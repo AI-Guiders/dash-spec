@@ -24,7 +24,13 @@ public static class CardDiagramResolver
             diagramProps[key] = value;
         }
 
-        var diagram = new DiagramDefinition(preset.Kind, diagramProps, FSharpOption<string>.None);
+        var cardColumns = DashSpec.Modeling.Parse.Diagram.TableColumnsBridge.get(card.Diagram);
+        var tableColumns = cardColumns is { Count: > 0 }
+            ? cardColumns
+            : preset.TableColumns ?? Array.Empty<DashSpec.Modeling.Parse.Syntax.ColumnRowSyntax>();
+        var diagram = DashSpec.Modeling.Parse.Diagram.TableColumnsBridge.attach(
+            new DiagramDefinition(preset.Kind, diagramProps, FSharpOption<string>.None),
+            tableColumns);
         var presentation = MergePresentation(preset.PresentationPreset, card.Presentation?.Value);
         var seriesTransform = MergeSeriesTransform(preset.SeriesTransformPreset, card.SeriesTransform?.Value);
         var inspect = InspectPresentationParser.Merge(preset.Inspect, card.Inspect?.Value);

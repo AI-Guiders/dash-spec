@@ -1028,13 +1028,20 @@ module DashSpecSurfaceSyntax =
             | Some(DashSpecBlockKeyword.Other kw)
                 when String.Equals(kw, "table", StringComparison.OrdinalIgnoreCase)
                      || String.Equals(kw, "columns", StringComparison.OrdinalIgnoreCase) ->
+                let rawAlign = tryAttr "align" |> Option.orElseWith (fun () -> tryAttr "alignment")
+                let rawHeaderAlign = tryAttr "header_align" |> Option.orElseWith (fun () -> tryAttr "header_alignment")
+                let rawSize = tryAttr "size"
+                let rawSorting = tryAttr "sorting"
                 TableRowKind.Column
                     { Id = tryAttr "id" |> Option.defaultValue ""
                       Format = tryAttr "format"
                       Label = tryAttr "label"
-                      Sorting = tryAttr "sorting"
-                      Alignment = tryAttr "alignment"
-                      HeaderAlignment = tryAttr "header_alignment" }
+                      Size = rawSize |> Option.bind TableColumnSize.tryParse
+                      Align = rawAlign |> Option.bind TableColumnAlign.tryParse
+                      HeaderAlign = rawHeaderAlign |> Option.bind TableColumnAlign.tryParse
+                      Sorting = rawSorting |> Option.bind TableSortDirection.tryParse
+                      Alignment = rawAlign
+                      HeaderAlignment = rawHeaderAlign }
             | _ when Map.containsKey "dashboard" attrs || Map.containsKey "dashspec" attrs ->
                 let id = tryAttr "id" |> Option.defaultValue ""
                 TableRowKind.CatalogEntry
@@ -1454,7 +1461,10 @@ module DashSpecSurfaceSyntax =
                             let moduleNode = appendModule container id text allTokens line kind moduleId
                             container.Children.Add moduleNode
                             parseContainerBody moduleNode id text allTokens reader true false
-                        | BlockSurfaceLineClassifier.BlockOpener(kind, blockId) when not (isLayoutParent container) || isLayoutSubBlock kind ->
+                        | BlockSurfaceLineClassifier.BlockOpener(kind, blockId) when
+                            not (isTypeParent container)
+                            && not (isPortsParent container)
+                            && (not (isLayoutParent container) || isLayoutSubBlock kind) ->
                             let blockNode = appendBlock container id text allTokens line kind blockId
                             container.Children.Add blockNode
 

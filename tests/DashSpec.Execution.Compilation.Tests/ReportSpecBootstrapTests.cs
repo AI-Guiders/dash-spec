@@ -124,6 +124,29 @@ public sealed class ReportSpecBootstrapTests
             };
             return new ReportCompileResult(doc, []);
         }
+
+        public string? ReadRuntimePath(string text) => "demo.toml";
+
+        public DashSpec.Modeling.Parse.Host.HostDocument ParseHost(string text, string? specDirectory = null) =>
+            throw new NotSupportedException();
+
+        public DashSpec.Modeling.Parse.Host.HostDocument ParseHostFile(string path) =>
+            throw new NotSupportedException();
+
+        public DashSpec.Modeling.Parse.Catalog.CatalogDocument ParseCatalog(string text) =>
+            throw new NotSupportedException();
+
+        public DashSpec.Modeling.Parse.Catalog.CatalogDocument ParseCatalogFile(string path) =>
+            throw new NotSupportedException();
+
+        public DashSpec.Modeling.Parse.Runtime.RuntimeDocument ParseRuntime(string text) =>
+            throw new NotSupportedException();
+
+        public DashSpec.Modeling.Parse.Layout.LayoutBoardDefinition ParseLayout(string text) =>
+            throw new NotSupportedException();
+
+        public string? TryDiscoverHostSpecPath(string directory, bool skipLocalConfig = false) =>
+            null;
     }
 
     [Fact]

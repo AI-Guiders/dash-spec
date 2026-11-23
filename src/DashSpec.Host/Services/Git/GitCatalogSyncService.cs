@@ -1,8 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using DashSpec.Execution.Parsing;
 using DashSpec.Abstractions.Hosting;
+using DashSpec.Compiler.Contract;
+using DashSpec.Execution.Parsing;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Dev;
@@ -10,6 +11,7 @@ using DashSpec.Host.Services.Dev;
 namespace DashSpec.Host.Services.Git;
 
 public sealed class GitCatalogSyncService(
+    IReportCompiler reportCompiler,
     DashSpecTomlRoot bootstrap,
     CatalogSourceState catalogState,
     IWebHostEnvironment environment,
@@ -50,7 +52,7 @@ public sealed class GitCatalogSyncService(
             if (changed)
             {
                 _lastCatalogHash = bytes;
-                var document = CatalogReader.ParseFile(catalogPath);
+                var document = reportCompiler.ParseCatalogFile(catalogPath);
                 catalogState.Replace(new CatalogBootstrap(document, catalogPath));
                 logger.LogInformation("Git catalog updated, requesting reload: {Path}", catalogPath);
                 reloadNotifier.Notify();

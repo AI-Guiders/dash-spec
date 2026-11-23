@@ -1,12 +1,13 @@
 using System.Text;
 using System.Text.Json;
 using DashSpec.Abstractions.Hosting;
+using DashSpec.Compiler.Contract;
 using DashSpec.Host.Services.Abstractions;
 using Tomlyn;
 
 namespace DashSpec.Host.Configuration;
 
-public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
+public sealed class DashSpecTomlLoader(IReportCompiler reportCompiler) : IDashSpecTomlLoader
 {
     private static readonly TomlSerializerOptions SerializerOptions = new()
     {
@@ -33,7 +34,7 @@ public sealed class DashSpecTomlLoader : IDashSpecTomlLoader
 
     private DashSpecTomlRoot LoadFromRuntimeModule(string text, string path)
     {
-        var doc = DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser.parse(text);
+        var doc = reportCompiler.ParseRuntime(text);
         var root = new DashSpecTomlRoot();
         root.Plugins.DefaultProviderId = string.IsNullOrWhiteSpace(doc.DefaultProviderId)
             ? "sqlserver"

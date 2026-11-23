@@ -596,12 +596,53 @@ and ClickRowSyntax =
       Drill: string option
       Set: string option }
 
-/// <summary>Typed row inside a `table` / `columns` table (`| id | format | label | sorting | alignment |`).</summary>
+/// <summary>Declarative column sizing mode in a `table` / `columns` table (`content | header | cells | fill`).</summary>
+and [<RequireQualifiedAccess>] TableColumnSize =
+    | Content
+    | Header
+    | Cells
+    | Fill
+
+    member this.WireName =
+        match this with
+        | TableColumnSize.Content -> "content"
+        | TableColumnSize.Header -> "header"
+        | TableColumnSize.Cells -> "cells"
+        | TableColumnSize.Fill -> "fill"
+
+/// <summary>Declarative horizontal alignment in a `table` / `columns` table (`left | center | right | justify`).</summary>
+and [<RequireQualifiedAccess>] TableColumnAlign =
+    | Left
+    | Center
+    | Right
+    | Justify
+
+    member this.WireName =
+        match this with
+        | TableColumnAlign.Left -> "left"
+        | TableColumnAlign.Center -> "center"
+        | TableColumnAlign.Right -> "right"
+        | TableColumnAlign.Justify -> "justify"
+
+/// <summary>Declarative sort direction in a `table` / `columns` table (`ASC | DESC`).</summary>
+and [<RequireQualifiedAccess>] TableSortDirection =
+    | Asc
+    | Desc
+
+    member this.WireName =
+        match this with
+        | TableSortDirection.Asc -> "ASC"
+        | TableSortDirection.Desc -> "DESC"
+
+/// <summary>Typed row inside a `table` / `columns` table (`| id | format | label | size | align | sorting |`).</summary>
 and ColumnRowSyntax =
     { Id: string
       Format: string option
       Label: string option
-      Sorting: string option
+      Size: TableColumnSize option
+      Align: TableColumnAlign option
+      HeaderAlign: TableColumnAlign option
+      Sorting: TableSortDirection option
       Alignment: string option
       HeaderAlignment: string option }
 
@@ -648,3 +689,58 @@ type DashSpecAstNodeKind =
     | ClauseDeclaration = 12
     | GridRowDeclaration = 13
     | TableRowDeclaration = 14
+
+module TableColumnSize =
+
+    let tryParse (raw: string) : TableColumnSize option =
+        match raw.Trim().ToLowerInvariant() with
+        | "content" | "auto" -> Some TableColumnSize.Content
+        | "header" -> Some TableColumnSize.Header
+        | "cells" -> Some TableColumnSize.Cells
+        | "fill" | "stretch" | "*" -> Some TableColumnSize.Fill
+        | _ -> None
+
+    let parse (column: string) (raw: string) : TableColumnSize =
+        match tryParse raw with
+        | Some s -> s
+        | None ->
+            raise (
+                DashSpecParseException(
+                    $"diagram columns table size for '{column}' must be content, header, cells, or fill; got '{raw.Trim()}'.")
+            )
+
+module TableColumnAlign =
+
+    let tryParse (raw: string) : TableColumnAlign option =
+        match raw.Trim().ToLowerInvariant() with
+        | "left" -> Some TableColumnAlign.Left
+        | "center" -> Some TableColumnAlign.Center
+        | "right" -> Some TableColumnAlign.Right
+        | "justify" -> Some TableColumnAlign.Justify
+        | _ -> None
+
+    let parse (column: string) (raw: string) : TableColumnAlign =
+        match tryParse raw with
+        | Some a -> a
+        | None ->
+            raise (
+                DashSpecParseException(
+                    $"diagram columns table alignment for '{column}' must be left, center, right, or justify; got '{raw.Trim()}'.")
+            )
+
+module TableSortDirection =
+
+    let tryParse (raw: string) : TableSortDirection option =
+        match raw.Trim().ToUpperInvariant() with
+        | "ASC" -> Some TableSortDirection.Asc
+        | "DESC" -> Some TableSortDirection.Desc
+        | _ -> None
+
+    let parse (column: string) (raw: string) : TableSortDirection =
+        match tryParse raw with
+        | Some d -> d
+        | None ->
+            raise (
+                DashSpecParseException(
+                    $"diagram columns table sorting for '{column}' must be ASC or DESC, got '{raw.Trim()}'.")
+            )

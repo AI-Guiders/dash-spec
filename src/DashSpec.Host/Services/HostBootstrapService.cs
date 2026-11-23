@@ -1,16 +1,17 @@
-using DashSpec.Execution.Runtime;
+using DashSpec.Abstractions.Hosting;
+using DashSpec.Compiler.Contract;
+using DashSpec.Composition.Shell;
 using DashSpec.Execution.Compilation;
 using DashSpec.Execution.Parsing;
-using DashSpec.Abstractions.Hosting;
-using DashSpec.Composition.Shell;
+using DashSpec.Execution.Runtime;
 using DashSpec.Host.Configuration;
 using DashSpec.Host.Services.Abstractions;
-using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Host.Services;
 
 /// <summary>Host bootstrap: ops TOML → <c>.dashhost</c> → catalog → default entry @runtime TOML.</summary>
 public sealed class HostBootstrapService(
+    IReportCompiler reportCompiler,
     IDashSpecTomlLoader tomlLoader,
     IHostPathResolver pathResolver,
     IHostSettingsOverlay settingsOverlay,
@@ -63,8 +64,7 @@ public sealed class HostBootstrapService(
             ?? throw new FileNotFoundException(
                 $"Host dashhost not found: '{bootstrap.Host.Dashhost}' (content root: {contentRoot}).");
 
-        DashSpecParser.EnsureModuleParsersRegistered();
-        var document = DashSpecParser.ParseHostFile(dashhostPath);
+        var document = reportCompiler.ParseHostFile(dashhostPath);
         var hostShell = new HostShellBootstrap { Document = document, FullPath = dashhostPath };
         ApplyHostShell(bootstrap, hostShell);
         DashSpecDefaultShell.RegisterGridDefault();
@@ -77,7 +77,6 @@ public sealed class HostBootstrapService(
 
     public CatalogBootstrap LoadCatalog(DashSpecTomlRoot bootstrap, string contentRoot)
     {
-        DashSpecParser.EnsureModuleParsersRegistered();
         var catalogPath = pathResolver.ResolveCatalogPath(contentRoot, bootstrap.Dashboard.CatalogPath);
         // ADR-0124: compiled row types ride next to the catalog (dsc build types). Absent
         // assembly = the wire mode; present = the renderer gets honest CLR TItems.
@@ -89,7 +88,7 @@ public sealed class HostBootstrapService(
         {
             DashSpec.Execution.Runtime.CompiledRowTypes.Load(typedRowsPath, File.ReadAllBytes(typedRowsPath));
         }
-        return new CatalogBootstrap(CatalogReader.ParseFile(catalogPath), catalogPath);
+        return new CatalogBootstrap(reportCompiler.ParseCatalogFile(catalogPath), catalogPath);
     }
 
     public string ResolveActiveSpecFullPath(CatalogBootstrap catalog, string? catalogEntryId = null)
@@ -182,7 +181,7 @@ public sealed class HostBootstrapService(
         }
     }
 
-    private static string? TryAutoDiscoverHostSpec(string contentRoot, bool skipLocalConfig)
+    private string? TryAutoDiscoverHostSpec(string contentRoot, bool skipLocalConfig)
     {
         var searchDirs = skipLocalConfig
             ? new[]
@@ -202,34 +201,10 @@ public sealed class HostBootstrapService(
 
         foreach (var dir in searchDirs.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            if (!Directory.Exists(dir))
+            var found = reportCompiler.TryDiscoverHostSpecPath(dir, skipLocalConfig);
+            if (!string.IsNullOrWhiteSpace(found))
             {
-                continue;
-            }
-
-            var idx = DashSpec.Modeling.Parse.Document.UnitIndexModule.build(dir);
-            var cfgOpt = DashSpec.Modeling.Parse.Project.DashSpecProjectLocator.tryFindConfig(
-                Microsoft.FSharp.Core.FSharpOption<string>.Some(dir));
-            if (Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Project.DashSpecProjectConfig>.get_IsSome(cfgOpt) &&
-                Microsoft.FSharp.Core.FSharpOption<string>.get_IsSome(cfgOpt.Value.HostId))
-            {
-                var explicitHostOpt = idx.TryFindUnit("host", cfgOpt.Value.HostId.Value);
-                if (Microsoft.FSharp.Core.FSharpOption<DashSpec.Modeling.Parse.Document.UnitIndexEntry>.get_IsSome(explicitHostOpt) &&
-                    File.Exists(explicitHostOpt.Value.Path))
-                {
-                    return Path.GetFullPath(explicitHostOpt.Value.Path);
-                }
-            }
-
-            var hostEntry = idx.Entries.FirstOrDefault(e =>
-                e.Kind is not null &&
-                string.Equals(e.Kind.Value, "host", StringComparison.OrdinalIgnoreCase) &&
-                File.Exists(e.Path) &&
-                (!skipLocalConfig || !Path.GetFileName(e.Path).Contains(".local.", StringComparison.OrdinalIgnoreCase)));
-
-            if (hostEntry is not null)
-            {
-                return Path.GetFullPath(hostEntry.Path);
+                return found;
             }
         }
 

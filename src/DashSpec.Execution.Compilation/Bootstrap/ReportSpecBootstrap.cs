@@ -4,7 +4,6 @@ using DashSpec.Execution.Runtime;
 using DashSpec.Execution.Resolution;
 using DashSpec.Execution.Runtime.Platform;
 using DashSpec.Modeling.Parse.Layout;
-using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 using DashSpec.Compiler.Contract;
 
@@ -27,7 +26,7 @@ public sealed class ReportSpecBootstrap(
         ReportLoadOptions? options = null)
     {
         options ??= new ReportLoadOptions();
-        var entryRuntime = DashSpecParser.ReadRuntimePath(text);
+        var entryRuntime = reportCompiler.ReadRuntimePath(text);
         if (string.IsNullOrWhiteSpace(entryRuntime))
         {
             throw new InvalidOperationException(

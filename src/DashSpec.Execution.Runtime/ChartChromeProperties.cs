@@ -15,7 +15,7 @@ public static class ChartChromeProperties
             "stacked", "orientation", "fill",
             "scale_value", "scale_measure", "scale_x", "scale_y", "value_scale", "y_format",
             "y_max", "value_axis_max", "color_mode", "default", "colors",
-            "width", "density", "column_filters", "grouping",
+            "width", "size", "column_size", "density", "column_filters", "frozen_columns", "grouping", "page_size", "align",
             "grid_lines", "markers",
         })
         {

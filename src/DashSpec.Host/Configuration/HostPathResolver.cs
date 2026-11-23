@@ -1,10 +1,10 @@
 using DashSpec.Abstractions.Hosting;
+using DashSpec.Compiler.Contract;
 using DashSpec.Execution.Parsing;
-using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 
 namespace DashSpec.Host.Configuration;
 
-public sealed class HostPathResolver : IHostPathResolver
+public sealed class HostPathResolver(IReportCompiler reportCompiler) : IHostPathResolver
 {
     public string ResolveSpecPath(string contentRoot, string specPath) =>
         SpecPathResolver.ResolveFromContentRoot(contentRoot, specPath);
@@ -60,7 +60,7 @@ public sealed class HostPathResolver : IHostPathResolver
         string specText,
         string? configFallbackDirectory = null)
     {
-        var configRelative = DashSpecParser.ReadRuntimePath(specText);
+        var configRelative = reportCompiler.ReadRuntimePath(specText);
         if (string.IsNullOrWhiteSpace(configRelative))
         {
             throw new InvalidOperationException(

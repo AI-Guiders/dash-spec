@@ -545,18 +545,26 @@ module DashflowModuleParser =
           Diagnostics = diagnostics |> List.toArray }
 
     /// <summary>ADR-0127 §4: a ports-less transformer gets the default unary
-    /// ports — input <c>raw</c>, output <c>rows</c> — with the output type left
-    /// empty for inference to fill.</summary>
-    let private applyDefaultPorts (transformers: DashflowTransformerDef[]) =
+    /// ports — input <c>rows</c> (or the incoming edge's explicit target port),
+    /// output <c>rows</c> — with the output type left empty for inference to fill.</summary>
+    let private applyDefaultPorts (transformers: DashflowTransformerDef[]) (links: FlowLinkDef[]) =
         transformers
         |> Array.map (fun transformer ->
             if transformer.Inputs.Length > 0 || transformer.Outputs.Length > 0 then
                 transformer
             else
+                let incomingPort =
+                    links
+                    |> Array.tryPick (fun l ->
+                        if String.Equals(l.ToNode, transformer.Id, StringComparison.OrdinalIgnoreCase) then
+                            l.ToPort
+                        else
+                            None)
+                    |> Option.defaultValue "rows"
                 { transformer with
-                    Inputs = [| { Name = "raw"; PortType = None } |]
+                    Inputs = [| { Name = incomingPort; PortType = None } |]
                     Outputs = [| ("rows", "") |]
-                    DefaultInputPort = Some "raw"
+                    DefaultInputPort = Some incomingPort
                     DefaultOutputPort = Some "rows" })
 
     /// <summary>ADR-0127: run port type inference, patch untyped outputs with
@@ -633,7 +641,7 @@ module DashflowModuleParser =
         (links: FlowLinkDef[])
         (typeCatalog: TypeCatalog)
         =
-        let transformers = applyDefaultPorts transformers
+        let transformers = applyDefaultPorts transformers links
         checkStepLayering transformers links
         let sources = validateCompositeOrigins sources
         let graph, sources, transformers, inferred, diagnostics = inferAndCheck sources transformers nestedFlows links typeCatalog

@@ -14,7 +14,8 @@
    HeaderTemplate would bury them); the column context menu rides the grid-level
    contextmenu event and resolves the column from the th[data-column-index]. *@
 <RadzenDataGrid @ref="_grid" TItem="TItem" Data="@Items" data-testid="typed-grid"
-                Wrap="true" Density="Density.Compact" Style="width:100%;--typed:1"
+                class="@GridCssClass"
+                Wrap="true" Density="@GridDensity" Style="@GridStyle"
                 AllowSorting="true" AllowFiltering="@ColumnFilters"
                 FilterMode="@(Fields.Count <= 4 ? FilterMode.Simple : FilterMode.SimpleWithMenu)"
                 FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
@@ -41,8 +42,10 @@
             {
                 <RadzenDataGridColumn TItem="TItem" Property="@Fields[index].Name"
                                       Title="@Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
+                                      CssClass="@ColumnCssClass(index)" HeaderCssClass="@ColumnCssClass(index)"
                                       Width="auto" Sortable="true" Filterable="true"
                                       Frozen="@(index < FrozenColumns)">
+                    <HeaderTemplate>@HeaderFragment(index)</HeaderTemplate>
                     <FilterTemplate Context="column">
                         <RadzenDatePicker TValue="DateTime?" Value="@DateFilterOf(index)"
                                           Change="@(v => OnDateFilterChanged(column, index, v))"
@@ -56,8 +59,10 @@
             {
                 <RadzenDataGridColumn TItem="TItem" Property="@Fields[index].Name"
                                       Title="@Fields[index].Header" TextAlign="@ColumnTextAlign(index)"
+                                      CssClass="@ColumnCssClass(index)" HeaderCssClass="@ColumnCssClass(index)"
                                       Width="auto" Sortable="true" Filterable="@ColumnFilters"
                                       Frozen="@(index < FrozenColumns)">
+                    <HeaderTemplate>@HeaderFragment(index)</HeaderTemplate>
                     <Template Context="row">@CellFragment(row, index)</Template>
                 </RadzenDataGridColumn>
             }
@@ -68,11 +73,43 @@
 <RadzenContextMenu @ref="_columnMenu" />
 
 @code {
+    /// <summary>Column header with inline copy-column icon button (ADR-0115 §4):
+    /// stopPropagation prevents triggering column sort when clicking the copy glyph.</summary>
+    private RenderFragment HeaderFragment(int index) => __builder =>
+    {
+        var copied = _copiedColumn == index;
+        var title = copied ? Loc["Copied"].Value : Loc["Copy column"].Value;
+        <span class="rviz-grid-head" @oncontextmenu="args => OpenColumnMenu(args, index)" @oncontextmenu:preventDefault="true">
+            <span class="rviz-grid-head-text">@Fields[index].Header</span>
+            <button type="button"
+                    class="rviz-grid-copy @(copied ? "rviz-grid-copy--done" : null)"
+                    title="@title"
+                    aria-label="@title"
+                    @onclick="() => CopyColumnAsync(index)"
+                    @onclick:stopPropagation="true">
+                @if (copied)
+                {
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 8.5 6.5 12 13 4.5" />
+                    </svg>
+                }
+                else
+                {
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+                        <path d="M10.5 5.5V3.5A1.5 1.5 0 0 0 9 2H3.5A1.5 1.5 0 0 0 2 3.5V9a1.5 1.5 0 0 0 1.5 1.5h2" />
+                    </svg>
+                }
+            </button>
+        </span>
+    };
+
     /// <summary>The cell body: formatted value + the column context menu (the column
     /// index is known at render time — no DOM round-trip).</summary>
     private RenderFragment CellFragment(TItem row, int index) => __builder =>
     {
-        <div class="rviz-cell" @oncontextmenu="args => OpenColumnMenu(args, index)"
-             @oncontextmenu:preventDefault="true">@FormatCell(PropertyOf(row, index), index)</div>
+        var text = FormatCell(PropertyOf(row, index), index);
+        <div class="rviz-cell" title="@text" @oncontextmenu="args => OpenColumnMenu(args, index)"
+             @oncontextmenu:preventDefault="true">@text</div>
     };
 }

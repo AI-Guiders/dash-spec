@@ -43,8 +43,11 @@ module PropertySchemas =
           spec "default" Scalar
           spec "colors" Scalar
           spec "width" Scalar
+          spec "size" Scalar
+          spec "column_size" Scalar
           spec "density" Scalar
           spec "column_filters" Scalar
+          spec "frozen_columns" Scalar
           spec "grouping" Scalar
           spec "page_size" Scalar
           spec "align" Scalar

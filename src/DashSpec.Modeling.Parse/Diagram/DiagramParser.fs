@@ -5,6 +5,7 @@ open System.Collections.Generic
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Syntax
 
 module DiagramParser =
 
@@ -14,8 +15,10 @@ module DiagramParser =
     let parseAfterKindIdent (reader: TokenReader) (name: string) =
         match DiagramKindRegistry.tryResolve name with
         | true, spec when name.Equals("table", StringComparison.OrdinalIgnoreCase) ->
-            let properties = TableDiagramParser.parse reader
-            { Kind = name; Properties = properties :> IReadOnlyDictionary<_, _>; UsePreset = None }
+            let properties, cols = TableDiagramParser.parseWithColumns reader
+            TableColumnsBridge.attach
+                { Kind = name; Properties = properties :> IReadOnlyDictionary<_, _>; UsePreset = None }
+                cols
         | true, spec ->
             let properties =
                 PropertyBlockParser.parse

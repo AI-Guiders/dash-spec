@@ -22,6 +22,7 @@ public static class ViewerPluginBootstrap
             onPluginRegistered(plugin);
         }
 
+        Register(DashSpecLanguageBuiltinPlugin.Instance);
         Register(new ScopeBuiltinPlugin());
         Register(new DiagramBuiltinPlugin());
         Register(new OnClickDefaultPlugin());

@@ -5,35 +5,27 @@ open System.Collections.Generic
 open DashSpec.Modeling.Core
 open DashSpec.Modeling.Parse
 open DashSpec.Modeling.Parse.Lexing
+open DashSpec.Modeling.Parse.Syntax
 
 /// Table diagram — `formats` child block via BlockGrammar (ADR-0070) plus
 /// `columns` as flat comma-list or GDL-style pipe table
-/// (<c>| id | format | label | sorting |</c>; ADR-0004 deferred step, ADR-0057 GDL-tables).
+/// (<c>| id | format | label | size | align | sorting |</c>; ADR-0004 deferred step, ADR-0057 GDL-tables).
 /// ADR-0106: the `columns` table side rides the construct declaration — vocabulary,
 /// header/unset semantics and the row loop are kernel-shared.
 module TableDiagramParser =
 
-    /// Desugars the `columns` pipe table into IR properties:
-    /// `columns` (ids in row order), `column_formats`, `column_labels` (newline map), `sort` (sorting cells in row order).
-    let private applyColumnsTable (rows: string list) (values: Dictionary<string, string>) =
+    /// Projects the `columns` pipe table into typed `ColumnRowSyntax` records and IR properties.
+    let private applyColumnsTable (rows: string list) (values: Dictionary<string, string>) : IReadOnlyList<ColumnRowSyntax> =
         if rows.IsEmpty then
-            ()
+            [||] :> IReadOnlyList<ColumnRowSyntax>
         else
             let ids = ResizeArray<string>()
+            let typedColumns = ResizeArray<ColumnRowSyntax>()
             let formats = Dictionary<string, string>()
             let labels = Dictionary<string, string>()
             let sorting = ResizeArray<string>()
             let alignments = Dictionary<string, string>()
             let headerAlignments = Dictionary<string, string>()
-
-            let validateAlignment (raw: string) (column: string) =
-                match raw.Trim().ToLowerInvariant() with
-                | "left" | "center" | "right" | "justify" as ok -> ok
-                | other ->
-                    raise (
-                        DashSpecParseException(
-                            $"diagram columns table alignment for '{column}' must be left, center, right, or justify; got '{other}'.")
-                    )
 
             let cellsToColumn (m: Map<string, string>) =
                 match Construct.tryCell m "id" with
@@ -43,34 +35,61 @@ module TableDiagramParser =
 
                     ids.Add id
 
-                    (match Construct.tryCell m "format" with
-                     | Some f -> formats.[id] <- f
-                     | None -> ())
+                    let fmt = Construct.tryCell m "format"
+                    match fmt with
+                    | Some f -> formats.[id] <- f
+                    | None -> ()
 
-                    (match Construct.tryCell m "label" with
-                     | Some l -> labels.[id] <- l
-                     | None -> ())
+                    let lbl = Construct.tryCell m "label"
+                    match lbl with
+                    | Some l -> labels.[id] <- l
+                    | None -> ()
 
-                    (match Construct.tryCell m "alignment" with
-                     | Some a -> alignments.[id] <- validateAlignment a id
-                     | None -> ())
+                    let colSize =
+                        Construct.tryCell m "size"
+                        |> Option.map (TableColumnSize.parse id)
 
-                    (match Construct.tryCell m "header_alignment" with
-                     | Some a -> headerAlignments.[id] <- validateAlignment a id
-                     | None -> ())
+                    let colAlign =
+                        Construct.tryCell m "align"
+                        |> Option.orElseWith (fun () -> Construct.tryCell m "alignment")
+                        |> Option.map (TableColumnAlign.parse id)
 
-                    (match Construct.tryCell m "sorting" with
-                     | Some s ->
-                         (match s.ToUpperInvariant() with
-                          | "ASC"
-                          | "DESC" as dir -> sorting.Add($"{id} {dir}")
-                          | other -> raise (DashSpecParseException($"diagram columns table sorting for '{id}' must be ASC or DESC, got '{other}'.")))
-                     | None -> ())
+                    match colAlign with
+                    | Some a -> alignments.[id] <- a.WireName
+                    | None -> ()
+
+                    let hdrAlign =
+                        Construct.tryCell m "header_align"
+                        |> Option.orElseWith (fun () -> Construct.tryCell m "header_alignment")
+                        |> Option.map (TableColumnAlign.parse id)
+
+                    match hdrAlign with
+                    | Some a -> headerAlignments.[id] <- a.WireName
+                    | None -> ()
+
+                    let sortDir =
+                        Construct.tryCell m "sorting"
+                        |> Option.map (TableSortDirection.parse id)
+
+                    match sortDir with
+                    | Some d -> sorting.Add($"{id} {d.WireName}")
+                    | None -> ()
+
+                    typedColumns.Add
+                        { Id = id
+                          Format = fmt
+                          Label = lbl
+                          Size = colSize
+                          Align = colAlign
+                          HeaderAlign = hdrAlign
+                          Sorting = sortDir
+                          Alignment = colAlign |> Option.map (fun a -> a.WireName)
+                          HeaderAlignment = hdrAlign |> Option.map (fun a -> a.WireName) }
                 | None -> raise (DashSpecParseException("diagram columns table row requires a non-empty 'id' cell."))
 
             let declaration : Construct.Declaration<unit> =
                 { Name = "diagram columns"
-                  Vocabulary = [ "id"; "format"; "label"; "sorting"; "alignment"; "header_alignment" ]
+                  Vocabulary = [ "id"; "format"; "label"; "size"; "align"; "alignment"; "header_align"; "header_alignment"; "sorting" ]
                   CellsToRow = cellsToColumn
                   ConstructRow = ignore }
 
@@ -102,7 +121,9 @@ module TableDiagramParser =
             if headerAlignments.Count > 0 then
                 values.["column_header_alignments"] <- BlockGrammar.serializeColumnFormatMap headerAlignments
 
-    let parse (reader: TokenReader) =
+            typedColumns :> IReadOnlyList<ColumnRowSyntax>
+
+    let parseWithColumns (reader: TokenReader) : Dictionary<string, string> * IReadOnlyList<ColumnRowSyntax> =
         let schema = DiagramKindRegistry.getProperties "table"
         let pipeRows = ResizeArray<string>()
 
@@ -124,5 +145,8 @@ module TableDiagramParser =
                   BlockGrammar.SchemaProperties(schema, false, false) ]
                 None
 
-        applyColumnsTable (List.ofSeq pipeRows) values
-        values
+        let cols = applyColumnsTable (List.ofSeq pipeRows) values
+        values, cols
+
+    let parse (reader: TokenReader) =
+        parseWithColumns reader |> fst

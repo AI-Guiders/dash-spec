@@ -57,6 +57,9 @@ module BlockSurfaceLineClassifier =
                 End(kind, tryReadOptionalId rest)
             | Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Module :: { Kind = TokenKind.Ident; Value = kind } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
                 ModuleHeader(kind, id)
+            | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Ident; Value = id } :: _
+                when DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.isNamedBlockKeyword kw && id <> "as" ->
+                BlockOpener(kw, Some id)
             | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Layout)
               :: Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Grid) :: _ ->
                 BlockOpener("grid", None)
@@ -83,9 +86,6 @@ module BlockSurfaceLineClassifier =
                     BlockOpener("import", Some nsName)
                 | _ ->
                     Content
-            | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Ident; Value = id } :: _
-                when DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.isNamedBlockKeyword kw && id <> "as" ->
-                BlockOpener(kw, Some id)
             | Kw (DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Block DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.Transform)
               :: Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Use :: { Kind = TokenKind.Ident; Value = pluginId } :: _ ->
                 BlockOpener("transform", Some pluginId)

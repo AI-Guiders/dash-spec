@@ -403,7 +403,17 @@ module DashSpecGrammarGraph =
         | "widget" ->
             [ GrammarExpectation.ValueDomain("widget", [ "combobox"; "chips"; "select"; "day"; "range" ]) ]
         | "density" ->
-            [ GrammarExpectation.ValueDomain("density", [ "inline"; "collapsed" ]) ]
+            [ GrammarExpectation.ValueDomain("density", [ "compact"; "comfortable"; "inline"; "collapsed" ]) ]
+        | "size" | "width" ->
+            [ GrammarExpectation.ValueDomain(propertyKey, [ "content"; "fill" ]) ]
+        | "column_size" ->
+            [ GrammarExpectation.ValueDomain("column_size", [ "content"; "header"; "cells"; "fill" ]) ]
+        | "align" ->
+            [ GrammarExpectation.ValueDomain("align", [ "left"; "center"; "right" ]) ]
+        | "grid_lines" ->
+            [ GrammarExpectation.ValueDomain("grid_lines", [ "both"; "x"; "y"; "none" ]) ]
+        | "markers" ->
+            [ GrammarExpectation.ValueDomain("markers", [ "true"; "false" ]) ]
         | "legend" ->
             [ GrammarExpectation.ValueDomain("legend", [ "bottom"; "top"; "left"; "right"; "none" ]) ]
         | "orientation" ->

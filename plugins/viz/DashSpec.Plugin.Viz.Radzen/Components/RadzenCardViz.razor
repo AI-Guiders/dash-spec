@@ -348,6 +348,13 @@ else
             FormatDefaults = Context.EffectiveCard.FormatDefaults,
             RowClickEnabled = RowClickEnabled,
             OnRowClick = EventCallback.Factory.Create<string>(this, OnTableRowClicked),
+            WidthMode = Context.EffectiveCard.TablePresentation?.Width ?? TableWidthMode.Content,
+            Density = Context.EffectiveCard.TablePresentation?.Density ?? TableDensity.Compact,
+            MaxHeightPx = Context.EffectiveCard.TablePresentation?.MaxHeightPx ?? 420,
+            DefaultColumnSize = Context.EffectiveCard.TablePresentation?.DefaultColumnSize
+                ?? DashSpec.Modeling.Parse.Syntax.TableColumnSize.Content,
+            DefaultAlign = Context.EffectiveCard.TablePresentation?.DefaultAlign
+                ?? DashSpec.Modeling.Parse.Syntax.TableColumnAlign.Left,
         },
     };
 

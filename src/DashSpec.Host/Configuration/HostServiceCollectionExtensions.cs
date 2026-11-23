@@ -1,5 +1,7 @@
 using DashSpec.Surface.Blazor.Services;
 using DashSpec.Abstractions.Hosting;
+using DashSpec.Compiler.Contract;
+using DashSpec.Composition.Plugins.Builtins;
 using DashSpec.Host.Services.Abstractions;
 using DashSpec.Host.Services.Git;
 using DashSpec.Host.Services;
@@ -12,6 +14,7 @@ public static class HostServiceCollectionExtensions
 {
     public static IServiceCollection AddDashSpecHostInfrastructure(this IServiceCollection services)
     {
+        services.TryAddSingleton<IReportCompiler>(DashSpecLanguageBuiltinPlugin.Instance);
         services.TryAddSingleton<IDashSpecTomlLoader, DashSpecTomlLoader>();
         services.TryAddSingleton<IHostPathResolver, HostPathResolver>();
         services.TryAddSingleton<IHostSettingsOverlay, HostSettingsOverlayService>();

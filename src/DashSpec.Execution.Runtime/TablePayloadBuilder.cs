@@ -22,27 +22,39 @@ internal static class TablePayloadBuilder
         var headerAlignments = ColumnFormatMap.Parse(
             diagram.Properties.GetValueOrDefault("column_header_alignments"));
 
+        var typedColumnsById = DashSpec.Modeling.Parse.Diagram.TableColumnsBridge.get(diagram)
+            .ToDictionary(c => c.Id, StringComparer.OrdinalIgnoreCase);
+
         var fields = columns
             .Select(column =>
             {
+                typedColumnsById.TryGetValue(column, out var typedCol);
                 var hasSchemaField = rows.Schema.FieldOrdinals.TryGetValue(column, out var ordinal);
                 var schemaField = hasSchemaField ? rows.Schema.Fields[ordinal] : null;
                 var optional = schemaField?.IsOptional ?? true;
                 var kind = schemaField?.Kind ?? DashPrimitiveKind.String;
-                var resolvedLabel = labels.TryGetValue(column, out var label)
-                    ? label
-                    : !string.IsNullOrWhiteSpace(schemaField?.Label) ? schemaField.Label! : column;
-                var resolvedFormat = columnFormats.TryGetValue(column, out var format)
-                    ? format
-                    : schemaField?.Format;
+                var resolvedLabel = typedCol?.Label?.Value
+                    ?? (labels.TryGetValue(column, out var label)
+                        ? label
+                        : !string.IsNullOrWhiteSpace(schemaField?.Label) ? schemaField.Label! : column);
+                var resolvedFormat = typedCol?.Format?.Value
+                    ?? (columnFormats.TryGetValue(column, out var format)
+                        ? format
+                        : schemaField?.Format);
+                var resolvedAlign = typedCol?.Align is { } a ? a.Value : null;
+                var resolvedHeaderAlign = typedCol?.HeaderAlign is { } ha ? ha.Value : null;
+                var resolvedSize = typedCol?.Size is { } sz ? sz.Value : null;
                 return new TableField(
                     column,
                     resolvedLabel,
                     kind,
                     optional,
                     resolvedFormat,
-                    columnAlignments.TryGetValue(column, out var alignment) ? alignment : null,
-                    headerAlignments.TryGetValue(column, out var headerAlignment) ? headerAlignment : null);
+                    resolvedAlign?.WireName ?? (columnAlignments.TryGetValue(column, out var alignment) ? alignment : null),
+                    resolvedHeaderAlign?.WireName ?? (headerAlignments.TryGetValue(column, out var headerAlignment) ? headerAlignment : null),
+                    resolvedSize,
+                    resolvedAlign,
+                    resolvedHeaderAlign);
             })
             .ToList();
 

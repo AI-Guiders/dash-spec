@@ -36,6 +36,18 @@ public sealed class TypedTableGridContext
     /// <summary>The first column's formatted value rides the same contract as the
     /// builtin table (value-based, a re-render can't make it stale).</summary>
     public EventCallback<string> OnRowClick { get; init; }
+
+    public TableWidthMode WidthMode { get; init; } = TableWidthMode.Content;
+
+    public TableDensity Density { get; init; } = TableDensity.Compact;
+
+    public int MaxHeightPx { get; init; } = 420;
+
+    public DashSpec.Modeling.Parse.Syntax.TableColumnSize DefaultColumnSize { get; init; } =
+        DashSpec.Modeling.Parse.Syntax.TableColumnSize.Content;
+
+    public DashSpec.Modeling.Parse.Syntax.TableColumnAlign DefaultAlign { get; init; } =
+        DashSpec.Modeling.Parse.Syntax.TableColumnAlign.Left;
 }
 
 /// <summary>
@@ -119,13 +131,66 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
         }
     }
 
-    private TextAlign ColumnTextAlign(int index) =>
-        Fields[index].Alignment switch
+    private TextAlign ColumnTextAlign(int index)
+    {
+        var align = Fields[index].Align ?? Context.DefaultAlign;
+        if (align is not null)
+        {
+            if (align.IsRight)
+            {
+                return TextAlign.Right;
+            }
+
+            if (align.IsCenter)
+            {
+                return TextAlign.Center;
+            }
+        }
+
+        return Fields[index].Alignment switch
         {
             "right" => TextAlign.Right,
             "center" => TextAlign.Center,
             _ => TextAlign.Left,
         };
+    }
+
+    private DashSpec.Modeling.Parse.Syntax.TableColumnSize EffectiveColumnSize(int index) =>
+        Fields[index].Size ?? Context.DefaultColumnSize ?? DashSpec.Modeling.Parse.Syntax.TableColumnSize.Content;
+
+    private string ColumnCssClass(int index)
+    {
+        var size = EffectiveColumnSize(index);
+        if (size.IsHeader)
+        {
+            return "rviz-col--size-header";
+        }
+
+        if (size.IsCells)
+        {
+            return "rviz-col--size-cells";
+        }
+
+        if (size.IsFill)
+        {
+            return "rviz-col--size-fill";
+        }
+
+        return "rviz-col--size-content";
+    }
+
+    private string GridCssClass =>
+        Context.WidthMode == TableWidthMode.Fill
+            ? "rviz-typed-grid rviz-typed-grid--fill"
+            : "rviz-typed-grid rviz-typed-grid--content";
+
+    private string GridStyle =>
+        Context.WidthMode == TableWidthMode.Fill
+            ? $"width:100%;max-height:{Context.MaxHeightPx}px;--rviz-table-max:{Context.MaxHeightPx}px;--typed:1"
+            : $"width:fit-content;max-width:100%;max-height:{Context.MaxHeightPx}px;--rviz-table-max:{Context.MaxHeightPx}px;--typed:1";
+
+    private Density GridDensity =>
+        Context.Density == TableDensity.Compact ? Density.Compact : Density.Default;
 
     private void OnRowRender(RowRenderEventArgs<TItem> args)
     {
@@ -244,6 +309,7 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
             }
 
             _copiedColumn = columnIndex;
+            await InvokeAsync(StateHasChanged);
             _ = ResetCopiedAsync();
         }
         catch (JSDisconnectedException)

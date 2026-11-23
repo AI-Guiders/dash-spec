@@ -39,7 +39,10 @@ module UnitFragmentResolver =
                     props.[kv.Key] <- kv.Value
                 let kind = if String.IsNullOrWhiteSpace r.Kind then l.Kind else r.Kind
                 let preset = r.UsePreset |> Option.orElse l.UsePreset
-                Some { Kind = kind; Properties = props :> IReadOnlyDictionary<_, _>; UsePreset = preset }
+                let rCols = TableColumnsBridge.get r
+                let cols = if rCols.Count > 0 then rCols else TableColumnsBridge.get l
+                let merged = { Kind = kind; Properties = props :> IReadOnlyDictionary<_, _>; UsePreset = preset }
+                Some(TableColumnsBridge.attach merged cols)
 
     let private mergePresentation (left: PresentationBlock option) (right: PresentationBlock option) =
         match right with

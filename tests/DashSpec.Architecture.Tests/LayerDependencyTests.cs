@@ -28,8 +28,8 @@ public sealed class LayerDependencyTests
 
     /// <summary>
     /// ADR-0103: поверхность читает F#-IR напрямую (модель — SSOT), но не разбирает
-    /// и не компилирует текст сама. Запрещены точки разбора/компиляции F#-парсера,
-    /// а не сам проект IR.
+    /// и не компилирует текст сама — всё чтение/парсинг .ds идёт только через плагин
+    /// компилятора (<c>IReportCompiler</c> / <c>language_ds</c>).
     /// </summary>
     [Fact]
     public void Host_must_not_parse_or_compile_dashspec()
@@ -37,13 +37,18 @@ public sealed class LayerDependencyTests
         var result = Types.InAssembly(HostAssembly)
             .ShouldNot()
             .HaveDependencyOnAny(
+                "DashSpec.Execution.Parsing.DashSpecParser",
+                "DashSpec.Execution.Parsing.CatalogReader",
                 "DashSpec.Modeling.Parse.Lexing",
                 "DashSpec.Modeling.Parse.Syntax",
                 "DashSpec.Modeling.Parse.Document.DashSpecCompiler",
                 "DashSpec.Modeling.Parse.Document.DashboardComposer",
                 "DashSpec.Modeling.Parse.Document.DashboardParser",
                 "DashSpec.Modeling.Parse.Document.DocumentModuleParser",
-                "DashSpec.Modeling.Parse.Document.TabParser")
+                "DashSpec.Modeling.Parse.Document.TabParser",
+                "DashSpec.Modeling.Parse.Host.HostModuleParser",
+                "DashSpec.Modeling.Parse.Runtime.RuntimeModuleParser",
+                "DashSpec.Modeling.Parse.Catalog.CatalogParser")
             .GetResult();
 
         Assert.True(result.IsSuccessful, string.Join("; ", result.FailingTypeNames ?? []));

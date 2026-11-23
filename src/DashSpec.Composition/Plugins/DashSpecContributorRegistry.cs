@@ -20,6 +20,7 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
     private readonly Dictionary<string, PhraseTemplateDescriptor> _phraseTemplates =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _presentationProperties = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<(string LogicalPath, string Content)> _embeddedUnits = [];
     private readonly Dictionary<string, ScopeContributorDescriptor> _scopeContributors =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, FilterWidgetContributorDescriptor> _filterWidgets =
@@ -52,6 +53,8 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
 
     public IReadOnlyList<Type> ScriptsComponents => _scriptsComponents;
 
+    public IReadOnlyList<(string LogicalPath, string Content)> EmbeddedUnits => _embeddedUnits;
+
     public bool ContainsPlugin(string pluginId) =>
         _plugins.Any(x => string.Equals(x.Id, pluginId, StringComparison.OrdinalIgnoreCase));
 
@@ -69,6 +72,26 @@ public sealed class DashSpecContributorRegistry : IDashSpecContributorRegistry
             {
                 _presentationProperties.Add(property.Trim());
             }
+        }
+
+        const string stdlibPrefix = "stdlib/";
+        var pluginAssembly = plugin.GetType().Assembly;
+        foreach (var resourceName in pluginAssembly.GetManifestResourceNames())
+        {
+            if (!resourceName.StartsWith(stdlibPrefix, StringComparison.OrdinalIgnoreCase) ||
+                !resourceName.EndsWith(".ds", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            using var stream = pluginAssembly.GetManifestResourceStream(resourceName);
+            if (stream is null)
+            {
+                continue;
+            }
+
+            using var reader = new StreamReader(stream);
+            _embeddedUnits.Add((resourceName, reader.ReadToEnd()));
         }
 
         if (plugin.HeadComponent is { } headType)

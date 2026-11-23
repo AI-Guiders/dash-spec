@@ -2,6 +2,7 @@ using System.Globalization;
 using DashSpec.Abstractions.Hosting;
 using DashSpec.Abstractions.Viewer;
 using DashSpec.Abstractions.Viz;
+using DashSpec.Compiler.Contract;
 using DashSpec.Execution.Parsing;
 using DashSpec.Execution.Runtime;
 using DashSpec.Stack.Radzen;
@@ -22,7 +23,6 @@ using DashSpec.Surface.Blazor;
 using DashSpec.Surface.Blazor.Commands;
 using DashSpec.Surface.Blazor.Configuration;
 using DashSpec.Surface.Blazor.Services.Presentation;
-using DashSpecParser = DashSpec.Execution.Parsing.DashSpecParser;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +53,7 @@ public static class DashSpecHostApplicationBuilderExtensions
         await using var bootstrapProvider = bootstrapServices.BuildServiceProvider();
 #pragma warning restore ASP0000
 
+        var reportCompiler = bootstrapProvider.GetRequiredService<IReportCompiler>();
         var hostBootstrap = bootstrapProvider.GetRequiredService<IHostBootstrap>();
         var hostDatabase = bootstrapProvider.GetRequiredService<IHostDatabaseInitializer>();
         var tomlLoader = bootstrapProvider.GetRequiredService<IDashSpecTomlLoader>();
@@ -70,7 +71,7 @@ public static class DashSpecHostApplicationBuilderExtensions
         var dashSpecToml = hostBootstrap.Load(builder.Environment);
         var defaultSpecText = await File.ReadAllTextAsync(defaultSpecPath);
         var startupConfigPath = pathResolver.ResolveRuntimeConfigPath(defaultSpecPath, defaultSpecText);
-        var startupRuntimeReference = DashSpecParser.ReadRuntimePath(defaultSpecText)
+        var startupRuntimeReference = reportCompiler.ReadRuntimePath(defaultSpecText)
             ?? throw new InvalidOperationException("Default catalog entry .dashspec must declare @runtime.");
 
         var accessOptions = new DashSpecAccessOptions { ApiKey = bootstrap.Access.ApiKey };

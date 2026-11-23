@@ -191,7 +191,8 @@ public sealed class SpecLibrary
             seriesTransformPreset,
             diagramProps,
             definition.Inspect?.Value,
-            definition.Tooltip?.Value);
+            definition.Tooltip?.Value,
+            DashSpec.Modeling.Parse.Diagram.TableColumnsBridge.get(diagram));
     }
 
     private void RegisterPresentationBlock(string name, PresentationBlock? block)
@@ -280,7 +281,8 @@ public sealed record DiagramPreset(
     string? SeriesTransformPreset,
     IReadOnlyDictionary<string, string> Properties,
     InspectPresentation? Inspect = null,
-    TooltipDefinition? Tooltip = null);
+    TooltipDefinition? Tooltip = null,
+    IReadOnlyList<DashSpec.Modeling.Parse.Syntax.ColumnRowSyntax>? TableColumns = null);
 
 public sealed record CardPreset(
     string DiagramPreset,

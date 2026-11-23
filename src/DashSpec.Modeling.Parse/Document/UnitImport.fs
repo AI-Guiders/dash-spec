@@ -108,9 +108,12 @@ module UnitImport =
                         effective.["column_labels"] <- BlockGrammar.serializeColumnLabelMap colLabels
                 | _ -> ()
 
-                { diagram with
-                    Properties = effective :> IReadOnlyDictionary<_, _>
-                    UsePreset = None })
+                let cols = TableColumnsBridge.get diagram
+                let resolved =
+                    { diagram with
+                        Properties = effective :> IReadOnlyDictionary<_, _>
+                        UsePreset = None }
+                TableColumnsBridge.attach resolved cols)
 
         let presentation =
             fragment.Presentation

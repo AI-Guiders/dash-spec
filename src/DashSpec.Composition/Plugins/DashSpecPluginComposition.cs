@@ -228,6 +228,7 @@ public static class DashSpecPluginComposition
     {
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
+            "language_ds",
             "scope_builtin",
             "diagram_builtin",
             "on_click_default",

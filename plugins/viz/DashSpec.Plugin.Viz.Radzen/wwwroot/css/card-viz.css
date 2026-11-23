@@ -194,26 +194,72 @@
 .rviz-grid-group--on {
   color: var(--rz-primary);
 }
-erit);
+
+/* Declarative table & column sizing (`size = content | fill`, `column_size = content | header | cells | fill`,
+   `visible_rows = N`) — Radzen's stock `.rz-grid-table` sets `table-layout: fixed; width: 100%`,
+   which forces 3 columns to stretch to 33% each. Under `size = content`, the grid shrinks to fit
+   its columns (`table-layout: auto; width: max-content`), and the body scrolls vertically within
+   `--rviz-table-max` without growing the card. */
+.rviz-typed-grid {
+  display: flex !important;
+  flex-direction: column;
+  max-height: var(--rviz-table-max, 420px);
+  overflow: hidden;
 }
 
-.rviz-group-levels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  padding: 0.25rem 0;
+.rviz-typed-grid .rz-data-grid-data {
+  flex: 1 1 auto;
+  overflow: auto !important;
+  max-height: calc(var(--rviz-table-max, 420px) - 2.2rem);
 }
-.rviz-group-chip {
-  display: inline-flex;
-  gap: 0.3rem;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid var(--rz-base-300, rgba(128, 128, 128, 0.3));
-  background: var(--rz-base-100, transparent);
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.85em;
+
+.rviz-typed-grid--content {
+  width: fit-content !important;
+  max-width: 100% !important;
 }
-.rviz-group-nested {
-  padding-left: 1.2rem;
+
+.rviz-typed-grid--content .rz-grid-table {
+  table-layout: auto !important;
+  width: max-content !important;
+  max-width: 100%;
 }
+
+.rviz-typed-grid--content th,
+.rviz-typed-grid--content td {
+  width: auto !important;
+  white-space: nowrap;
+}
+
+/* Compact filter inputs inside content-sized columns so the filter box doesn't inflate column width */
+.rviz-typed-grid--content .rz-cell-filter input,
+.rviz-typed-grid--content .rz-cell-filter .rz-textbox,
+.rviz-typed-grid--content .rz-cell-filter .rz-datepicker {
+  min-width: 4.5rem;
+  width: 100% !important;
+  max-width: 11rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.78rem;
+  height: 1.65rem;
+}
+
+/* Column size modes: content | header | cells | fill */
+.rviz-col--size-content .rviz-cell {
+  white-space: nowrap;
+}
+
+.rviz-col--size-header .rviz-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14ch;
+}
+
+.rviz-col--size-cells .rviz-grid-head-text {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.rviz-col--size-fill {
+  width: 100% !important;
+}
+

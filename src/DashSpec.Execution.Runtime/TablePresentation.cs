@@ -21,14 +21,18 @@ public sealed record TablePresentation(
     bool ColumnFilters = true,
     int FrozenColumns = 0,
     bool AllowGrouping = false,
-    int PageSize = 15)
+    int PageSize = 15,
+    int? VisibleRows = null,
+    DashSpec.Modeling.Parse.Syntax.TableColumnSize DefaultColumnSize = default!,
+    DashSpec.Modeling.Parse.Syntax.TableColumnAlign DefaultAlign = default!)
 {
     public static TablePresentation FromProperties(IReadOnlyDictionary<string, string> properties)
     {
         var width = TableWidthMode.Content;
-        if (properties.TryGetValue("width", out var rawWidth))
+        if (properties.TryGetValue("size", out var rawSize) ||
+            properties.TryGetValue("width", out rawSize))
         {
-            width = rawWidth.ToLowerInvariant() switch
+            width = rawSize.Trim().ToLowerInvariant() switch
             {
                 "fill" or "100%" or "full" or "stretch" => TableWidthMode.Fill,
                 _ => TableWidthMode.Content,
@@ -42,7 +46,17 @@ public sealed record TablePresentation(
             density = TableDensity.Compact;
         }
 
-        var maxHeight = 420;
+        int? visibleRows = null;
+        if (properties.TryGetValue("visible_rows", out var rawVisibleRows) &&
+            int.TryParse(rawVisibleRows.Trim(), out var parsedVisibleRows) &&
+            parsedVisibleRows > 0)
+        {
+            visibleRows = parsedVisibleRows;
+        }
+
+        var maxHeight = visibleRows is { } vr
+            ? (density is TableDensity.Compact ? 96 + (vr * 30) : 110 + (vr * 36))
+            : 420;
         if (properties.TryGetValue("height", out var rawHeight) &&
             int.TryParse(rawHeight, out var parsedHeight) &&
             parsedHeight > 0)
@@ -88,7 +102,35 @@ public sealed record TablePresentation(
             pageSize = parsedPageSize;
         }
 
-        return new TablePresentation(width, density, maxHeight, columnFilters, frozenColumns, allowGrouping, pageSize);
+        var defaultColumnSize = DashSpec.Modeling.Parse.Syntax.TableColumnSize.Content;
+        if (properties.TryGetValue("column_size", out var rawColSize) &&
+            DashSpec.Modeling.Parse.Syntax.TableColumnSizeModule.tryParse(rawColSize) is { } parsedColSize)
+        {
+            defaultColumnSize = parsedColSize.Value;
+        }
+        else if (width is TableWidthMode.Fill)
+        {
+            defaultColumnSize = DashSpec.Modeling.Parse.Syntax.TableColumnSize.Fill;
+        }
+
+        var defaultAlign = DashSpec.Modeling.Parse.Syntax.TableColumnAlign.Left;
+        if (properties.TryGetValue("align", out var rawAlign) &&
+            DashSpec.Modeling.Parse.Syntax.TableColumnAlignModule.tryParse(rawAlign) is { } parsedAlign)
+        {
+            defaultAlign = parsedAlign.Value;
+        }
+
+        return new TablePresentation(
+            width,
+            density,
+            maxHeight,
+            columnFilters,
+            frozenColumns,
+            allowGrouping,
+            pageSize,
+            visibleRows,
+            defaultColumnSize,
+            defaultAlign);
     }
 
     public static TablePresentation Resolve(CardDefinition card, SpecLibrary? library) =>

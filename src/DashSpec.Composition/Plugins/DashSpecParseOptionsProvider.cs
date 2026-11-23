@@ -7,6 +7,27 @@ public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry reg
 {
     public DashSpecParseOptions CreateOptions()
     {
+        var knownPresentationProperties = registry.PresentationProperties.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (registry.EmbeddedUnits.Count > 0)
+        {
+            foreach (var (_, content) in registry.EmbeddedUnits)
+            {
+                var tree = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse(content);
+                foreach (var node in DashSpec.Modeling.Parse.Syntax.DashSpecAst.descendants(tree.Root))
+                {
+                    if (node is DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.PropertyAssignment { Item: var prop } &&
+                        !prop.KeyPath.IsQualified &&
+                        !string.IsNullOrWhiteSpace(prop.Key))
+                    {
+                        knownPresentationProperties.Add(prop.Key);
+                    }
+                }
+            }
+
+            DashSpec.Modeling.Parse.Document.UnitSource.registerEmbeddedUnits(
+                registry.EmbeddedUnits.Select(x => System.Tuple.Create(x.LogicalPath, x.Content)));
+        }
+
         var options = new DashSpecParseOptions
         {
             ExtensionBlockKeywords = registry.ExtensionBlockKeywords,
@@ -18,7 +39,7 @@ public sealed class DashSpecParseOptionsProvider(DashSpecContributorRegistry reg
             KnownActionHandlers = registry.ActionHandlers.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
             KnownInteractionHandlers = registry.InteractionHandlers.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
             KnownClickSources = registry.ClickSources.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase),
-            KnownPresentationProperties = registry.PresentationProperties.ToHashSet(StringComparer.OrdinalIgnoreCase),
+            KnownPresentationProperties = knownPresentationProperties,
         };
 
         if (options.KnownPresentationProperties.Count > 0)
