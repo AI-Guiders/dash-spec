@@ -1141,6 +1141,7 @@ module DashSpecSurfaceSyntax =
             | "grid", _ -> DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Grid
             | "chrome", _ -> DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Chrome
             | "click", _ -> DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.OnClick
+            | "import", Some ns -> DashSpecBlockOpener.Named(DashSpecBlockKeyword.ImportBlock, ns)
             | kind, id -> DashSpecBlockOpenerSyntax.ofLineKind(BlockSurfaceLineClassifier.BlockOpener(kind, id))
 
         let typeAnnotation, origin, headerValid =

@@ -210,6 +210,12 @@ module CatalogParser =
                     let title = DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration b) |> Option.defaultValue entryId
                     let form = Construct.fromAstBlock [ "id", entryId; "title", title ] b
                     Construct.apply decl form
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Other kw, entryId)
+                    when String.Equals(kw, "entry", StringComparison.OrdinalIgnoreCase) ->
+                    flushPending ()
+                    let title = DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration b) |> Option.defaultValue entryId
+                    let form = Construct.fromAstBlock [ "id", entryId; "title", title ] b
+                    Construct.apply decl form
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, _)
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Page, _) ->
                     for tok in b.Tokens do

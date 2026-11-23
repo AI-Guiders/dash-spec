@@ -132,8 +132,6 @@ module DashSpecBlockKeyword =
         | "when" -> Some DashSpecBlockKeyword.When
         | "table" -> Some DashSpecBlockKeyword.Table
         | "columns" -> Some DashSpecBlockKeyword.Columns
-        | "entry" -> Some DashSpecBlockKeyword.Entry
-        | "import" -> Some DashSpecBlockKeyword.ImportBlock
         | "bindings" | "phrases" | "command" -> Some(DashSpecBlockKeyword.Other name)
         | _ when DashSpecKeywords.isDiagramKind keyword ->
             Some(DashSpecBlockKeyword.Other name)
