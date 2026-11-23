@@ -413,7 +413,9 @@
   flex: var(--fx-grow, 1) 1 0;
 }
 
-/* per-slot header & maximize: slot title left, compact actions (close drill ✕ / expand ⤢) right */
+/* per-slot header & maximize: slot title left, compact actions (close drill ✕ / expand ⤢) right.
+   When the slot holds a content-sized table (.rviz-typed-grid--content), the shell shrinks to fit
+   that table's width so the header's right edge (and ✕ button) aligns flush with the table's right edge. */
 .card-slot-shell {
   position: relative;
   display: flex;
@@ -422,13 +424,27 @@
   min-height: 0;
 }
 
+.card-slot-shell:has(.rviz-typed-grid--content),
+.card-slot-shell:has(.table-wrap--width-content) {
+  width: fit-content;
+  max-width: 100%;
+  align-self: flex-start;
+}
+
+.card-slot-shell:has(.rviz-typed-grid--content) .rviz-chart-wrap,
+.card-slot-shell:has(.table-wrap--width-content) .rviz-chart-wrap {
+  width: fit-content;
+  max-width: 100%;
+}
+
 .card-slot-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.4rem;
+  width: 100%;
   min-height: 1.65rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
 }
 
 .card-slot-head .card-slot-title {
