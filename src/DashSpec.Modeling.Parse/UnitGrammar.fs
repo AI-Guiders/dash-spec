@@ -126,6 +126,7 @@ module UnitGrammar =
                 imports.Add imp
             | DashSpecAstNode.BlockDeclaration b when
                 (match b.Opener with
+                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.ImportBlock, _) -> true
                  | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Other kw, _) ->
                      String.Equals(kw, "import", StringComparison.OrdinalIgnoreCase)
                  | _ -> false) ->

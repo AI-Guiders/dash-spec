@@ -486,17 +486,17 @@ module DashSpecSurfaceSyntax =
 
     let private tryParseTypeFieldLine (tokens: Token list) : (bool * DashType * string) option =
         let sigTokens = significantTokens tokens
+        let (|Kw|_|) (t: Token) =
+            if t.Kind = TokenKind.Ident then DashSpecKeyword.tryParse t.Value else None
 
         let optional, afterOpt =
             match sigTokens with
-            | { Kind = TokenKind.Ident; Value = kw } :: rest
-                when String.Equals(kw, "optional", StringComparison.OrdinalIgnoreCase) ->
+            | Kw DashSpecKeyword.Optional :: rest ->
                 true, rest
             | _ -> false, sigTokens
 
         match afterOpt with
-        | { Kind = TokenKind.Ident; Value = arrKw } :: { Kind = TokenKind.Ident; Value = elemName } :: { Kind = TokenKind.Ident; Value = lenText } :: restTokens
-            when String.Equals(arrKw, "array", StringComparison.OrdinalIgnoreCase) ->
+        | Kw DashSpecKeyword.Array :: { Kind = TokenKind.Ident; Value = elemName } :: { Kind = TokenKind.Ident; Value = lenText } :: restTokens ->
             let nameTokens, trailingOk = splitTypeFieldTrailing restTokens
             match DashPrimitive.tryParseFieldKeyword elemName, Int32.TryParse lenText, tryParseDottedName nameTokens with
             | Some elem, (true, len), Some fieldName when len > 0 && trailingOk ->
@@ -570,24 +570,22 @@ module DashSpecSurfaceSyntax =
             not segment.IsEmpty
             && segment |> List.forall (fun t -> t.Kind = TokenKind.Ident || t.Kind = TokenKind.Dot)
 
+        let (|Kw|_|) (t: Token) =
+            if t.Kind = TokenKind.Ident then DashSpecKeyword.tryParse t.Value else None
+
         match sigTokens with
-        | { Kind = TokenKind.Ident; Value = role } :: rest
-            when String.Equals(role, "input", StringComparison.OrdinalIgnoreCase)
-            || String.Equals(role, "output", StringComparison.OrdinalIgnoreCase)
-            || String.Equals(role, "param", StringComparison.OrdinalIgnoreCase) ->
-            let isParam = String.Equals(role, "param", StringComparison.OrdinalIgnoreCase)
-            let roleEnum =
-                if isParam then PortDeclRole.PortParam
-                elif String.Equals(role, "output", StringComparison.OrdinalIgnoreCase) then PortDeclRole.PortOutput
-                else PortDeclRole.PortInput
+        | (Kw DashSpecKeyword.Input | Kw DashSpecKeyword.Output | Kw DashSpecKeyword.Param) as roleTok :: rest ->
+            let roleEnum, isParam =
+                match roleTok with
+                | Kw DashSpecKeyword.Param -> PortDeclRole.PortParam, true
+                | Kw DashSpecKeyword.Output -> PortDeclRole.PortOutput, false
+                | _ -> PortDeclRole.PortInput, false
 
             let shape, afterShape =
                 match rest with
-                | { Kind = TokenKind.Ident; Value = s } :: tail
-                    when String.Equals(s, "stream", StringComparison.OrdinalIgnoreCase) ->
+                | Kw DashSpecKeyword.Stream :: tail ->
                     Some PortShapeSyntax.Stream, tail
-                | { Kind = TokenKind.Ident; Value = s } :: tail
-                    when String.Equals(s, "scalar", StringComparison.OrdinalIgnoreCase) ->
+                | Kw DashSpecKeyword.Scalar :: tail ->
                     Some PortShapeSyntax.Scalar, tail
                 | _ -> None, rest
 
@@ -1017,13 +1015,12 @@ module DashSpecSurfaceSyntax =
                     { Source = tryAttr "source" |> Option.defaultValue ""
                       Drill = tryAttr "drill"
                       Set = tryAttr "set" }
-            | Some(DashSpecBlockKeyword.Other kw) when String.Equals(kw, "when", StringComparison.OrdinalIgnoreCase) ->
+            | Some DashSpecBlockKeyword.When ->
                 TableRowKind.When
                     { State = tryAttr "state" |> Option.defaultValue ""
                       Message = tryAttr "message" |> Option.defaultValue "" }
-            | Some(DashSpecBlockKeyword.Other kw)
-                when String.Equals(kw, "table", StringComparison.OrdinalIgnoreCase)
-                     || String.Equals(kw, "columns", StringComparison.OrdinalIgnoreCase) ->
+            | Some DashSpecBlockKeyword.Table
+            | Some DashSpecBlockKeyword.Columns ->
                 let rawAlign = tryAttr "align" |> Option.orElseWith (fun () -> tryAttr "alignment")
                 let rawHeaderAlign = tryAttr "header_align" |> Option.orElseWith (fun () -> tryAttr "header_alignment")
                 let rawSize = tryAttr "size"
@@ -1051,17 +1048,20 @@ module DashSpecSurfaceSyntax =
 
     /// <summary>Module-header import line: `[global] import &lt;kind&gt; from &lt;namespace&gt; [= &lt;alias&gt;]` or `[global] from &lt;namespace&gt; import &lt;kind&gt; [= &lt;alias&gt;]`.</summary>
     let private tryParseImportLine (tokens: Token list) =
+        let (|Kw|_|) (t: Token) =
+            if t.Kind = TokenKind.Ident then DashSpecKeyword.tryParse t.Value else None
+
         let sigTokens =
             match significantTokens tokens with
             | { Kind = TokenKind.Ident; Value = g } :: rest
                 when String.Equals(g, "global", StringComparison.OrdinalIgnoreCase) -> rest
             | other -> other
         match sigTokens with
-        | { Kind = TokenKind.Ident; Value = "from" } :: rest when
-            rest |> List.exists (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase)) ->
+        | Kw DashSpecKeyword.From :: rest when
+            rest |> List.exists (function Kw DashSpecKeyword.Import -> true | _ -> false) ->
             let importIdx =
                 rest
-                |> List.findIndex (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "import", StringComparison.OrdinalIgnoreCase))
+                |> List.findIndex (function Kw DashSpecKeyword.Import -> true | _ -> false)
             let nsTokens = rest |> List.take importIdx
             let afterImport =
                 rest
@@ -1076,28 +1076,26 @@ module DashSpecSurfaceSyntax =
             | { Kind = TokenKind.Ident; Value = k } :: tail ->
                 let aliasName =
                     match tail with
-                    | { Kind = TokenKind.Eq } :: { Kind = TokenKind.Ident; Value = a } :: _ -> Some a
-                    | { Kind = TokenKind.Ident; Value = asKw } :: { Kind = TokenKind.Ident; Value = a } :: _
-                        when String.Equals(asKw, "as", StringComparison.OrdinalIgnoreCase) -> Some a
+                    | { Kind = TokenKind.Eq } :: { Kind = TokenKind.Ident; Value = a } :: _
+                    | Kw DashSpecKeyword.As :: { Kind = TokenKind.Ident; Value = a } :: _ -> Some a
                     | _ -> None
                 Some("import", Some k, target, aliasName)
             | _ -> None
-        | { Kind = TokenKind.Ident; Value = "import" } :: rest ->
+        | Kw DashSpecKeyword.Import :: rest ->
             let kindOpt =
                 match rest with
-                | { Kind = TokenKind.Ident; Value = k } :: _
-                    when not (String.Equals(k, "from", StringComparison.OrdinalIgnoreCase)) ->
-                    Some k
+                | Kw DashSpecKeyword.From :: _ -> None
+                | { Kind = TokenKind.Ident; Value = k } :: _ -> Some k
                 | _ -> None
 
             let afterFrom =
-                match rest |> List.tryFindIndex (fun t -> t.Kind = TokenKind.Ident && String.Equals(t.Value, "from", StringComparison.OrdinalIgnoreCase)) with
+                match rest |> List.tryFindIndex (function Kw DashSpecKeyword.From -> true | _ -> false) with
                 | Some i -> rest |> List.skip (i + 1)
                 | None -> rest
 
             let isAliasSplitToken (t: Token) =
                 t.Kind = TokenKind.Eq
-                || (t.Kind = TokenKind.Ident && String.Equals(t.Value, "as", StringComparison.OrdinalIgnoreCase))
+                || (match t with Kw DashSpecKeyword.As -> true | _ -> false)
 
             let targetTokens, aliasTokens =
                 match afterFrom |> List.tryFindIndex isAliasSplitToken with
@@ -1113,10 +1111,10 @@ module DashSpecSurfaceSyntax =
             let aliasName =
                 aliasTokens
                 |> List.tryPick (fun t ->
-                    if t.Kind = TokenKind.Ident && not (String.Equals(t.Value, "as", StringComparison.OrdinalIgnoreCase)) then
-                        Some t.Value
-                    else
-                        None)
+                    match t with
+                    | Kw DashSpecKeyword.As -> None
+                    | { Kind = TokenKind.Ident; Value = v } -> Some v
+                    | _ -> None)
 
             Some("import", kindOpt, target, aliasName)
         | _ -> None

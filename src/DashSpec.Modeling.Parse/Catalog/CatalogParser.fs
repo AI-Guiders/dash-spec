@@ -205,8 +205,7 @@ module CatalogParser =
 
                     projectScopeEntries (innerMembers.ToArray()) (Some gId) entries groups |> ignore
                     groups.Add({ Id = gId; Title = groupTitle })
-                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Other kw, entryId)
-                    when String.Equals(kw, "entry", StringComparison.OrdinalIgnoreCase) ->
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Entry, entryId) ->
                     flushPending ()
                     let title = DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration b) |> Option.defaultValue entryId
                     let form = Construct.fromAstBlock [ "id", entryId; "title", title ] b

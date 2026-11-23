@@ -62,6 +62,11 @@ type DashSpecBlockKeyword =
     | Wide
     | Mid
     | Narrow
+    | When
+    | Table
+    | Columns
+    | Entry
+    | ImportBlock
     | Other of name: string
 
 module DashSpecBlockKeyword =
@@ -124,6 +129,11 @@ module DashSpecBlockKeyword =
         | "wide" -> Some DashSpecBlockKeyword.Wide
         | "mid" -> Some DashSpecBlockKeyword.Mid
         | "narrow" -> Some DashSpecBlockKeyword.Narrow
+        | "when" -> Some DashSpecBlockKeyword.When
+        | "table" -> Some DashSpecBlockKeyword.Table
+        | "columns" -> Some DashSpecBlockKeyword.Columns
+        | "entry" -> Some DashSpecBlockKeyword.Entry
+        | "import" -> Some DashSpecBlockKeyword.ImportBlock
         | "bindings" | "phrases" | "command" -> Some(DashSpecBlockKeyword.Other name)
         | _ when DashSpecKeywords.isDiagramKind keyword ->
             Some(DashSpecBlockKeyword.Other name)
@@ -133,7 +143,7 @@ module DashSpecBlockKeyword =
     let isNamedBlockKeyword (name: string) =
         match name.ToLowerInvariant() with
         | "card" | "section" | "page" | "phase" | "group" | "type" | "nest"
-        | "source" | "transformer" | "flow" | "link" | "provider" | "command" -> true
+        | "source" | "transformer" | "flow" | "link" | "provider" | "entry" | "command" -> true
         | _ -> false
 
     let isDiagramContainer (keyword: DashSpecBlockKeyword) =
@@ -248,6 +258,11 @@ module DashSpecBlockKeyword =
         | DashSpecBlockKeyword.Wide -> "wide"
         | DashSpecBlockKeyword.Mid -> "mid"
         | DashSpecBlockKeyword.Narrow -> "narrow"
+        | DashSpecBlockKeyword.When -> "when"
+        | DashSpecBlockKeyword.Table -> "table"
+        | DashSpecBlockKeyword.Columns -> "columns"
+        | DashSpecBlockKeyword.Entry -> "entry"
+        | DashSpecBlockKeyword.ImportBlock -> "import"
         | DashSpecBlockKeyword.Other name -> name
 
 /// First-class Roslyn-style keyword kind in DashSpec syntax (SSOT for control words,

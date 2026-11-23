@@ -368,6 +368,15 @@ module DashSpecGrammarGraph =
                   kw "focus" "focus <phase>"
                   kw "goto" "goto <page>"
                   kw "drill" "drill <slot>" ]
+            | DashSpecBlockKeyword.Table ->
+                schemaProps PropertySchemas.tableDiagram "diagram table"
+            | DashSpecBlockKeyword.Columns ->
+                [ kw "id" "Column field id"
+                  kw "label" "Column header label"
+                  kw "format" "Column value format"
+                  kw "size" "Column width mode (content | header | cells | fill)"
+                  kw "align" "Column alignment (left | center | right)"
+                  kw "sorting" "Column sort direction (ASC | DESC)" ]
             | DashSpecBlockKeyword.Other name ->
                 match name.ToLowerInvariant() with
                 | "place" -> schemaProps PropertySchemas.placement "place"
