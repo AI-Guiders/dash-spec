@@ -156,8 +156,6 @@ type ModuleImportState() =
 
     member this.RegisterChartChromePreset(id: string, block: PresentationBlock) =
         if String.IsNullOrWhiteSpace id then invalidArg "id" "Preset id is required."
-        if chartChromePresets.ContainsKey id then
-            raise (DashSpecParseException($"Duplicate chart chrome preset '{id}' in module imports."))
         chartChromePresets.[id] <- block
 
     member this.RegisterSeriesTransformPreset(id: string, block: SeriesTransformBlock) =

@@ -1,0 +1,12 @@
+module presentation table_compact
+namespace DashSpec.Std
+
+size = content
+column_size = content
+align = left
+density = compact
+column_filters = true
+visible_rows = 8
+page_size = 15
+frozen_columns = 0
+grouping = off
