@@ -311,6 +311,12 @@ public static class DashSpecEditorIntelligence
 
         if (leaf is DashSpecAstNode.ClauseDeclaration clause)
         {
+            if (clause.Item.Kind is ClauseKind.UsePresetClause usePreset &&
+                workspaceIndex.UnitsById.TryGetValue(usePreset.target, out var presetUnit))
+            {
+                return ToTarget(presetUnit);
+            }
+
             if (clause.Item.Kind is ClauseKind.UseClause useClause &&
                 workspaceIndex.UnitsById.TryGetValue(useClause.target, out var usedUnit))
             {
@@ -487,6 +493,7 @@ public static class DashSpecEditorIntelligence
             {
                 ClauseKind.NamespaceClause => "namespace declaration",
                 ClauseKind.DefaultPortClause dp => $"default {(dp.direction.IsInput ? "input" : "output")} port",
+                ClauseKind.UsePresetClause up => $"use {up.target}",
                 ClauseKind.UseClause u => $"use {u.kind}",
                 ClauseKind.UseProviderClause => "use provider",
                 ClauseKind.FromClause => "source from",

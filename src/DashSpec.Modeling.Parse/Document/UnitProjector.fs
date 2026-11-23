@@ -409,6 +409,7 @@ module DefaultsModuleParser =
                 applyProperty p
             | DashSpecAstNode.ClauseDeclaration c ->
                 match c.Kind with
+                | ClauseKind.UsePresetClause target
                 | ClauseKind.UseClause(_, target) -> usePreset <- Some target
                 | ClauseKind.UseProviderClause p -> provider <- Some p
                 | _ -> ()

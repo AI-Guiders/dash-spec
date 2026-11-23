@@ -112,6 +112,7 @@ module DashSpecConceptOntology =
         | ClauseKind.NamespaceClause ns -> $"namespace {ns}"
         | ClauseKind.ScopeClause s -> $"scope {s}"
         | ClauseKind.UseProviderClause p -> $"use provider {p}"
+        | ClauseKind.UsePresetClause t -> $"use {t}"
         | ClauseKind.UseClause(k, t) -> $"use {k} {t}"
         | ClauseKind.FromClause _ -> "from"
         | ClauseKind.DefaultPortClause(dir, port) -> $"default {dir} {port}"

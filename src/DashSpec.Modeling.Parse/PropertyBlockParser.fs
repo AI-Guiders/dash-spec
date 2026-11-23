@@ -101,6 +101,8 @@ module PropertyBlockParser =
             | DashSpec.Modeling.Parse.Syntax.DashSpecAstNode.ClauseDeclaration c ->
                 match c.Kind with
                 | DashSpec.Modeling.Parse.Syntax.ClauseKind.NamespaceClause _ -> ()
+                | DashSpec.Modeling.Parse.Syntax.ClauseKind.UsePresetClause preset when specs.ContainsKey "use" ->
+                    values.["use"] <- preset
                 | DashSpec.Modeling.Parse.Syntax.ClauseKind.DirectiveClause("use", [| preset |]) when specs.ContainsKey "use" ->
                     values.["use"] <- preset
                 | _ ->

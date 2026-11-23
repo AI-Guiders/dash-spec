@@ -783,10 +783,10 @@ module DashSpecSurfaceSyntax =
         | _ -> None
 
     /// <summary>Positional clause line (ADR-0130): dispatches `namespace`, `scope`, `use`,
-    /// `from`, `default input|output`, and positional directives (`rows`, `catalog`, `entry`, `layout`, `use`)
+    /// `from`, `default input|output`, and positional directives (`rows`, `catalog`, `entry`, `layout`)
     /// into structured <see cref="ClauseKind"/> variants.</summary>
     let private positionalDirectives =
-        set [ "rows"; "catalog"; "entry"; "layout"; "use" ]
+        set [ "rows"; "catalog"; "entry"; "layout" ]
 
     let private tryParseClauseLine (tokens: Token list) : ClauseKind option =
         let sigTokens = significantTokens tokens
@@ -794,16 +794,17 @@ module DashSpecSurfaceSyntax =
         if sigTokens |> List.exists (fun t -> t.Kind = TokenKind.Eq) then
             None
         else
+            let (|Kw|_|) (t: Token) =
+                if t.Kind = TokenKind.Ident then DashSpecKeyword.tryParse t.Value else None
+
             match sigTokens with
-            | { Kind = TokenKind.Ident; Value = kw } :: rest when String.Equals(kw, "namespace", StringComparison.OrdinalIgnoreCase) ->
-                match tryParseDottedName rest with
-                | Some ns -> Some(ClauseKind.NamespaceClause ns)
-                | None -> None
-            | [ { Kind = TokenKind.Ident; Value = kw }; { Kind = TokenKind.Ident; Value = scopeKind } ]
-                when String.Equals(kw, "scope", StringComparison.OrdinalIgnoreCase) ->
+            | Kw DashSpecKeyword.Namespace :: rest ->
+                tryParseDottedName rest |> Option.map ClauseKind.NamespaceClause
+            | [ Kw DashSpecKeyword.Scope; { Kind = TokenKind.Ident; Value = scopeKind } ] ->
                 tryParseScopeSyntax scopeKind |> Option.map ClauseKind.ScopeClause
-            | [ { Kind = TokenKind.Ident; Value = kw }; { Kind = TokenKind.Ident; Value = useKind }; { Kind = TokenKind.Ident; Value = target } ]
-                when String.Equals(kw, "use", StringComparison.OrdinalIgnoreCase) ->
+            | [ Kw DashSpecKeyword.Use; { Kind = TokenKind.Ident; Value = target } ] ->
+                Some(ClauseKind.UsePresetClause target)
+            | [ Kw DashSpecKeyword.Use; { Kind = TokenKind.Ident; Value = useKind }; { Kind = TokenKind.Ident; Value = target } ] ->
                 if String.Equals(useKind, "provider", StringComparison.OrdinalIgnoreCase) then
                     let binding =
                         if String.Equals(target, "infer", StringComparison.OrdinalIgnoreCase) then
@@ -813,17 +814,12 @@ module DashSpecSurfaceSyntax =
                     Some(ClauseKind.UseProviderClause binding)
                 else
                     Some(ClauseKind.UseClause(useKind.ToLowerInvariant(), target))
-            | { Kind = TokenKind.Ident; Value = kw } :: rest
-                when String.Equals(kw, "from", StringComparison.OrdinalIgnoreCase) ->
+            | Kw DashSpecKeyword.From :: rest ->
                 tryParseFromOrigin rest |> Option.map ClauseKind.FromClause
-            | [ { Kind = TokenKind.Ident; Value = kw }; { Kind = TokenKind.Ident; Value = dir }; { Kind = TokenKind.Ident; Value = portName } ]
-                when String.Equals(kw, "default", StringComparison.OrdinalIgnoreCase)
-                && (String.Equals(dir, "input", StringComparison.OrdinalIgnoreCase)
-                    || String.Equals(dir, "output", StringComparison.OrdinalIgnoreCase)) ->
-                let portDir =
-                    if String.Equals(dir, "input", StringComparison.OrdinalIgnoreCase) then PortDirection.Input
-                    else PortDirection.Output
-                Some(ClauseKind.DefaultPortClause(portDir, portName))
+            | [ Kw DashSpecKeyword.Default; Kw DashSpecKeyword.Input; { Kind = TokenKind.Ident; Value = portName } ] ->
+                Some(ClauseKind.DefaultPortClause(PortDirection.Input, portName))
+            | [ Kw DashSpecKeyword.Default; Kw DashSpecKeyword.Output; { Kind = TokenKind.Ident; Value = portName } ] ->
+                Some(ClauseKind.DefaultPortClause(PortDirection.Output, portName))
             | { Kind = TokenKind.Ident; Value = kw } :: rest
                 when positionalDirectives.Contains(kw.ToLowerInvariant()) && not rest.IsEmpty ->
                 let args = rest |> List.map (fun t -> t.Value) |> Array.ofList

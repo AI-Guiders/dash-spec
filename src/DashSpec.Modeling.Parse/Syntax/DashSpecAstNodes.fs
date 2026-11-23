@@ -290,6 +290,7 @@ type ClauseKind =
     | NamespaceClause of name: string
     | ScopeClause of scope: LayoutScopeSyntax
     | UseProviderClause of provider: ProviderBindingSyntax
+    | UsePresetClause of target: string
     | UseClause of kind: string * target: string
     | FromClause of origin: SourceOriginSyntax
     | DefaultPortClause of direction: PortDirection * portName: string
