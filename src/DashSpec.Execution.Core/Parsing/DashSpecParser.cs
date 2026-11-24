@@ -1,4 +1,5 @@
 using System.Linq;
+using AIGuiders.Platform.Modeling.Paths;
 using DashSpec.Compiler.Contract;
 using DashSpec.Execution.Runtime;
 using Microsoft.FSharp.Core;
@@ -37,7 +38,7 @@ public static class DashSpecParser
                 using var stream = assembly.GetManifestResourceStream(name)
                     ?? throw new InvalidOperationException($"Embedded stdlib unit '{name}' not found in manifest.");
                 using var reader = new System.IO.StreamReader(stream);
-                var normalizedName = name.Replace('\\', '/');
+                var normalizedName = LogicalPath.Create(name).Value;
                 return System.Tuple.Create(normalizedName, reader.ReadToEnd());
             });
         ParseDoc.UnitSource.registerEmbeddedUnits(units);

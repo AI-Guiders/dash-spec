@@ -256,7 +256,7 @@ public static class PrecompiledReportBundle
             library,
             slotPlane);
 
-        var relPath = Path.GetRelativePath(fullCorpusDir, specFullPath).Replace('\\', '/');
+        var relPath = AIGuiders.Platform.Modeling.Paths.LogicalPath.Create(Path.GetRelativePath(fullCorpusDir, specFullPath)).Value;
         reports.Add(new BundleReportEntry(
             entryId,
             relPath,
@@ -285,7 +285,7 @@ public static class PrecompiledReportBundle
         {
             var bytes = File.ReadAllBytes(file);
             var sha = Convert.ToHexStringLower(SHA256.HashData(bytes));
-            var rel = Path.GetRelativePath(rootDirectory, file).Replace('\\', '/');
+            var rel = AIGuiders.Platform.Modeling.Paths.LogicalPath.Create(Path.GetRelativePath(rootDirectory, file)).Value;
             list.Add(new BundleFileEntry(rel, sha, bytes.LongLength));
         }
 

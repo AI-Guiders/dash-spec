@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Reflection
 open System.Text.RegularExpressions
+open AIGuiders.Platform.Modeling.Paths
 
 /// <summary>Unit files (ADR-0101): one unit per file, `module &lt;kind&gt; &lt;id&gt;`, header lines `namespace` and `import` directly after it (ADR-0098).</summary>
 module UnitSource =
@@ -42,7 +43,7 @@ module UnitSource =
     /// text — headers are blanked per-read (same as files).
     let private embeddedUnits = System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
-    let private normalizeKey (path: string) = path.Replace('\\', '/')
+    let private normalizeKey (path: string) = (LogicalPath.Create path).Value
 
     let registerEmbeddedUnits (units: seq<string * string>) =
         for (path, text) in units do
