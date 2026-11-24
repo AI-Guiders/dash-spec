@@ -1,6 +1,7 @@
 module section self_monitoring
 namespace DashSpec.Std.Monitoring.Report
 
+from DashSpec.Std import presentations
 import types from DashSpec.Std.Monitoring.Types
 import flows from DashSpec.Std.Monitoring.Flows
 import diagrams from DashSpec.Std.Monitoring.Diagrams
@@ -11,10 +12,12 @@ end runtime
 
 connect
   layout grid
-    columns = 12
-    [recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries]
-    [recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs]
+    [] [] [] [] [] [] [] [] [] [] [] []
   end grid
+  layout board
+    | recent_queries |
+    | recent_logs    |
+  end layout
 end connect
 
 report "DashSpec Self-Monitoring (WitDB)"

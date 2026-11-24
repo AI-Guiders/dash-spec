@@ -185,6 +185,37 @@ public sealed class DashSpecAssembledDiagnosticsTests
         }
     }
 
+    [Fact]
+    public void Embedded_self_monitoring_report_compiles_and_builds_slot_plane()
+    {
+        var compiler = new ReportCompiler();
+        var text = compiler.ReadEmbeddedUnit("stdlib/monitoring/self_monitoring.ds");
+        Assert.False(string.IsNullOrWhiteSpace(text));
+
+        var tempDir = Path.Combine(Path.GetTempPath(), "dspec-selfmon-" + Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var specFullPath = Path.Combine(tempDir, "self_monitoring.ds");
+            var ok = PrecompiledReportBundle.TryGetOrCompile(
+                text,
+                specFullPath,
+                tempDir,
+                compiler,
+                () => DashSpec.Compiler.Contract.DashSpecParseOptions.Default,
+                out var compiled);
+
+            Assert.True(ok);
+            Assert.Equal("host-telemetry.runtime.toml", compiled.EntryRuntimePath);
+            Assert.Equal(2, compiled.Document.Cards.Count);
+            Assert.NotNull(compiled.SlotPlane);
+        }
+        finally
+        {
+            Cleanup(tempDir);
+        }
+    }
+
     string CreateCorpus(string tabBody)
     {
         var dir = Path.Combine(Path.GetTempPath(), "dspec-assembled-" + Path.GetRandomFileName());

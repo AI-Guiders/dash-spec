@@ -2,13 +2,7 @@ module diagram diag_telemetry_logs
 namespace DashSpec.Std.Monitoring.Diagrams
 
 presentation
-  size = content
-  column_size = content
-  align = left
-  visible_rows = 15
-  page_size = 15
-  frozen_columns = 0
-  grouping = off
+  use table_detail
 end presentation
 
 table
