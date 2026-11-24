@@ -9,6 +9,14 @@ runtime
   manifest = "host-telemetry.runtime.toml"
 end runtime
 
+connect
+  layout grid
+    columns = 12
+    [recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries recent_queries]
+    [recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs recent_logs]
+  end grid
+end connect
+
 report "DashSpec Self-Monitoring (WitDB)"
   card recent_queries as "Executed Queries (WitDB: query_telemetry)"
     diagram ref main diag_telemetry_queries

@@ -1,10 +1,14 @@
 module diagram diag_telemetry_queries
 namespace DashSpec.Std.Monitoring.Diagrams
 
-from DashSpec.Std import presentations
-
 presentation
-  use table_compact
+  size = content
+  column_size = content
+  align = left
+  visible_rows = 8
+  page_size = 0
+  frozen_columns = 0
+  grouping = off
 end presentation
 
 table
