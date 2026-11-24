@@ -1682,7 +1682,7 @@ public sealed class DashboardPageController : IDisposable
             pairs.Add(new("report", ActiveCatalogEntryId));
         }
 
-        if (!string.IsNullOrWhiteSpace(ActiveTabId) && _session.Document.Tabs.Count > 1)
+        if (!string.IsNullOrWhiteSpace(ActiveTabId))
         {
             pairs.Add(new("tab", ActiveTabId));
         }

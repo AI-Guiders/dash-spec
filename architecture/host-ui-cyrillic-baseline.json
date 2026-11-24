@@ -14,7 +14,7 @@
     "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardTabBar.razor": 1,
     "src/DashSpec.Surface.Blazor/Components/Dashboard/DashboardToolbar.razor": 2,
     "src/DashSpec.Host/Components/Pages/Admin.razor": 1,
-    "src/DashSpec.Surface.Blazor/Components/Pages/Help.razor": 42,
+    "src/DashSpec.Surface.Blazor/Components/Pages/Help.razor": 28,
     "src/DashSpec.Surface.Blazor/Components/Pages/Spec.razor": 8
   }
 }
