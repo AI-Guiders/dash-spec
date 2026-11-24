@@ -93,6 +93,10 @@ public sealed class DashboardPageController : IDisposable
 
     public event Action? Changed;
 
+    public bool SyncBrowserUrl { get; set; }
+
+    private bool _suppressUrlSync;
+
     /// <summary>Marshals UI updates to the Blazor renderer (set from the page component).</summary>
     public Func<Func<Task>, Task>? UiDispatcher
     {
@@ -375,11 +379,17 @@ public sealed class DashboardPageController : IDisposable
 
     public async Task SelectTab(string tabId)
     {
+        if (string.Equals(ActiveTabId, tabId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
         ActiveTabId = tabId;
         ResetActivePageForTab();
         RecomputeTabPlacements();
         RecomputeToolbarPlacements();
         ApplyReportFormatDefaults();
+        PushNavigationQueryToUrl(replace: false);
         Notify();
         await Task.CompletedTask;
     }
@@ -397,6 +407,7 @@ public sealed class DashboardPageController : IDisposable
         SyncUsageDateFromActivePage();
         RecomputeTabPlacements();
         RecomputeToolbarPlacements();
+        PushNavigationQueryToUrl(replace: false);
         Notify();
         await ApplyFiltersAsync().ConfigureAwait(false);
     }
@@ -558,6 +569,7 @@ public sealed class DashboardPageController : IDisposable
             return;
         }
 
+        PushNavigationQueryToUrl(replace: false);
         Notify();
         await ApplyFiltersAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -738,6 +750,7 @@ public sealed class DashboardPageController : IDisposable
                 Loaded = true;
             }
 
+            PushNavigationQueryToUrl(replace: false);
             Notify();
             RecordCatalogUsage();
             _ = RefreshCardsInBackgroundAsync();
@@ -1559,6 +1572,148 @@ public sealed class DashboardPageController : IDisposable
         }
 
         return ex.Message;
+    }
+
+    public async Task ApplyLocationQueryAsync(string? requestedEntry, string? requestedTab, string? requestedPage)
+    {
+        if (!Loaded || _suppressUrlSync)
+        {
+            return;
+        }
+
+        _suppressUrlSync = true;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(requestedEntry) &&
+                !string.Equals(requestedEntry, ActiveCatalogEntryId, StringComparison.OrdinalIgnoreCase) &&
+                CatalogEntries.Any(e => string.Equals(e.Id, requestedEntry, StringComparison.OrdinalIgnoreCase)))
+            {
+                await SelectCatalogEntryAsync(requestedEntry).ConfigureAwait(false);
+            }
+
+            else if (string.IsNullOrWhiteSpace(requestedEntry) &&
+                     !string.IsNullOrWhiteSpace( _catalogState.Current.Document.DefaultEntryId) &&
+                     !string.Equals(ActiveCatalogEntryId, _catalogState.Current.Document.DefaultEntryId, StringComparison.OrdinalIgnoreCase))
+            {
+                await SelectCatalogEntryAsync(_catalogState.Current.Document.DefaultEntryId).ConfigureAwait(false);
+            }
+
+            if (!string.IsNullOrWhiteSpace(requestedTab) &&
+                !string.Equals(requestedTab, ActiveTabId, StringComparison.OrdinalIgnoreCase) &&
+                _session.Document.Tabs.Any(t => string.Equals(t.Id, requestedTab, StringComparison.OrdinalIgnoreCase)))
+            {
+                await SelectTab(requestedTab).ConfigureAwait(false);
+            }
+            else if (string.IsNullOrWhiteSpace(requestedTab))
+            {
+                var defaultTabId = _session.SlotPlane?.InitialRoute.TabId ?? _session.Document.Tabs.FirstOrDefault()?.Id;
+                var entry = _catalogState.Current.Document.Entries.FirstOrDefault(e =>
+                    string.Equals(e.Id, ActiveCatalogEntryId, StringComparison.OrdinalIgnoreCase));
+                if (!string.IsNullOrWhiteSpace(entry?.InitialTabId?.Value))
+                {
+                    defaultTabId = entry.InitialTabId.Value;
+                }
+
+                if (!string.IsNullOrWhiteSpace(defaultTabId) &&
+                    !string.Equals(defaultTabId, ActiveTabId, StringComparison.OrdinalIgnoreCase) &&
+                    _session.Document.Tabs.Any(t => string.Equals(t.Id, defaultTabId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    await SelectTab(defaultTabId).ConfigureAwait(false);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(requestedPage) &&
+                !string.Equals(requestedPage, ActivePageId, StringComparison.OrdinalIgnoreCase) &&
+                ActiveTabPages().Any(p => string.Equals(p.Id, requestedPage, StringComparison.OrdinalIgnoreCase)))
+            {
+                await SelectPageAsync(requestedPage).ConfigureAwait(false);
+            }
+            else if (string.IsNullOrWhiteSpace(requestedPage))
+            {
+                var defaultPageId = ActiveTabPages().FirstOrDefault()?.Id;
+                if (!string.IsNullOrWhiteSpace(defaultPageId) &&
+                    !string.Equals(defaultPageId, ActivePageId, StringComparison.OrdinalIgnoreCase))
+                {
+                    await SelectPageAsync(defaultPageId).ConfigureAwait(false);
+                }
+            }
+        }
+        finally
+        {
+            _suppressUrlSync = false;
+        }
+    }
+
+    public void PushNavigationQueryToUrl(bool replace)
+    {
+        if (!SyncBrowserUrl || _suppressUrlSync)
+        {
+            return;
+        }
+
+        if (!Uri.TryCreate(_navigation.Uri, UriKind.Absolute, out var navUri))
+        {
+            return;
+        }
+
+        var path = navUri.GetComponents(UriComponents.Path, UriFormat.Unescaped).TrimEnd('/');
+        if (path.Length > 0)
+        {
+            return;
+        }
+
+        var pairs = new List<KeyValuePair<string, string?>>();
+        var qs = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(navUri.Query);
+        foreach (var kv in qs)
+        {
+            if (!string.Equals(kv.Key, "report", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(kv.Key, "tab", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(kv.Key, "page", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var v in kv.Value)
+                {
+                    pairs.Add(new(kv.Key, v));
+                }
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(ActiveCatalogEntryId))
+        {
+            pairs.Add(new("report", ActiveCatalogEntryId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ActiveTabId) && _session.Document.Tabs.Count > 1)
+        {
+            pairs.Add(new("tab", ActiveTabId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(ActivePageId) && HasPages)
+        {
+            pairs.Add(new("page", ActivePageId));
+        }
+
+        var targetPath = navUri.GetComponents(UriComponents.Path, UriFormat.Unescaped);
+        if (string.IsNullOrEmpty(targetPath))
+        {
+            targetPath = "/";
+        }
+
+        var rebuilt = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(targetPath, pairs);
+        var currentRelative = navUri.PathAndQuery;
+        if (string.Equals(currentRelative, rebuilt, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _suppressUrlSync = true;
+        try
+        {
+            _navigation.NavigateTo(rebuilt, replace);
+        }
+        finally
+        {
+            _suppressUrlSync = false;
+        }
     }
 
     private void Notify() => Changed?.Invoke();

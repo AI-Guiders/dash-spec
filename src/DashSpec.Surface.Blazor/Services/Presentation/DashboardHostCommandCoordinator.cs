@@ -56,7 +56,10 @@ public sealed class DashboardHostCommandCoordinator
             {
                 await _dashboard.SelectCatalogEntryAsync(entryId).ConfigureAwait(false);
                 CommandError = _dashboard.CommandError;
-                NavigateToReport(entryId, replace: true);
+                if (!_dashboard.SyncBrowserUrl)
+                {
+                    NavigateToReport(entryId, replace: false);
+                }
             }
             finally
             {

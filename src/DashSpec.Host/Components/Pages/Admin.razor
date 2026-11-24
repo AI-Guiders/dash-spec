@@ -244,14 +244,13 @@
 
     protected override void OnParametersSet()
     {
-        if (!AdminSectionCatalog.TryResolve(SectionId, out _section) &&
-            !string.IsNullOrWhiteSpace(SectionId))
+        if (string.IsNullOrWhiteSpace(SectionId))
         {
-            Nav.NavigateTo($"/admin/{AdminSectionCatalog.DefaultSectionId}", replace: true);
+            _section = AdminSectionCatalog.All[0];
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(SectionId))
+        if (!AdminSectionCatalog.TryResolve(SectionId, out _section))
         {
             Nav.NavigateTo($"/admin/{AdminSectionCatalog.DefaultSectionId}", replace: true);
         }
