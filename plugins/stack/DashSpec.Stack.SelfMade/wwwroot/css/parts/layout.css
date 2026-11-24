@@ -210,14 +210,9 @@
 
 /* Control Center (ADR-0042) — List | Data like Forge/GH settings */
 .admin {
-  max-width: 56rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.admin--wide {
-  max-width: none;
 }
 
 .admin-header h1 {
