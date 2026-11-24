@@ -109,22 +109,39 @@ public sealed class DashboardRefreshCoordinator : IDisposable
     public Task RefreshCardInteriorSlotsAsync(string cardId, CancellationToken cancellationToken = default) =>
         RefreshInteriorSlotsAsync(cardId, cancellationToken);
 
+    private bool _disposed;
+
     public void CancelPendingApplies()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         _dashboardApplyCts?.Cancel();
         _cardApplyCts?.Cancel();
     }
 
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
         _dashboardApplyCts?.Cancel();
         _dashboardApplyCts?.Dispose();
+        _dashboardApplyCts = null;
         _cardApplyCts?.Cancel();
         _cardApplyCts?.Dispose();
+        _cardApplyCts = null;
         _refreshCts?.Cancel();
         _refreshCts?.Dispose();
+        _refreshCts = null;
         _interiorRefreshCts?.Cancel();
         _interiorRefreshCts?.Dispose();
+        _interiorRefreshCts = null;
     }
 
     private async Task RefreshInteriorSlotsAsync(string cardId, CancellationToken cancellationToken)
