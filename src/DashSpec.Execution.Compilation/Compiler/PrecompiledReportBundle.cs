@@ -204,6 +204,7 @@ public static class PrecompiledReportBundle
             document);
         _ = SpecResolver.Resolve(document, library);
         var slotPlane = SlotPlaneBuilder.Build(document, library);
+        TypedRowsCompiler.EnsureDocumentRowTypesCompiled(document);
 
         compiled = new CachedCompiledReport(
             normalizedPath,
@@ -246,6 +247,7 @@ public static class PrecompiledReportBundle
             doc);
         _ = SpecResolver.Resolve(doc, library);
         var slotPlane = SlotPlaneBuilder.Build(doc, library);
+        TypedRowsCompiler.EnsureDocumentRowTypesCompiled(doc);
 
         MemoryCache[specFullPath] = new CachedCompiledReport(
             specFullPath,

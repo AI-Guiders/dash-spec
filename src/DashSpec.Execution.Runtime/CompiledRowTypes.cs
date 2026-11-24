@@ -33,8 +33,10 @@ public static class CompiledRowTypes
     {
         ArgumentNullException.ThrowIfNull(assemblyPath);
         ArgumentNullException.ThrowIfNull(assemblyBytes);
-        var fullPath = Path.GetFullPath(assemblyPath);
-        LoadCore(fullPath, ctx =>
+        var key = assemblyPath.StartsWith("memory://", StringComparison.OrdinalIgnoreCase)
+            ? assemblyPath
+            : Path.GetFullPath(assemblyPath);
+        LoadCore(key, ctx =>
         {
             using var stream = new MemoryStream(assemblyBytes, writable: false);
             return ctx.LoadFromStream(stream);

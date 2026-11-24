@@ -38,9 +38,43 @@ public static class TypedRowsCompiler
         var source = EmitSource(clrTypes);
         Directory.CreateDirectory(outputDirectory);
         var path = Path.Combine(outputDirectory, assemblyName + ".dll");
+        var bytes = CompileToBytes(source, assemblyName);
+        File.WriteAllBytes(path, bytes);
 
-        // The wire contract assembly + the SDK ref pack (no implementation assemblies:
-        // System.Private.CoreLib next to ref assemblies breaks predefined type resolution).
+        return new BuildResult(path, clrTypes.Select(d => d.Name).ToList());
+    }
+
+    /// <summary>
+    /// Compiles any missing <see cref="RowTypeDef"/> from a loaded document into an in-memory
+    /// Roslyn assembly and registers them in <see cref="DashSpec.Execution.Runtime.CompiledRowTypes"/>.
+    /// </summary>
+    public static void EnsureDocumentRowTypesCompiled(DashSpec.Modeling.Parse.Document.DashboardDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        var rowTypes = document.ResolvedRowTypes;
+        if (rowTypes.Count == 0)
+        {
+            return;
+        }
+
+        var missing = rowTypes.Values
+            .Where(d => d.Fields.All(f => !f.Name.Contains('.')))
+            .Where(d => !DashSpec.Execution.Runtime.CompiledRowTypes.Contains(d.Name))
+            .ToList();
+
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        var assemblyName = $"DashSpec.TypedRows.Dynamic.{Guid.NewGuid():N}";
+        var source = EmitSource(missing);
+        var bytes = CompileToBytes(source, assemblyName);
+        DashSpec.Execution.Runtime.CompiledRowTypes.Load($"memory://{assemblyName}.dll", bytes);
+    }
+
+    private static byte[] CompileToBytes(string source, string assemblyName)
+    {
         var references = new List<MetadataReference>
         {
             MetadataReference.CreateFromFile(typeof(DashValue).Assembly.Location),
@@ -56,7 +90,7 @@ public static class TypedRowsCompiler
                 .WithNullableContextOptions(NullableContextOptions.Enable)
                 .WithOptimizationLevel(OptimizationLevel.Release));
 
-        using var stream = File.Create(path);
+        using var stream = new MemoryStream();
         var result = compilation.Emit(stream);
         if (!result.Success)
         {
@@ -66,7 +100,7 @@ public static class TypedRowsCompiler
             throw new InvalidOperationException($"TypedRows compilation failed:\n{errors}");
         }
 
-        return new BuildResult(path, clrTypes.Select(d => d.Name).ToList());
+        return stream.ToArray();
     }
 
     /// <summary>Framework reference assemblies for compilation: the SDK's
