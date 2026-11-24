@@ -353,3 +353,132 @@ module DashSpecDocumentationExtractor =
         for d in docs do
             visit d
         map :> IReadOnlyDictionary<_, _>
+
+/// <summary>
+/// One chapter/page in a <c>module documentation &lt;id&gt;</c> book (DASHSPEC-ADR-0138).
+/// Combines authored <c>///</c> Markdown narrative, sub-sections, Doxygen symbol-domain tables
+/// (<c>symbols = units | transforms | presentations | types | monitoring | rules | workspace</c>),
+/// and live embedded <c>.ds</c> reports (<c>report = "..."</c>).
+/// </summary>
+[<CLIMutable>]
+type DocumentationPageDefinition =
+    { Id: string
+      Title: string
+      Markdown: string
+      SymbolsCategory: string option
+      EmbeddedReportUnit: string option
+      Sections: DocumentationPageDefinition[] }
+
+/// <summary>
+/// First-class <c>module documentation &lt;id&gt;</c> compilation unit (DASHSPEC-ADR-0138).
+/// </summary>
+[<CLIMutable>]
+type DocumentationModuleDocument =
+    { Id: string
+      Namespace: string option
+      Title: string
+      Markdown: string
+      Pages: DocumentationPageDefinition[] }
+
+module DocumentationModuleParser =
+
+    let private unquote (raw: string) =
+        let t = raw.Trim()
+        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
+            t.Substring(1, t.Length - 2)
+        else
+            t
+
+    let rec private parsePageBlock
+        (docs: IReadOnlyDictionary<AIGuiders.Platform.Modeling.Core.Identity.NodeId, string>)
+        (block: BlockDeclarationSyntax)
+        (pageId: string)
+        : DocumentationPageDefinition =
+        let headerTitle =
+            DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration block)
+        let mutable propTitle: string option = None
+        let mutable symbolsCat: string option = None
+        let mutable embeddedReport: string option = None
+        let subSections = ResizeArray<DocumentationPageDefinition>()
+
+        for m in block.Members do
+            match m with
+            | DashSpecAstNode.PropertyAssignment p ->
+                match p.Key.Trim().ToLowerInvariant() with
+                | "title" | "label" -> propTitle <- Some(unquote p.ValueText)
+                | "symbols" | "category" -> symbolsCat <- Some(unquote p.ValueText)
+                | "report" | "embed" -> embeddedReport <- Some(unquote p.ValueText)
+                | _ -> ()
+            | DashSpecAstNode.BlockDeclaration childBlock ->
+                match childBlock.Opener with
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, secId)
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Page, secId)
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Group, secId)
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Card, secId) ->
+                    subSections.Add(parsePageBlock docs childBlock secId)
+                | _ -> ()
+            | _ -> ()
+
+        let md =
+            match docs.TryGetValue block.Id with
+            | true, d -> d
+            | false, _ -> ""
+
+        { Id = pageId
+          Title = headerTitle |> Option.orElse propTitle |> Option.defaultValue pageId
+          Markdown = md
+          SymbolsCategory = symbolsCat
+          EmbeddedReportUnit = embeddedReport
+          Sections = subSections.ToArray() }
+
+    let parse (text: string) : DocumentationModuleDocument =
+        if String.IsNullOrWhiteSpace text then
+            invalidArg "text" "Documentation module text is required."
+
+        let tree = SyntaxTree.parse text
+        let docs = DashSpecAst.collectLeadingDocs tree.Root
+
+        let moduleNode =
+            DashSpecAst.members tree.Root
+            |> Array.tryPick (function
+                | DashSpecAstNode.ModuleDeclaration m -> Some m
+                | _ -> None)
+            |> Option.defaultWith (fun () ->
+                raise (DashSpecParseException("Expected 'module documentation <id>'.")))
+
+        let unitId =
+            match moduleNode.Directive with
+            | DashSpecModuleDirective.Module(DashSpecModuleKind.Documentation, id) -> id
+            | DashSpecModuleDirective.Module(DashSpecModuleKind.Custom kw, id)
+                when String.Equals(kw, "documentation", StringComparison.OrdinalIgnoreCase) -> id
+            | _ ->
+                raise (DashSpecParseException("Expected 'module documentation <id>'."))
+
+        let mutable ns: string option = None
+        let mutable title = unitId
+        let pages = ResizeArray<DocumentationPageDefinition>()
+
+        for m in moduleNode.Members do
+            match m with
+            | DashSpecAstNode.ClauseDeclaration { Kind = ClauseKind.NamespaceClause n } ->
+                ns <- Some n
+            | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "title", StringComparison.OrdinalIgnoreCase) ->
+                title <- unquote p.ValueText
+            | DashSpecAstNode.BlockDeclaration b ->
+                match b.Opener with
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Page, pageId)
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, pageId) ->
+                    pages.Add(parsePageBlock docs b pageId)
+                | _ -> ()
+            | _ -> ()
+
+        let moduleMd =
+            match docs.TryGetValue moduleNode.Id with
+            | true, d -> d
+            | false, _ -> ""
+
+        { Id = unitId
+          Namespace = ns
+          Title = title
+          Markdown = moduleMd
+          Pages = pages.ToArray() }

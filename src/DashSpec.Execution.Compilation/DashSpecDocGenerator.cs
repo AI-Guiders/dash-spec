@@ -19,6 +19,23 @@ public sealed record DashSpecDocCatalog(
     IReadOnlyList<DashSpecDocSection> Sections,
     IReadOnlyDictionary<string, DashSpecSymbolDoc> SymbolIndex);
 
+public sealed record DashSpecCompiledBookPage(
+    string Id,
+    string Title,
+    string Markdown,
+    string? SymbolsCategory,
+    string? EmbeddedReportUnit,
+    IReadOnlyList<DashSpecCompiledBookPage> SubSections,
+    IReadOnlyList<DashSpecDocSection> SymbolSections);
+
+public sealed record DashSpecCompiledBook(
+    string Id,
+    string Title,
+    string Markdown,
+    string Language,
+    IReadOnlyList<DashSpecCompiledBookPage> Pages,
+    IReadOnlyDictionary<string, DashSpecSymbolDoc> GlobalSymbolIndex);
+
 /// <summary>
 /// Self-documenting language &amp; workspace documentation generator (DASHSPEC-ADR-0138).
 /// Builds structured documentation catalogs and Markdown reference books directly from
@@ -55,7 +72,8 @@ public static class DashSpecDocGenerator
             {
                 if (!resName.StartsWith("stdlib/", StringComparison.OrdinalIgnoreCase) ||
                     !resName.EndsWith(".ds", StringComparison.OrdinalIgnoreCase) ||
-                    resName.StartsWith("stdlib/texts/", StringComparison.OrdinalIgnoreCase))
+                    resName.StartsWith("stdlib/texts/", StringComparison.OrdinalIgnoreCase) ||
+                    resName.StartsWith("stdlib/documentation/", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -253,6 +271,115 @@ public static class DashSpecDocGenerator
             lang,
             sections,
             index);
+    }
+
+    public static DashSpecCompiledBook BuildDocumentationBook(string? workspaceDir = null, string? language = null)
+    {
+        var lang = NormalizeLanguage(language);
+        var stdlib = BuildStdlibCatalog(lang);
+        var workspace = BuildWorkspaceCatalog(workspaceDir ?? "", lang);
+
+        var globalIndex = new Dictionary<string, DashSpecSymbolDoc>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in stdlib.SymbolIndex)
+        {
+            globalIndex[kv.Key] = kv.Value;
+        }
+        foreach (var kv in workspace.SymbolIndex)
+        {
+            globalIndex[kv.Key] = kv.Value;
+        }
+
+        string? docModuleText = null;
+        if (!string.IsNullOrWhiteSpace(workspaceDir) && Directory.Exists(workspaceDir))
+        {
+            foreach (var file in Directory.EnumerateFiles(workspaceDir, "*.ds", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    var raw = File.ReadAllText(file);
+                    if (raw.Contains("module documentation ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        docModuleText = raw;
+                        break;
+                    }
+                }
+                catch
+                {
+                    // Ignore unreadable file
+                }
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(docModuleText))
+        {
+            var asm = typeof(DashSpec.Execution.Parsing.DashSpecParser).Assembly;
+            using var stream = asm.GetManifestResourceStream("stdlib/documentation/dashspec_manual.ds");
+            if (stream is not null)
+            {
+                using var reader = new StreamReader(stream);
+                docModuleText = reader.ReadToEnd();
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(docModuleText))
+        {
+            return new DashSpecCompiledBook(
+                "dashspec_manual",
+                stdlib.Title,
+                "",
+                lang,
+                [],
+                globalIndex);
+        }
+
+        var parsed = DocumentationModuleParser.parse(docModuleText);
+        var compiledPages = parsed.Pages
+            .Select(p => CompileBookPage(p, stdlib, workspace))
+            .ToList();
+
+        return new DashSpecCompiledBook(
+            parsed.Id,
+            parsed.Title,
+            parsed.Markdown,
+            lang,
+            compiledPages,
+            globalIndex);
+    }
+
+    private static DashSpecCompiledBookPage CompileBookPage(
+        DocumentationPageDefinition page,
+        DashSpecDocCatalog stdlib,
+        DashSpecDocCatalog workspace)
+    {
+        var cat = FSharpOption<string>.get_IsSome(page.SymbolsCategory)
+            ? page.SymbolsCategory.Value.Trim().ToLowerInvariant()
+            : null;
+        var reportUnit = FSharpOption<string>.get_IsSome(page.EmbeddedReportUnit)
+            ? page.EmbeddedReportUnit.Value.Trim()
+            : null;
+
+        IReadOnlyList<DashSpecDocSection> symbolSections = cat switch
+        {
+            "workspace" => workspace.Sections,
+            "all" => stdlib.Sections.Concat(workspace.Sections).ToList(),
+            not null => stdlib.Sections
+                .Where(s => string.Equals(s.CategoryId, cat, StringComparison.OrdinalIgnoreCase))
+                .ToList(),
+            _ => [],
+        };
+
+        var subSections = page.Sections
+            .Select(s => CompileBookPage(s, stdlib, workspace))
+            .ToList();
+
+        return new DashSpecCompiledBookPage(
+            page.Id,
+            page.Title,
+            page.Markdown,
+            cat,
+            reportUnit,
+            subSections,
+            symbolSections);
     }
 
     public static string RenderMarkdown(DashSpecDocCatalog catalog)

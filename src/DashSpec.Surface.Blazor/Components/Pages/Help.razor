@@ -8,179 +8,455 @@
 @using Microsoft.FSharp.Core
 @inject CatalogSourceState CatalogState
 @inject DashSpec.Surface.Blazor.Commands.IDashboardCultureAmbient CultureAmbient
+@inject DashSpec.Surface.Blazor.Services.Localization.DashboardLocalizer Loc
 
-<PageTitle>Справка и документация — DashSpec</PageTitle>
+<PageTitle>@(_book?.Title ?? "Documentation") — DashSpec</PageTitle>
 
-<section class="help-page">
-    <header class="help-header">
-        <h1>Справка и самодокументируемый справочник DashSpec</h1>
-        <p class="muted">Живая документация языка (<code>stdlib</code>) и каталога отчётов, генерируемая компилятором напрямую из <code>///</code> Markdown-комментариев и <code>module texts</code> (ADR-0138).</p>
-    </header>
+@if (_book is not null)
+{
+    <section class="help-page">
+        <div class="dox-shell">
+            @* 1. Left Doxygen Navigation Tree *@
+            <aside class="dox-sidebar" aria-label="Documentation Tree">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
+                    <strong style="font-size: 0.85rem;">module documentation</strong>
+                    <span class="badge">@_book.Id</span>
+                </div>
 
-    <nav class="help-tabs" aria-label="Разделы справки">
-        <button type="button" class="help-tab @(_tab == "stdlib" ? "help-tab-active" : null)" @onclick='() => SelectTab("stdlib")'>Справочник языка (Stdlib)</button>
-        <button type="button" class="help-tab @(_tab == "catalog" ? "help-tab-active" : null)" @onclick='() => SelectTab("catalog")'>Документация каталога</button>
-        <button type="button" class="help-tab @(_tab == "user" ? "help-tab-active" : null)" @onclick='() => SelectTab("user")'>Руководство пользователя</button>
-        <button type="button" class="help-tab @(_tab == "admin" ? "help-tab-active" : null)" @onclick='() => SelectTab("admin")'>Администратор</button>
-    </nav>
-
-    @if (_tab == "stdlib" || _tab == "catalog")
-    {
-        var catalog = _tab == "stdlib" ? _stdlibCatalog : _workspaceCatalog;
-        if (catalog is not null)
-        {
-            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem;">
                 <input type="search"
-                       placeholder="Поиск по модулям, типам, полям, карточкам, трансформациям…"
+                       class="dox-search"
+                       placeholder="Search symbols, types, rules…"
                        @bind="_search"
-                       @bind:event="oninput"
-                       style="flex: 1 1 280px; max-width: 480px; padding: 0.45rem 0.75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text);" />
-                <span class="muted" style="font-size: 0.82rem;">CLI: <code>dsc doc @(_tab == "stdlib" ? "--stdlib" : "<dir>") --out reference.md</code></span>
-            </div>
+                       @bind:event="oninput" />
 
-            @foreach (var sec in catalog.Sections)
-            {
-                var filteredUnits = FilterUnits(sec.Units);
-                if (filteredUnits.Count == 0)
-                {
-                    continue;
-                }
-
-                <section style="margin-top: 1rem;">
-                    <h2 style="margin: 0 0 0.65rem; font-size: 1.15rem; border-bottom: 1px solid var(--border); padding-bottom: 0.35rem;">@sec.CategoryTitle</h2>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 0.85rem;">
-                        @foreach (var unit in filteredUnits)
+                <div class="dox-nav-group">
+                    @foreach (var pageItem in _book.Pages)
+                    {
+                        var units = FilteredPageUnits(pageItem);
+                        if (!string.IsNullOrWhiteSpace(_search) && units.Count == 0 && !PageMatchesSearch(pageItem))
                         {
-                            var unitTitle = FSharpOption<string>.get_IsSome(unit.Title) && !string.IsNullOrWhiteSpace(unit.Title.Value)
-                                ? unit.Title.Value
-                                : null;
-                            var sourcePath = FSharpOption<string>.get_IsSome(unit.SourcePath)
-                                ? $"{unit.SourcePath.Value}:{unit.Line}"
-                                : null;
-                            <article class="card" style="padding: 0.85rem 1rem; min-height: auto; gap: 0.45rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;">
-                                    <code style="font-weight: 600; font-size: 0.92rem; color: var(--accent, #60a5fa);">@unit.Signature</code>
-                                    @if (!string.IsNullOrWhiteSpace(sourcePath))
-                                    {
-                                        <span class="badge">@sourcePath</span>
-                                    }
-                                </div>
-                                @if (!string.IsNullOrWhiteSpace(unitTitle))
+                            continue;
+                        }
+
+                        var isChapterActive = _activePage?.Id == pageItem.Id && _activeSymbol is null;
+                        var isExpanded = _expandedPages.Contains(pageItem.Id) || !string.IsNullOrWhiteSpace(_search) || _activePage?.Id == pageItem.Id;
+
+                        <button type="button"
+                                class="dox-nav-chapter @(isChapterActive ? "is-active" : null)"
+                                @onclick="() => SelectChapter(pageItem)">
+                            <span>@pageItem.Title</span>
+                            @if (units.Count > 0)
+                            {
+                                <span class="badge">@units.Count</span>
+                            }
+                        </button>
+
+                        @if (isExpanded && units.Count > 0)
+                        {
+                            <ul class="dox-nav-items">
+                                @foreach (var unit in units)
                                 {
-                                    <div style="font-weight: 600; font-size: 0.95rem;">@unitTitle</div>
+                                    var isSymActive = _activeSymbol is not null &&
+                                                      string.Equals(_activeSymbol.Id, unit.Id, StringComparison.OrdinalIgnoreCase) &&
+                                                      string.Equals(_activeSymbol.Kind, unit.Kind, StringComparison.OrdinalIgnoreCase);
+                                    <li>
+                                        <button type="button"
+                                                class="dox-nav-item @(isSymActive ? "is-active" : null)"
+                                                title="@unit.Signature"
+                                                @onclick="() => SelectSymbol(pageItem, unit)">
+                                            <span>@unit.Id</span>
+                                        </button>
+                                    </li>
                                 }
-                                @if (!string.IsNullOrWhiteSpace(unit.Markdown))
-                                {
-                                    <p style="margin: 0.15rem 0; font-size: 0.88rem; line-height: 1.45;">
-                                        <RichTextView Text="@unit.Markdown" />
-                                    </p>
-                                }
-                                @if (unit.Children.Length > 0)
-                                {
-                                    <ul style="margin: 0.25rem 0 0; padding-left: 1.15rem; font-size: 0.83rem; line-height: 1.4;">
-                                        @foreach (var child in unit.Children)
-                                        {
-                                            var childTitle = FSharpOption<string>.get_IsSome(child.Title) && !string.IsNullOrWhiteSpace(child.Title.Value)
-                                                ? child.Title.Value
-                                                : null;
-                                            <li style="margin-bottom: 0.2rem;">
-                                                <code>@child.Signature</code>
-                                                @if (!string.IsNullOrWhiteSpace(childTitle))
-                                                {
-                                                    <span class="muted"> (@childTitle)</span>
-                                                }
-                                                @if (!string.IsNullOrWhiteSpace(child.Markdown))
-                                                {
-                                                    <span> — <RichTextView Text="@child.Markdown" /></span>
-                                                }
-                                                @if (child.Children.Length > 0)
-                                                {
-                                                    <ul style="margin: 0.15rem 0 0.25rem; padding-left: 1rem;">
-                                                        @foreach (var grand in child.Children)
-                                                        {
-                                                            <li>
-                                                                <code>@grand.Signature</code>
-                                                                @if (!string.IsNullOrWhiteSpace(grand.Markdown))
-                                                                {
-                                                                    <span> — <RichTextView Text="@grand.Markdown" /></span>
-                                                                }
-                                                            </li>
-                                                        }
-                                                    </ul>
-                                                }
-                                            </li>
-                                        }
-                                    </ul>
-                                }
-                            </article>
+                            </ul>
+                        }
+                    }
+                </div>
+            </aside>
+
+            @* 2. Center Doxygen Detail Pane *@
+            <article class="dox-main">
+                @if (_activeSymbol is not null)
+                {
+                    var sym = _activeSymbol;
+                    var symTitle = FSharpOption<string>.get_IsSome(sym.Title) && !string.IsNullOrWhiteSpace(sym.Title.Value)
+                        ? sym.Title.Value
+                        : sym.Id;
+                    var symNs = FSharpOption<string>.get_IsSome(sym.Namespace) ? sym.Namespace.Value : null;
+                    var symPath = FSharpOption<string>.get_IsSome(sym.SourcePath) ? $"{sym.SourcePath.Value}:{sym.Line}" : null;
+
+                    <nav class="dox-breadcrumbs" aria-label="Breadcrumbs">
+                        <button type="button" class="dox-crumb-btn" @onclick="() => SelectChapter(_book.Pages[0])">@_book.Title</button>
+                        @if (_activePage is not null)
+                        {
+                            <span>/</span>
+                            <button type="button" class="dox-crumb-btn" @onclick="() => SelectChapter(_activePage)">@_activePage.Title</button>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(symNs))
+                        {
+                            <span>/</span>
+                            <span class="badge">@symNs</span>
+                        }
+                        <span>/</span>
+                        <code>@sym.Id</code>
+                    </nav>
+
+                    <header class="dox-title-row">
+                        <div>
+                            <h1>@symTitle</h1>
+                            @if (!string.Equals(symTitle, sym.Id, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <div class="muted" style="font-family: ui-monospace, Consolas, monospace; font-size: 0.88rem; margin-top: 0.2rem;">@sym.Kind @sym.Id</div>
+                            }
+                        </div>
+                        <span class="badge">@sym.Kind</span>
+                    </header>
+
+                    <div class="dox-decl-box">
+                        <code>@sym.Signature</code>
+                        @if (!string.IsNullOrWhiteSpace(symPath))
+                        {
+                            <span class="badge">@symPath</span>
                         }
                     </div>
-                </section>
-            }
-        }
-    }
-    else if (_tab == "user")
-    {
-        <article class="help-body">
-            <h2>Как открыть</h2>
-            <ol>
-                <li>Браузер Edge или Chrome.</li>
-                <li>Адрес выдаёт администратор (например <code>http://&lt;сервер&gt;:5295/</code>).</li>
-                <li>Если запросит ключ — страница <a href="/access">/access</a>.</li>
-            </ol>
 
-            <h2>Экран</h2>
-            <ul>
-                <li><strong>Отчёт</strong> — выбор отчёта в левом меню или выпадающем списке.</li>
-                <li><strong>Вкладки и страницы</strong> — переключение с сохранением истории браузера (работают кнопки «Назад» и «Вперёд»).</li>
-                <li><strong>Фильтры</strong> — дата, продукты, пользователь, масштаб (день/месяц/год), период, топ N.</li>
-            </ul>
+                    @if (!string.IsNullOrWhiteSpace(sym.Markdown))
+                    {
+                        <div class="dox-prose">
+                            @foreach (var paragraph in SplitParagraphs(sym.Markdown))
+                            {
+                                <p style="margin: 0 0 0.65rem;"><RichTextView Text="@paragraph" /></p>
+                            }
+                        </div>
+                    }
 
-            <h2>Типовые сценарии</h2>
-            <ul>
-                <li>Открыть отчёт из каталога.</li>
-                <li>Сузить период и измерения фильтрами.</li>
-                <li>Открыть карточку и выгрузить CSV или XLSX.</li>
-            </ul>
-        </article>
-    }
-    else
-    {
-        <article class="help-body">
-            <h2>Настройки хоста и самодиагностика</h2>
-            <p><a href="/admin/access">Settings</a> — API key, git-каталог, часовой пояс, язык, длинные списки фильтра ПО (&gt;80).</p>
-            <p><a href="/admin/monitoring">Monitoring &amp; Logs</a> — встроенный самодокументируемый отчёт <code>stdlib/monitoring/self_monitoring.ds</code> поверх <code>host-telemetry.witdb</code>.</p>
+                    @* Group children by Doxygen member kind (type, field, port, param, source, transformer, card, filter, row, property) *@
+                    @foreach (var group in sym.Children.GroupBy(c => c.Kind))
+                    {
+                        <section>
+                            <h2 class="dox-section-title">@FormatMemberGroupTitle(group.Key) (@group.Count())</h2>
+                            <table class="dox-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 24%;">Identifier</th>
+                                        <th style="width: 30%;">Declaration / Type</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var memberItem in group)
+                                    {
+                                        var memberTitle = FSharpOption<string>.get_IsSome(memberItem.Title) && !string.IsNullOrWhiteSpace(memberItem.Title.Value)
+                                            ? memberItem.Title.Value
+                                            : null;
+                                        <tr>
+                                            <td>
+                                                @if (memberItem.Children.Length > 0)
+                                                {
+                                                    <button type="button"
+                                                            class="dox-sym-link"
+                                                            @onclick="() => SelectSymbol(_activePage, memberItem)">
+                                                        @memberItem.Id
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <code>@memberItem.Id</code>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(memberTitle))
+                                                {
+                                                    <div class="muted" style="font-size: 0.78rem; margin-top: 0.15rem;">@memberTitle</div>
+                                                }
+                                            </td>
+                                            <td>
+                                                <code>@memberItem.Signature</code>
+                                                @foreach (var linkedType in FindReferencedSymbols(memberItem))
+                                                {
+                                                    <div style="margin-top: 0.2rem;">
+                                                        <span class="muted" style="font-size: 0.74rem;">→ </span>
+                                                        <button type="button"
+                                                                class="dox-sym-link"
+                                                                style="font-size: 0.78rem;"
+                                                                @onclick="() => NavigateToSymbolById(linkedType.Id)">
+                                                            @linkedType.Id
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrWhiteSpace(memberItem.Markdown))
+                                                {
+                                                    <RichTextView Text="@memberItem.Markdown" />
+                                                }
+                                                @if (memberItem.Children.Length > 0)
+                                                {
+                                                    <div style="margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.2rem;">
+                                                        @foreach (var sub in memberItem.Children)
+                                                        {
+                                                            <div style="font-size: 0.8rem;">
+                                                                <code>@sub.Signature</code>
+                                                                @if (!string.IsNullOrWhiteSpace(sub.Markdown))
+                                                                {
+                                                                    <span class="muted"> — <RichTextView Text="@sub.Markdown" /></span>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </section>
+                    }
+                }
+                else if (_activePage is not null)
+                {
+                    var chapter = _activePage;
+                    <nav class="dox-breadcrumbs" aria-label="Breadcrumbs">
+                        <span>@_book.Title</span>
+                        <span>/</span>
+                        <code>@chapter.Id</code>
+                    </nav>
 
-            <h2>Документирующие комментарии и CLI</h2>
-            <ul>
-                <li>Над любым модулем, типом, полем, портом, карточкой, фильтром или трансформацией в <code>.ds</code> можно писать <code>/// Markdown-комментарий</code>.</li>
-                <li>Локализация документации поддерживается через <code>module texts</code> (ключи <code>&lt;kind&gt;.&lt;id&gt;.doc</code> или ссылки <code>@@text(key)</code>).</li>
-                <li>Генерация полного Markdown-справочника из командной строки: <code>dsc doc &lt;dir&gt; --stdlib --out docs/reference.md</code>.</li>
-            </ul>
-        </article>
-    }
-</section>
+                    <header class="dox-title-row">
+                        <h1>@chapter.Title</h1>
+                        <span class="badge">page @chapter.Id</span>
+                    </header>
+
+                    @if (!string.IsNullOrWhiteSpace(chapter.Markdown))
+                    {
+                        <div class="dox-prose">
+                            @foreach (var paragraph in SplitParagraphs(chapter.Markdown))
+                            {
+                                <p style="margin: 0 0 0.75rem;"><RichTextView Text="@paragraph" /></p>
+                            }
+                        </div>
+                    }
+
+                    @foreach (var sub in chapter.SubSections)
+                    {
+                        <section>
+                            <h2 class="dox-section-title">@sub.Title</h2>
+                            @if (!string.IsNullOrWhiteSpace(sub.Markdown))
+                            {
+                                <div class="dox-prose">
+                                    @foreach (var paragraph in SplitParagraphs(sub.Markdown))
+                                    {
+                                        <p style="margin: 0 0 0.65rem;"><RichTextView Text="@paragraph" /></p>
+                                    }
+                                </div>
+                            }
+                        </section>
+                    }
+
+                    @foreach (var sec in chapter.SymbolSections)
+                    {
+                        var units = FilterSymbolList(sec.Units);
+                        if (units.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        <section>
+                            <h2 class="dox-section-title">@sec.CategoryTitle (@units.Count)</h2>
+                            <table class="dox-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 24%;">Module / Symbol</th>
+                                        <th style="width: 24%;">Namespace / Source</th>
+                                        <th>Summary</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var unit in units)
+                                    {
+                                        var uTitle = FSharpOption<string>.get_IsSome(unit.Title) && !string.IsNullOrWhiteSpace(unit.Title.Value)
+                                            ? unit.Title.Value
+                                            : null;
+                                        var uNs = FSharpOption<string>.get_IsSome(unit.Namespace) ? unit.Namespace.Value : "—";
+                                        var uSrc = FSharpOption<string>.get_IsSome(unit.SourcePath) ? $"{unit.SourcePath.Value}:{unit.Line}" : null;
+                                        <tr>
+                                            <td>
+                                                <button type="button"
+                                                        class="dox-sym-link"
+                                                        @onclick="() => SelectSymbol(chapter, unit)">
+                                                    @unit.Id
+                                                </button>
+                                                <div class="muted" style="font-size: 0.75rem; font-family: ui-monospace, Consolas, monospace;">@unit.Kind</div>
+                                            </td>
+                                            <td>
+                                                <code style="font-size: 0.78rem;">@uNs</code>
+                                                @if (!string.IsNullOrWhiteSpace(uSrc))
+                                                {
+                                                    <div class="muted" style="font-size: 0.73rem; margin-top: 0.15rem;">@uSrc</div>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrWhiteSpace(uTitle))
+                                                {
+                                                    <div style="font-weight: 600; margin-bottom: 0.2rem;">@uTitle</div>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(unit.Markdown))
+                                                {
+                                                    <RichTextView Text="@unit.Markdown" />
+                                                }
+                                                @if (unit.Children.Length > 0)
+                                                {
+                                                    <div class="muted" style="font-size: 0.76rem; margin-top: 0.25rem;">
+                                                        Members: @string.Join(", ", unit.Children.Take(6).Select(c => c.Id))@(unit.Children.Length > 6 ? $" (+{unit.Children.Length - 6})" : "")
+                                                    </div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </section>
+                    }
+                }
+            </article>
+
+            @* 3. Right On-This-Page Outline *@
+            <aside class="dox-toc" aria-label="On this page">
+                <p class="dox-toc-heading">On this page</p>
+                @if (_activeSymbol is not null)
+                {
+                    <ul class="dox-toc-list">
+                        <li><code>@_activeSymbol.Id</code></li>
+                        @foreach (var grp in _activeSymbol.Children.GroupBy(c => c.Kind))
+                        {
+                            <li class="muted">@FormatMemberGroupTitle(grp.Key) (@grp.Count())</li>
+                            @foreach (var item in grp.Take(12))
+                            {
+                                <li style="padding-left: 0.55rem;">
+                                    @if (item.Children.Length > 0)
+                                    {
+                                        <button type="button"
+                                                class="dox-crumb-btn"
+                                                style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;"
+                                                @onclick="() => SelectSymbol(_activePage, item)">
+                                            @item.Id
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="muted" style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;">@item.Id</span>
+                                    }
+                                </li>
+                            }
+                        }
+                    </ul>
+                }
+                else if (_activePage is not null)
+                {
+                    <ul class="dox-toc-list">
+                        <li><strong>@_activePage.Title</strong></li>
+                        @foreach (var sub in _activePage.SubSections)
+                        {
+                            <li class="muted">@sub.Title</li>
+                        }
+                        @foreach (var sec in _activePage.SymbolSections)
+                        {
+                            @foreach (var u in FilterSymbolList(sec.Units).Take(18))
+                            {
+                                <li>
+                                    <button type="button"
+                                            class="dox-crumb-btn"
+                                            style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;"
+                                            @onclick="() => SelectSymbol(_activePage, u)">
+                                        @u.Id
+                                    </button>
+                                </li>
+                            }
+                        }
+                    </ul>
+                }
+                <div style="margin-top: 0.75rem; padding-top: 0.65rem; border-top: 1px solid var(--border); font-size: 0.74rem;" class="muted">
+                    CLI: <code>dsc doc --stdlib</code>
+                </div>
+            </aside>
+        </div>
+    </section>
+}
 
 @code {
-    private string _tab = "stdlib";
+    private DashSpecCompiledBook? _book;
+    private DashSpecCompiledBookPage? _activePage;
+    private DashSpecSymbolDoc? _activeSymbol;
+    private readonly HashSet<string> _expandedPages = new(StringComparer.OrdinalIgnoreCase);
     private string _search = "";
-    private DashSpecDocCatalog? _stdlibCatalog;
-    private DashSpecDocCatalog? _workspaceCatalog;
 
     protected override void OnInitialized()
     {
         var lang = CultureAmbient.Culture.Name;
-        _stdlibCatalog = DashSpecDocGenerator.BuildStdlibCatalog(lang);
         var catalogDir = Path.GetDirectoryName(CatalogState.Current.FullPath);
-        _workspaceCatalog = DashSpecDocGenerator.BuildWorkspaceCatalog(catalogDir ?? "", lang);
+        _book = DashSpecDocGenerator.BuildDocumentationBook(catalogDir, lang);
+        if (_book.Pages.Count > 0)
+        {
+            _activePage = _book.Pages[0];
+            _expandedPages.Add(_activePage.Id);
+        }
     }
 
-    private void SelectTab(string tab)
+    private void SelectChapter(DashSpecCompiledBookPage page)
     {
-        _tab = tab;
+        _activePage = page;
+        _activeSymbol = null;
+        if (!_expandedPages.Add(page.Id))
+        {
+            // Keep open when selected
+        }
     }
 
-    private IReadOnlyList<DashSpecSymbolDoc> FilterUnits(IReadOnlyList<DashSpecSymbolDoc> units)
+    private void SelectSymbol(DashSpecCompiledBookPage? parentPage, DashSpecSymbolDoc symbol)
+    {
+        if (parentPage is not null)
+        {
+            _activePage = parentPage;
+            _expandedPages.Add(parentPage.Id);
+        }
+        _activeSymbol = symbol;
+    }
+
+    private void NavigateToSymbolById(string symbolId)
+    {
+        if (_book is null)
+        {
+            return;
+        }
+
+        foreach (var page in _book.Pages)
+        {
+            foreach (var sec in page.SymbolSections)
+            {
+                foreach (var unit in sec.Units)
+                {
+                    if (string.Equals(unit.Id, symbolId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        SelectSymbol(page, unit);
+                        return;
+                    }
+
+                    var child = unit.Children.FirstOrDefault(c =>
+                        string.Equals(c.Id, symbolId, StringComparison.OrdinalIgnoreCase));
+                    if (child is not null)
+                    {
+                        SelectSymbol(page, child.Children.Length > 0 ? child : unit);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private IReadOnlyList<DashSpecSymbolDoc> FilteredPageUnits(DashSpecCompiledBookPage page) =>
+        page.SymbolSections
+            .SelectMany(s => FilterSymbolList(s.Units))
+            .ToList();
+
+    private IReadOnlyList<DashSpecSymbolDoc> FilterSymbolList(IReadOnlyList<DashSpecSymbolDoc> units)
     {
         if (string.IsNullOrWhiteSpace(_search))
         {
@@ -188,15 +464,76 @@
         }
 
         var q = _search.Trim();
-        return units
-            .Where(u => Matches(u, q))
-            .ToList();
+        return units.Where(u => SymbolMatches(u, q)).ToList();
     }
 
-    private static bool Matches(DashSpecSymbolDoc doc, string q) =>
+    private bool PageMatchesSearch(DashSpecCompiledBookPage page)
+    {
+        if (string.IsNullOrWhiteSpace(_search))
+        {
+            return true;
+        }
+
+        var q = _search.Trim();
+        return page.Title.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+               page.Markdown.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+               page.SubSections.Any(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Markdown.Contains(q, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool SymbolMatches(DashSpecSymbolDoc doc, string q) =>
         doc.Id.Contains(q, StringComparison.OrdinalIgnoreCase) ||
         doc.Signature.Contains(q, StringComparison.OrdinalIgnoreCase) ||
         doc.Markdown.Contains(q, StringComparison.OrdinalIgnoreCase) ||
         (FSharpOption<string>.get_IsSome(doc.Title) && doc.Title.Value.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
-        doc.Children.Any(c => Matches(c, q));
+        doc.Children.Any(c => SymbolMatches(c, q));
+
+    private static IReadOnlyList<string> SplitParagraphs(string markdown) =>
+        markdown
+            .Split(["\r\n\r\n", "\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static string FormatMemberGroupTitle(string kind) =>
+        kind.ToLowerInvariant() switch
+        {
+            "type" => "Data Types (type)",
+            "field" => "Fields",
+            "port" => "Ports",
+            "param" => "Parameters",
+            "property" => "Properties",
+            "source" => "Data Sources (source)",
+            "transformer" => "Transformers (transformer)",
+            "card" => "Report Cards (card)",
+            "filter" => "Filters (filter)",
+            "row" => "Registry Entries",
+            _ => kind,
+        };
+
+    private IReadOnlyList<DashSpecSymbolDoc> FindReferencedSymbols(DashSpecSymbolDoc memberItem)
+    {
+        if (_book is null)
+        {
+            return [];
+        }
+
+        var results = new List<DashSpecSymbolDoc>();
+        var tokens = memberItem.Signature.Split([' ', ':', ',', '|', '(', ')'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var tok in tokens)
+        {
+            if (string.Equals(tok, memberItem.Id, StringComparison.OrdinalIgnoreCase) || tok.Length < 3)
+            {
+                continue;
+            }
+
+            if (_book.GlobalSymbolIndex.TryGetValue(tok, out var target) &&
+                !string.Equals(target.Id, memberItem.Id, StringComparison.OrdinalIgnoreCase) &&
+                target.Kind is "type" or "module diagram" or "module presentation" or "module transform")
+            {
+                if (!results.Any(r => string.Equals(r.Id, target.Id, StringComparison.OrdinalIgnoreCase)))
+                {
+                    results.Add(target);
+                }
+            }
+        }
+
+        return results;
+    }
 }

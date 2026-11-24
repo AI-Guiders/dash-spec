@@ -1,0 +1,87 @@
+/// Официальное руководство и справочник стандартной библиотеки языка DashSpec (`stdlib`),
+/// автоматически собираемое компилятором из документирующих комментариев `///` и таблиц `module texts` (DASHSPEC-ADR-0138).
+module documentation dashspec_manual
+namespace DashSpec.Std.Documentation
+
+title = "DashSpec Language & Standard Library Reference"
+
+/// **DashSpec** — декларативный строго типизированный язык описания аналитических дашбордов, потоков данных (`module flow`),
+/// схем строк (`module types`), диаграмм (`module diagram`) и сеток компоновки (`module layout`).
+///
+/// Каждая спецификация компилируется в типизированный конвейер (`SlotPlane`, `WiringGraph`, CLR-строки `CompiledRowTypes`)
+/// без ручного HTML/CSS или императивного кода.
+page overview as "Обзор и архитектура"
+
+  /// Язык DashSpec разделён на **декларативные модули** (`types`, `presentation`, `layout`, `transform`, `defaults`, `texts`, `runtime`)
+  /// и **потребляющие модули** (`flow`, `diagram`, `section`, `dashboard`, `catalog`, `documentation`).
+  ///
+  /// Все модули начинаются с заголовка `module <kind> <id>` и пространства имён `namespace <Qualified.Name>`,
+  /// а связываются через явный импорт `import <kind> from <Namespace>`.
+  section architecture as "Модульная архитектура языка"
+  end section
+
+  /// Над любым модулем, типом данных, полем, портом, трансформацией, параметром, карточкой или фильтром
+  /// можно писать документирующие комментарии с тройным слэшем `///` и поддержкой **Markdown**.
+  ///
+  /// Для мультиязычных каталогов поддерживается локализация через `module texts`:
+  /// достаточно объявить строку `<kind>.<id>.doc` или вставить ссылку `@text(key)` внутрь `///`.
+  section self_documenting as "Самодокументируемый код и i18n"
+  end section
+
+  /// В веб-интерфейсе `DashSpec.Host`:
+  /// - **Левое меню и вкладки** переключают отчёты, секции и подстраницы с сохранением истории браузера (кнопки «Назад» и «Вперёд»).
+  /// - **Панель фильтров** позволяет сузить диапазон дат, измерения и лимит `TOP N`.
+  /// - **Шапка каждой карточки** содержит кнопки полноэкранного просмотра и выгрузки данных в `CSV` / `XLSX`.
+  section viewer_guide as "Работа с дашбордом и экспорт"
+  end section
+
+  /// Администрирование и эксплуатация `DashSpec.Host`:
+  /// - **`/admin/access`** — настройка API-ключа, Git-синхронизации каталога, часового пояса и темы оформления (`WitDB`).
+  /// - **`/admin/monitoring`** — встроенный самодокументируемый отчёт `stdlib/monitoring/self_monitoring.ds` поверх `host-telemetry.witdb`.
+  /// - **CLI `dsc`** — проверка спецификаций (`dsc validate`), компиляция типов (`dsc build types`), SQL-представлений (`dsc build views`) и генерация документации (`dsc doc`).
+  section admin_and_cli as "Администрирование и CLI dsc"
+  end section
+
+end page
+
+/// Полный реестр видов модулей (`module <kind> <id>`), ключевых слов импорта (`import <import_as> from ...`)
+/// и их ролей в конвейере компиляции (`declaration`, `consumer`, `root`).
+page language_units as "Модули языка (Units)"
+  symbols = "units"
+end page
+
+/// Встроенные декларации трансформаций потоков данных (`transform use <id>`).
+/// Разделяются по месту исполнения (`locality`) на **`database`** (компилируются в SQL-запрос слота)
+/// и **`runtime`** (исполняются в памяти над `TypedRowBatch`).
+page dataflow_transforms as "Трансформации (Transforms)"
+  symbols = "transforms"
+end page
+
+/// Стандартные пресеты визуального оформления карточек, графиков и таблиц из пространства имён `DashSpec.Std`.
+/// Подключаются через `from DashSpec.Std import presentations` и `use <preset_id>`.
+page presentation_presets as "Пресеты оформления (Presentations)"
+  symbols = "presentations"
+end page
+
+/// Базовые структурные типы времени, дат и календарных периодов стандартной библиотеки (`DashSpec.Std`).
+page standard_types as "Стандартные типы (Types)"
+  symbols = "types"
+end page
+
+/// Встроенные модули, типы, потоки данных и диаграммы самодиагностики хоста (`DashSpec.Std.Monitoring.*`),
+/// работающие поверх реляционной БД `host-telemetry.witdb`.
+page self_monitoring_docs as "Самодиагностика (Self-Monitoring)"
+  symbols = "monitoring"
+end page
+
+/// Полный перечень правил статического анализатора и проверок компилятора (`stdlib/rules/rules.ds`)
+/// с локализованными текстами диагностик.
+page compiler_rules as "Правила компилятора (Rules)"
+  symbols = "rules"
+end page
+
+/// Автоматически извлечённая документация по всем модулям, типам строк (`type`), потокам (`flow`),
+/// диаграммам (`diagram`) и отчётам (`section` / `dashboard`) текущего рабочего каталога.
+page workspace_reference as "Каталог отчётов (Workspace API)"
+  symbols = "workspace"
+end page

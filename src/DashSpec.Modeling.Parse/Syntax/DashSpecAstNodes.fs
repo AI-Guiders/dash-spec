@@ -317,6 +317,7 @@ type DashSpecModuleKind =
     | Catalog
     | Host
     | Transform
+    | Documentation
     | Custom of keyword: string
 
 module DashSpecModuleKind =
@@ -340,6 +341,7 @@ module DashSpecModuleKind =
         | "catalog" -> DashSpecModuleKind.Catalog
         | "host" -> DashSpecModuleKind.Host
         | "transform" -> DashSpecModuleKind.Transform
+        | "documentation" -> DashSpecModuleKind.Documentation
         | other -> DashSpecModuleKind.Custom other
 
     let toKeyword (kind: DashSpecModuleKind) =
@@ -361,6 +363,7 @@ module DashSpecModuleKind =
         | DashSpecModuleKind.Catalog -> "catalog"
         | DashSpecModuleKind.Host -> "host"
         | DashSpecModuleKind.Transform -> "transform"
+        | DashSpecModuleKind.Documentation -> "documentation"
         | DashSpecModuleKind.Custom kw -> kw
 
 [<RequireQualifiedAccess>]

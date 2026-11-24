@@ -192,7 +192,11 @@ module UnitImport =
                   { KindKeyword = "commands"
                     ImportKind = Some ImportKind.Commands
                     Role = UnitCompileRole.Declaration
-                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Toolbar.CommandAliasesParser.parseEnvelope ctx.Envelope) } ]
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Toolbar.CommandAliasesParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "documentation"
+                    ImportKind = Some ImportKind.Documentations
+                    Role = UnitCompileRole.Consumer
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Syntax.DocumentationModuleParser.parse ctx.Text) } ]
             for d in descriptors do
                 UnitProjector.register d
 
@@ -237,6 +241,7 @@ module UnitImport =
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Transform -> Some ImportKind.Transforms
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section -> Some ImportKind.Tabs
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Registry -> Some ImportKind.Registries
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Documentation -> Some ImportKind.Documentations
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw ->
             UnitProjector.tryResolve kw |> Option.bind (fun d -> d.ImportKind)
         | _ -> None
@@ -245,7 +250,8 @@ module UnitImport =
         match kind with
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Diagram
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Flow _
-        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section -> UnitCompileRole.Consumer
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Documentation -> UnitCompileRole.Consumer
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw ->
             UnitProjector.tryResolve kw
             |> Option.map (fun d -> d.Role)

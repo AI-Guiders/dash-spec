@@ -238,6 +238,10 @@ public sealed class DashSpecAssembledDiagnosticsTests
             Assert.Contains("decimal", roundDoc.Markdown);
             var md = DashSpecDocGenerator.RenderMarkdown(stdlibCat);
             Assert.Contains("module transform round", md);
+
+            var book = DashSpecDocGenerator.BuildDocumentationBook(tempDir, "ru-RU");
+            Assert.Equal("dashspec_manual", book.Id);
+            Assert.True(book.Pages.Count >= 7);
         }
         finally
         {

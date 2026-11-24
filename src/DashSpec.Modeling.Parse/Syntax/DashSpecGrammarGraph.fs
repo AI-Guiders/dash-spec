@@ -144,6 +144,10 @@ module DashSpecGrammarGraph =
                   kw "global" "Global implicit import modifier" ]
             | DashSpecModuleKind.Registry ->
                 []
+            | DashSpecModuleKind.Documentation ->
+                [ kw "title" "Documentation book title"
+                  kw "page" "Documentation chapter/page block"
+                  kw "section" "Documentation section block" ]
             | DashSpecModuleKind.Custom "commands" ->
                 [ kw "planet" "Command planet id"
                   kw "flavor" "Command grammar flavor"
