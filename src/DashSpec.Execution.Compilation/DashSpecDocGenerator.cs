@@ -1,5 +1,5 @@
-using System.Reflection;
 using System.Text;
+using AIGuiders.Platform.Modeling.Paths;
 using DashSpec.Modeling.Core;
 using DashSpec.Modeling.Parse.Document;
 using DashSpec.Modeling.Parse.Syntax;
@@ -46,6 +46,7 @@ public static class DashSpecDocGenerator
 {
     public static DashSpecDocCatalog BuildStdlibCatalog(string? language = null)
     {
+        DashSpec.Execution.Parsing.DashSpecParser.EnsureStdlibRegistered();
         UnitImport.ensureBuiltinUnitsRegistered();
         var lang = NormalizeLanguage(language);
         var textLookup = LoadStdlibTexts(lang);
@@ -59,94 +60,82 @@ public static class DashSpecDocGenerator
         var ruleDocs = new List<DashSpecSymbolDoc>();
         var monitoringDocs = new List<DashSpecSymbolDoc>();
 
-        var assemblies = new[]
+        foreach (var resName in UnitSource.embeddedUnitPaths().OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
         {
-            typeof(ImportKindRegistry).Assembly,
-            typeof(DashSpecDocumentationExtractor).Assembly,
-            typeof(DashSpec.Execution.Parsing.DashSpecParser).Assembly,
-        };
-
-        foreach (var asm in assemblies.Distinct())
-        {
-            foreach (var rawResName in asm.GetManifestResourceNames().OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+            if (!resName.StartsWith("stdlib/", StringComparison.OrdinalIgnoreCase) ||
+                !resName.EndsWith(".ds", StringComparison.OrdinalIgnoreCase) ||
+                resName.StartsWith("stdlib/texts/", StringComparison.OrdinalIgnoreCase) ||
+                resName.StartsWith("stdlib/documentation/", StringComparison.OrdinalIgnoreCase))
             {
-                var resName = rawResName.Replace('\\', '/');
-                if (!resName.StartsWith("stdlib/", StringComparison.OrdinalIgnoreCase) ||
-                    !resName.EndsWith(".ds", StringComparison.OrdinalIgnoreCase) ||
-                    resName.StartsWith("stdlib/texts/", StringComparison.OrdinalIgnoreCase) ||
-                    resName.StartsWith("stdlib/documentation/", StringComparison.OrdinalIgnoreCase))
+                continue;
+            }
+
+            var textOpt = UnitSource.tryReadRaw(resName);
+            if (FSharpOption<string>.get_IsNone(textOpt))
+            {
+                continue;
+            }
+
+            var text = textOpt.Value;
+            var extracted = DashSpecDocumentationExtractor.extractFromText(
+                FSharpOption<string>.Some(resName),
+                resolver,
+                text);
+
+            foreach (var doc in extracted)
+            {
+                if (resName.StartsWith("stdlib/units/", StringComparison.OrdinalIgnoreCase))
                 {
-                    continue;
+                    unitDocs.Add(doc);
                 }
-
-                using var stream = asm.GetManifestResourceStream(rawResName);
-                if (stream is null)
+                else if (resName.StartsWith("stdlib/transforms/", StringComparison.OrdinalIgnoreCase))
                 {
-                    continue;
+                    transformDocs.Add(doc);
                 }
-
-                using var reader = new StreamReader(stream);
-                var text = reader.ReadToEnd();
-                var extracted = DashSpecDocumentationExtractor.extractFromText(
-                    FSharpOption<string>.Some(resName),
-                    resolver,
-                    text);
-
-                foreach (var doc in extracted)
+                else if (resName.StartsWith("stdlib/presentation/", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (resName.StartsWith("stdlib/units/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        unitDocs.Add(doc);
-                    }
-                    else if (resName.StartsWith("stdlib/transforms/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        transformDocs.Add(doc);
-                    }
-                    else if (resName.StartsWith("stdlib/presentation/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        presentationDocs.Add(doc);
-                    }
-                    else if (resName.StartsWith("stdlib/types/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        typeDocs.Add(doc);
-                    }
-                    else if (resName.StartsWith("stdlib/rules/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var enrichedChildren = doc.Children
-                            .Select(c =>
+                    presentationDocs.Add(doc);
+                }
+                else if (resName.StartsWith("stdlib/types/", StringComparison.OrdinalIgnoreCase))
+                {
+                    typeDocs.Add(doc);
+                }
+                else if (resName.StartsWith("stdlib/rules/", StringComparison.OrdinalIgnoreCase))
+                {
+                    var enrichedChildren = doc.Children
+                        .Select(c =>
+                        {
+                            if (string.IsNullOrWhiteSpace(c.Markdown) &&
+                                textLookup.TryGetValue($"rule.{c.Id}", out var ruleText))
                             {
-                                if (string.IsNullOrWhiteSpace(c.Markdown) &&
-                                    textLookup.TryGetValue($"rule.{c.Id}", out var ruleText))
-                                {
-                                    return new DashSpecSymbolDoc(
-                                        c.Kind,
-                                        c.Id,
-                                        c.Title,
-                                        c.Namespace,
-                                        c.Signature,
-                                        ruleText,
-                                        c.SourcePath,
-                                        c.Line,
-                                        c.Children);
-                                }
-                                return c;
-                            })
-                            .ToArray();
-                        ruleDocs.Add(new DashSpecSymbolDoc(
-                            doc.Kind,
-                            doc.Id,
-                            doc.Title,
-                            doc.Namespace,
-                            doc.Signature,
-                            doc.Markdown,
-                            doc.SourcePath,
-                            doc.Line,
-                            enrichedChildren));
-                    }
-                    else if (resName.StartsWith("stdlib/monitoring/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        monitoringDocs.Add(doc);
-                    }
+                                return new DashSpecSymbolDoc(
+                                    c.Kind,
+                                    c.Id,
+                                    c.Title,
+                                    c.Namespace,
+                                    c.Signature,
+                                    ruleText,
+                                    c.SourcePath,
+                                    c.Line,
+                                    c.Children);
+                            }
+                            return c;
+                        })
+                        .ToArray();
+                    ruleDocs.Add(new DashSpecSymbolDoc(
+                        doc.Kind,
+                        doc.Id,
+                        doc.Title,
+                        doc.Namespace,
+                        doc.Signature,
+                        doc.Markdown,
+                        doc.SourcePath,
+                        doc.Line,
+                        enrichedChildren));
+                }
+                else if (resName.StartsWith("stdlib/monitoring/", StringComparison.OrdinalIgnoreCase))
+                {
+                    monitoringDocs.Add(doc);
                 }
             }
         }
@@ -234,7 +223,7 @@ public static class DashSpecDocGenerator
             try
             {
                 var raw = File.ReadAllText(file);
-                var relPath = Path.GetRelativePath(fullRoot, file).Replace('\\', '/');
+                var relPath = LogicalPath.Create(Path.GetRelativePath(fullRoot, file)).Value;
                 var extracted = DashSpecDocumentationExtractor.extractFromText(
                     FSharpOption<string>.Some(relPath),
                     resolver,
@@ -313,14 +302,10 @@ public static class DashSpecDocGenerator
 
         if (string.IsNullOrWhiteSpace(docModuleText))
         {
-            var asm = typeof(DashSpec.Execution.Parsing.DashSpecParser).Assembly;
-            var docResName = asm.GetManifestResourceNames()
-                .FirstOrDefault(n => n.Replace('\\', '/').Equals("stdlib/documentation/dashspec_manual.ds", StringComparison.OrdinalIgnoreCase));
-            using var stream = docResName is not null ? asm.GetManifestResourceStream(docResName) : null;
-            if (stream is not null)
+            var manualOpt = UnitSource.tryReadRaw("stdlib/documentation/dashspec_manual.ds");
+            if (FSharpOption<string>.get_IsSome(manualOpt))
             {
-                using var reader = new StreamReader(stream);
-                docModuleText = reader.ReadToEnd();
+                docModuleText = manualOpt.Value;
             }
         }
 
@@ -451,23 +436,20 @@ public static class DashSpecDocGenerator
 
     private static Dictionary<string, string> LoadStdlibTexts(string language)
     {
+        DashSpec.Execution.Parsing.DashSpecParser.EnsureStdlibRegistered();
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var asm = typeof(ImportKindRegistry).Assembly;
         var isRu = language.StartsWith("ru", StringComparison.OrdinalIgnoreCase);
         var preferredRes = isRu ? "stdlib/texts/rules.ru.ds" : "stdlib/texts/rules.en.ds";
 
         foreach (var resName in new[] { "stdlib/texts/rules.en.ds", preferredRes }.Distinct())
         {
-            var matchedRes = asm.GetManifestResourceNames()
-                .FirstOrDefault(n => n.Replace('\\', '/').Equals(resName, StringComparison.OrdinalIgnoreCase));
-            using var stream = matchedRes is not null ? asm.GetManifestResourceStream(matchedRes) : null;
-            if (stream is null)
+            var textOpt = UnitSource.tryReadRaw(resName);
+            if (FSharpOption<string>.get_IsNone(textOpt))
             {
                 continue;
             }
 
-            using var reader = new StreamReader(stream);
-            var text = reader.ReadToEnd();
+            var text = textOpt.Value;
             try
             {
                 var doc = TextsModuleParser.parse(text);

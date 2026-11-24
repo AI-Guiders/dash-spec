@@ -29,19 +29,27 @@ public static class DashSpecParser
     private static void RegisterEmbeddedStdlib()
     {
         const string prefix = "stdlib/";
-        var assembly = typeof(DashSpecParser).Assembly;
-        var units = assembly
-            .GetManifestResourceNames()
-            .Where(name => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            .Select(name =>
-            {
-                using var stream = assembly.GetManifestResourceStream(name)
-                    ?? throw new InvalidOperationException($"Embedded stdlib unit '{name}' not found in manifest.");
-                using var reader = new System.IO.StreamReader(stream);
-                var normalizedName = LogicalPath.Create(name).Value;
-                return System.Tuple.Create(normalizedName, reader.ReadToEnd());
-            });
-        ParseDoc.UnitSource.registerEmbeddedUnits(units);
+        var assemblies = new[]
+        {
+            typeof(DashSpec.Modeling.Core.ImportKindRegistry).Assembly,
+            typeof(ParseDoc.UnitSource).Assembly,
+            typeof(DashSpecParser).Assembly,
+        };
+        foreach (var assembly in assemblies.Distinct())
+        {
+            var units = assembly
+                .GetManifestResourceNames()
+                .Where(name => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .Select(name =>
+                {
+                    using var stream = assembly.GetManifestResourceStream(name)
+                        ?? throw new InvalidOperationException($"Embedded stdlib unit '{name}' not found in manifest.");
+                    using var reader = new System.IO.StreamReader(stream);
+                    var normalizedName = LogicalPath.Create(name).Value;
+                    return System.Tuple.Create(normalizedName, reader.ReadToEnd());
+                });
+            ParseDoc.UnitSource.registerEmbeddedUnits(units);
+        }
     }
 
     public static string? ReadRuntimePath(string text)
