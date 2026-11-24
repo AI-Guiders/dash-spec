@@ -49,9 +49,9 @@ public static class DashSpecDocGenerator
         DashSpec.Execution.Parsing.DashSpecParser.EnsureStdlibRegistered();
         UnitImport.ensureBuiltinUnitsRegistered();
         var lang = NormalizeLanguage(language);
-        var textLookup = LoadStdlibTexts(lang);
+        var state = CreateStdlibTextState(lang);
         FSharpFunc<string, FSharpOption<string>> resolver = FuncConvert.FromFunc<string, FSharpOption<string>>(
-            key => textLookup.TryGetValue(key, out var val) ? FSharpOption<string>.Some(val) : FSharpOption<string>.None);
+            state.TryResolveRawText);
 
         var unitDocs = new List<DashSpecSymbolDoc>();
         var transformDocs = new List<DashSpecSymbolDoc>();
@@ -105,8 +105,9 @@ public static class DashSpecDocGenerator
                     var enrichedChildren = doc.Children
                         .Select(c =>
                         {
+                            var resolvedOpt = state.TryResolveRawText($"rule.{c.Id}");
                             if (string.IsNullOrWhiteSpace(c.Markdown) &&
-                                textLookup.TryGetValue($"rule.{c.Id}", out var ruleText))
+                                FSharpOption<string>.get_IsSome(resolvedOpt))
                             {
                                 return new DashSpecSymbolDoc(
                                     c.Kind,
@@ -114,9 +115,10 @@ public static class DashSpecDocGenerator
                                     c.Title,
                                     c.Namespace,
                                     c.Signature,
-                                    ruleText,
+                                    resolvedOpt.Value,
                                     c.SourcePath,
                                     c.Line,
+                                    c.ReferencedSymbols,
                                     c.Children);
                             }
                             return c;
@@ -131,6 +133,7 @@ public static class DashSpecDocGenerator
                         doc.Markdown,
                         doc.SourcePath,
                         doc.Line,
+                        doc.ReferencedSymbols,
                         enrichedChildren));
                 }
                 else if (resName.StartsWith("stdlib/monitoring/", StringComparison.OrdinalIgnoreCase))
@@ -177,19 +180,27 @@ public static class DashSpecDocGenerator
         }
 
         var fullRoot = Path.GetFullPath(workspaceDir);
-        var files = Directory
-            .EnumerateFiles(fullRoot, "*.ds", SearchOption.AllDirectories)
+        var files = UnitIndexModule.corpusFiles(fullRoot)
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var textLookup = LoadStdlibTexts(lang);
+        var parsedUnits = new List<(string FilePath, string RawText, ParseTree Tree, FSharpOption<DashSpec.Modeling.Parse.UnitGrammar.UnitEnvelope> Envelope)>();
+        var state = CreateStdlibTextState(lang);
         foreach (var file in files)
         {
             try
             {
-                var raw = File.ReadAllText(file);
+                var rawOpt = UnitSource.tryReadRaw(file);
+                if (FSharpOption<string>.get_IsNone(rawOpt))
+                {
+                    continue;
+                }
+
+                var raw = rawOpt.Value;
                 var tree = SyntaxTree.parse(raw);
                 var envOpt = DashSpec.Modeling.Parse.UnitGrammar.tryUnwrapAny(tree.Root);
+                parsedUnits.Add((file, raw, tree, envOpt));
+
                 if (FSharpOption<DashSpec.Modeling.Parse.UnitGrammar.UnitEnvelope>.get_IsSome(envOpt) &&
                     envOpt.Value.Kind.IsTexts)
                 {
@@ -198,13 +209,7 @@ public static class DashSpecDocGenerator
                     if (string.IsNullOrWhiteSpace(docLang) ||
                         docLang.StartsWith(lang[..2], StringComparison.OrdinalIgnoreCase))
                     {
-                        foreach (var b in doc.Bindings)
-                        {
-                            var k = FSharpOption<LanguageObjectKind>.get_IsSome(b.Target.Kind)
-                                ? $"{b.Target.Kind.Value.ToString().ToLowerInvariant()}.{b.Target.Path.Text}"
-                                : b.Target.Path.Text;
-                            textLookup[k] = b.Label;
-                        }
+                        state.RegisterTexts(doc);
                     }
                 }
             }
@@ -215,19 +220,18 @@ public static class DashSpecDocGenerator
         }
 
         FSharpFunc<string, FSharpOption<string>> resolver = FuncConvert.FromFunc<string, FSharpOption<string>>(
-            key => textLookup.TryGetValue(key, out var val) ? FSharpOption<string>.Some(val) : FSharpOption<string>.None);
+            state.TryResolveRawText);
 
         var byKind = new Dictionary<string, List<DashSpecSymbolDoc>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var file in files)
+        foreach (var (file, _, tree, _) in parsedUnits)
         {
             try
             {
-                var raw = File.ReadAllText(file);
                 var relPath = LogicalPath.Create(Path.GetRelativePath(fullRoot, file)).Value;
-                var extracted = DashSpecDocumentationExtractor.extractFromText(
+                var extracted = DashSpecDocumentationExtractor.extractFromTree(
                     FSharpOption<string>.Some(relPath),
                     resolver,
-                    raw);
+                    tree);
                 foreach (var doc in extracted)
                 {
                     if (!byKind.TryGetValue(doc.Kind, out var list))
@@ -282,20 +286,17 @@ public static class DashSpecDocGenerator
         string? docModuleText = null;
         if (!string.IsNullOrWhiteSpace(workspaceDir) && Directory.Exists(workspaceDir))
         {
-            foreach (var file in Directory.EnumerateFiles(workspaceDir, "*.ds", SearchOption.AllDirectories))
+            foreach (var file in UnitIndexModule.corpusFiles(Path.GetFullPath(workspaceDir)))
             {
-                try
+                var rawOpt = UnitSource.tryReadRaw(file);
+                if (FSharpOption<string>.get_IsSome(rawOpt))
                 {
-                    var raw = File.ReadAllText(file);
-                    if (raw.Contains("module documentation ", StringComparison.OrdinalIgnoreCase))
+                    var (kind, _) = UnitSource.tryKindAndId(rawOpt.Value);
+                    if (string.Equals(kind, "documentation", StringComparison.OrdinalIgnoreCase))
                     {
-                        docModuleText = raw;
+                        docModuleText = rawOpt.Value;
                         break;
                     }
-                }
-                catch
-                {
-                    // Ignore unreadable file
                 }
             }
         }
@@ -339,19 +340,22 @@ public static class DashSpecDocGenerator
         DashSpecDocCatalog stdlib,
         DashSpecDocCatalog workspace)
     {
-        var cat = FSharpOption<string>.get_IsSome(page.SymbolsCategory)
-            ? page.SymbolsCategory.Value.Trim().ToLowerInvariant()
+        var catOpt = FSharpOption<DocumentationSymbolsCategory>.get_IsSome(page.SymbolsCategory)
+            ? page.SymbolsCategory.Value
+            : null;
+        var catId = catOpt is not null
+            ? DocumentationSymbolsCategoryModule.toCategoryId(catOpt)
             : null;
         var reportUnit = FSharpOption<string>.get_IsSome(page.EmbeddedReportUnit)
             ? page.EmbeddedReportUnit.Value.Trim()
             : null;
 
-        IReadOnlyList<DashSpecDocSection> symbolSections = cat switch
+        IReadOnlyList<DashSpecDocSection> symbolSections = catOpt switch
         {
-            "workspace" => workspace.Sections,
-            "all" => stdlib.Sections.Concat(workspace.Sections).ToList(),
+            { IsWorkspace: true } => workspace.Sections,
+            { IsAll: true } => stdlib.Sections.Concat(workspace.Sections).ToList(),
             not null => stdlib.Sections
-                .Where(s => string.Equals(s.CategoryId, cat, StringComparison.OrdinalIgnoreCase))
+                .Where(s => string.Equals(s.CategoryId, catId, StringComparison.OrdinalIgnoreCase))
                 .ToList(),
             _ => [],
         };
@@ -364,7 +368,7 @@ public static class DashSpecDocGenerator
             page.Id,
             page.Title,
             page.Markdown,
-            cat,
+            catId,
             reportUnit,
             subSections,
             symbolSections);
@@ -434,10 +438,10 @@ public static class DashSpecDocGenerator
         }
     }
 
-    private static Dictionary<string, string> LoadStdlibTexts(string language)
+    private static DashSpec.Modeling.Parse.Import.ModuleImportState CreateStdlibTextState(string language)
     {
         DashSpec.Execution.Parsing.DashSpecParser.EnsureStdlibRegistered();
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var state = new DashSpec.Modeling.Parse.Import.ModuleImportState();
         var isRu = language.StartsWith("ru", StringComparison.OrdinalIgnoreCase);
         var preferredRes = isRu ? "stdlib/texts/rules.ru.ds" : "stdlib/texts/rules.en.ds";
 
@@ -449,17 +453,9 @@ public static class DashSpecDocGenerator
                 continue;
             }
 
-            var text = textOpt.Value;
             try
             {
-                var doc = TextsModuleParser.parse(text);
-                foreach (var b in doc.Bindings)
-                {
-                    var key = FSharpOption<LanguageObjectKind>.get_IsSome(b.Target.Kind)
-                        ? $"{b.Target.Kind.Value.ToString().ToLowerInvariant()}.{b.Target.Path.Text}"
-                        : b.Target.Path.Text;
-                    map[key] = b.Label;
-                }
+                state.RegisterTexts(TextsModuleParser.parse(textOpt.Value));
             }
             catch
             {
@@ -467,7 +463,7 @@ public static class DashSpecDocGenerator
             }
         }
 
-        return map;
+        return state;
     }
 
     private static string NormalizeLanguage(string? language) =>

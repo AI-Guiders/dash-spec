@@ -19,6 +19,7 @@ type DashSpecSymbolDoc =
       Markdown: string
       SourcePath: string option
       Line: int
+      ReferencedSymbols: string[]
       Children: DashSpecSymbolDoc[] }
 
 module DashSpecDocumentationExtractor =
@@ -27,15 +28,7 @@ module DashSpecDocumentationExtractor =
         Regex(@"@text\(\s*([A-Za-z0-9_.\-]+)\s*\)", RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
     let private lineOfOffset (text: string) (offset: int) : int =
-        if String.IsNullOrEmpty text || offset <= 0 then
-            1
-        else
-            let clamped = min offset (text.Length - 1)
-            let mutable line = 1
-            for i = 0 to clamped do
-                if text.[i] = '\n' then
-                    line <- line + 1
-            line
+        TextSpan.lineOfOffset text offset
 
     /// Resolve `@text(<key>)` placeholders and `<kind>.<id>.doc` / `<id>.doc` overrides from `module texts`.
     let resolveLocalizedMarkdown
@@ -81,6 +74,38 @@ module DashSpecDocumentationExtractor =
         | DashType.Named name -> name
         | DashType.FixedArray(el, len) -> $"{DashPrimitive.toString el}[{len}]"
 
+    let private collectPropertyRefs (v: PropertyValueSyntax) : string[] =
+        match v with
+        | PropertyValueSyntax.Member d -> [| d.Text |]
+        | PropertyValueSyntax.Aliased(inner, _) ->
+            match inner with
+            | PropertyValueSyntax.Member d -> [| d.Text |]
+            | _ -> [||]
+        | _ -> [||]
+
+    let private collectBlockRefs (members: DashSpecAstNode[]) (typeAnnotation: string option) : string[] =
+        let refs = ResizeArray<string>()
+        match typeAnnotation with
+        | Some t when not (String.IsNullOrWhiteSpace t) -> refs.Add t
+        | _ -> ()
+        for m in members do
+            match m with
+            | DashSpecAstNode.ClauseDeclaration c ->
+                match c.Kind with
+                | ClauseKind.UsePresetClause target -> refs.Add target
+                | ClauseKind.UseClause(_, target) -> refs.Add target
+                | ClauseKind.DirectiveClause("rows", args) when args.Length > 0 -> refs.Add args.[0]
+                | _ -> ()
+            | DashSpecAstNode.PropertyAssignment p ->
+                for r in collectPropertyRefs p.Value do
+                    refs.Add r
+            | DashSpecAstNode.BlockDeclaration b ->
+                match b.Opener with
+                | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Transform, pluginId) -> refs.Add pluginId
+                | _ -> ()
+            | _ -> ()
+        refs |> Seq.distinctBy (fun s -> s.ToLowerInvariant()) |> Seq.toArray
+
     let rec private extractBlockChildren
         (text: string)
         (sourcePath: string option)
@@ -97,6 +122,10 @@ module DashSpecDocumentationExtractor =
             | DashSpecAstNode.TypeFieldDeclaration f ->
                 let optPrefix = if f.Optional then "optional " else ""
                 let typeName = formatDashType f.FieldType
+                let fieldRefs =
+                    match f.FieldType with
+                    | DashType.Named name -> [| name |]
+                    | _ -> [||]
                 let sigText = $"{optPrefix}{typeName} {f.FieldName}"
                 let rawMd = nodeDoc docs f.Id
                 let md = resolveLocalizedMarkdown tryResolveText "field" f.FieldName (Some parentId) rawMd
@@ -109,6 +138,7 @@ module DashSpecDocumentationExtractor =
                       Markdown = md
                       SourcePath = sourcePath
                       Line = lineOfOffset text f.Span.Start
+                      ReferencedSymbols = fieldRefs
                       Children = [||] }
             | DashSpecAstNode.PortDeclaration p ->
                 let roleStr =
@@ -122,6 +152,7 @@ module DashSpecDocumentationExtractor =
                     | Some PortShapeSyntax.Scalar -> " scalar"
                     | None -> ""
                 let typeStr = p.ValueType |> Option.map (fun t -> $": {t}") |> Option.defaultValue ""
+                let portRefs = p.ValueType |> Option.map (fun t -> [| t |]) |> Option.defaultValue [||]
                 let sigText = $"{roleStr}{shapeStr} {p.PortName}{typeStr}"
                 let rawMd = nodeDoc docs p.Id
                 let md = resolveLocalizedMarkdown tryResolveText "port" p.PortName (Some parentId) rawMd
@@ -134,6 +165,7 @@ module DashSpecDocumentationExtractor =
                       Markdown = md
                       SourcePath = sourcePath
                       Line = lineOfOffset text p.Span.Start
+                      ReferencedSymbols = portRefs
                       Children = [||] }
             | DashSpecAstNode.PropertyAssignment p ->
                 let rawMd = nodeDoc docs p.Id
@@ -154,6 +186,7 @@ module DashSpecDocumentationExtractor =
                           Markdown = md
                           SourcePath = sourcePath
                           Line = lineOfOffset text p.Span.Start
+                          ReferencedSymbols = collectPropertyRefs p.Value
                           Children = [||] }
             | DashSpecAstNode.BlockDeclaration innerBlock ->
                 match innerBlock.Opener with
@@ -176,6 +209,7 @@ module DashSpecDocumentationExtractor =
                           Markdown = md
                           SourcePath = sourcePath
                           Line = lineOfOffset text innerBlock.Span.Start
+                          ReferencedSymbols = collectBlockRefs innerBlock.Members innerBlock.TypeAnnotation
                           Children = grandChildren }
                 | DashSpecBlockOpener.Anonymous kw ->
                     let childKind = DashSpecBlockKeyword.toEndName kw
@@ -190,6 +224,7 @@ module DashSpecDocumentationExtractor =
                               Markdown = rawMd
                               SourcePath = sourcePath
                               Line = lineOfOffset text innerBlock.Span.Start
+                              ReferencedSymbols = collectBlockRefs innerBlock.Members innerBlock.TypeAnnotation
                               Children = [||] }
             | DashSpecAstNode.TableRowDeclaration row ->
                 let rawMd = nodeDoc docs row.Id
@@ -209,6 +244,7 @@ module DashSpecDocumentationExtractor =
                           Markdown = md
                           SourcePath = sourcePath
                           Line = lineOfOffset text row.Span.Start
+                          ReferencedSymbols = [||]
                           Children = [||] }
                 | _ -> ()
             | _ -> ()
@@ -265,6 +301,7 @@ module DashSpecDocumentationExtractor =
                                       Markdown = bMd
                                       SourcePath = sourcePath
                                       Line = lineOfOffset tree.Text b.Span.Start
+                                      ReferencedSymbols = collectBlockRefs b.Members b.TypeAnnotation
                                       Children = bChildren }
                             | DashSpecBlockOpener.Anonymous kw ->
                                 let bKind = DashSpecBlockKeyword.toEndName kw
@@ -283,6 +320,7 @@ module DashSpecDocumentationExtractor =
                                               Markdown = rawBMd
                                               SourcePath = sourcePath
                                               Line = lineOfOffset tree.Text b.Span.Start
+                                              ReferencedSymbols = collectBlockRefs b.Members b.TypeAnnotation
                                               Children = [||] }
                         | _ -> ()
 
@@ -297,13 +335,6 @@ module DashSpecDocumentationExtractor =
                     |> Array.tryPick (function
                         | DashSpecAstNode.BlockDeclaration b when b.Opener = DashSpecBlockOpener.Anonymous DashSpecBlockKeyword.Report ->
                             DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration b)
-                            |> Option.orElseWith (fun () ->
-                                b.Tokens
-                                |> Array.tryPick (fun t ->
-                                    if t.LexKind = DashSpec.Modeling.Parse.Lexing.TokenKind.String && t.Text.Length >= 2 then
-                                        Some(t.Text.Substring(1, t.Text.Length - 2))
-                                    else
-                                        None))
                         | _ -> None)
 
                 results.Add
@@ -318,6 +349,7 @@ module DashSpecDocumentationExtractor =
                       Markdown = moduleMd
                       SourcePath = sourcePath
                       Line = lineOfOffset tree.Text m.Span.Start
+                      ReferencedSymbols = collectBlockRefs m.Members None
                       Children = moduleChildren.ToArray() }
             | _ -> ()
 
@@ -355,6 +387,45 @@ module DashSpecDocumentationExtractor =
         map :> IReadOnlyDictionary<_, _>
 
 /// <summary>
+/// First-class domain partition for <c>symbols = ...</c> in <c>module documentation &lt;id&gt;</c> (DASHSPEC-ADR-0138).
+/// </summary>
+[<RequireQualifiedAccess>]
+type DocumentationSymbolsCategory =
+    | Units
+    | Transforms
+    | Presentations
+    | Types
+    | Monitoring
+    | Rules
+    | Workspace
+    | All
+
+module DocumentationSymbolsCategory =
+
+    let tryParse (raw: string) : DocumentationSymbolsCategory option =
+        match raw.Trim().ToLowerInvariant() with
+        | "units" -> Some DocumentationSymbolsCategory.Units
+        | "transforms" -> Some DocumentationSymbolsCategory.Transforms
+        | "presentations" -> Some DocumentationSymbolsCategory.Presentations
+        | "types" -> Some DocumentationSymbolsCategory.Types
+        | "monitoring" -> Some DocumentationSymbolsCategory.Monitoring
+        | "rules" -> Some DocumentationSymbolsCategory.Rules
+        | "workspace" -> Some DocumentationSymbolsCategory.Workspace
+        | "all" -> Some DocumentationSymbolsCategory.All
+        | _ -> None
+
+    let toCategoryId (cat: DocumentationSymbolsCategory) : string =
+        match cat with
+        | DocumentationSymbolsCategory.Units -> "units"
+        | DocumentationSymbolsCategory.Transforms -> "transforms"
+        | DocumentationSymbolsCategory.Presentations -> "presentations"
+        | DocumentationSymbolsCategory.Types -> "types"
+        | DocumentationSymbolsCategory.Monitoring -> "monitoring"
+        | DocumentationSymbolsCategory.Rules -> "rules"
+        | DocumentationSymbolsCategory.Workspace -> "workspace"
+        | DocumentationSymbolsCategory.All -> "all"
+
+/// <summary>
 /// One chapter/page in a <c>module documentation &lt;id&gt;</c> book (DASHSPEC-ADR-0138).
 /// Combines authored <c>///</c> Markdown narrative, sub-sections, Doxygen symbol-domain tables
 /// (<c>symbols = units | transforms | presentations | types | monitoring | rules | workspace</c>),
@@ -365,7 +436,7 @@ type DocumentationPageDefinition =
     { Id: string
       Title: string
       Markdown: string
-      SymbolsCategory: string option
+      SymbolsCategory: DocumentationSymbolsCategory option
       EmbeddedReportUnit: string option
       Sections: DocumentationPageDefinition[] }
 
@@ -382,13 +453,6 @@ type DocumentationModuleDocument =
 
 module DocumentationModuleParser =
 
-    let private unquote (raw: string) =
-        let t = raw.Trim()
-        if t.Length >= 2 && t.[0] = '"' && t.[t.Length - 1] = '"' then
-            t.Substring(1, t.Length - 2)
-        else
-            t
-
     let rec private parsePageBlock
         (docs: IReadOnlyDictionary<AIGuiders.Platform.Modeling.Core.Identity.NodeId, string>)
         (block: BlockDeclarationSyntax)
@@ -397,7 +461,7 @@ module DocumentationModuleParser =
         let headerTitle =
             DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration block)
         let mutable propTitle: string option = None
-        let mutable symbolsCat: string option = None
+        let mutable symbolsCat: DocumentationSymbolsCategory option = None
         let mutable embeddedReport: string option = None
         let subSections = ResizeArray<DocumentationPageDefinition>()
 
@@ -405,9 +469,9 @@ module DocumentationModuleParser =
             match m with
             | DashSpecAstNode.PropertyAssignment p ->
                 match p.Key.Trim().ToLowerInvariant() with
-                | "title" | "label" -> propTitle <- Some(unquote p.ValueText)
-                | "symbols" | "category" -> symbolsCat <- Some(unquote p.ValueText)
-                | "report" | "embed" -> embeddedReport <- Some(unquote p.ValueText)
+                | "title" | "label" -> propTitle <- Some p.Value.Text
+                | "symbols" | "category" -> symbolsCat <- DocumentationSymbolsCategory.tryParse p.Value.Text
+                | "report" | "embed" -> embeddedReport <- Some p.Value.Text
                 | _ -> ()
             | DashSpecAstNode.BlockDeclaration childBlock ->
                 match childBlock.Opener with
@@ -463,7 +527,7 @@ module DocumentationModuleParser =
             | DashSpecAstNode.ClauseDeclaration { Kind = ClauseKind.NamespaceClause n } ->
                 ns <- Some n
             | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "title", StringComparison.OrdinalIgnoreCase) ->
-                title <- unquote p.ValueText
+                title <- p.Value.Text
             | DashSpecAstNode.BlockDeclaration b ->
                 match b.Opener with
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Page, pageId)

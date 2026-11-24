@@ -467,68 +467,6 @@ public static class DashSpecEditorIntelligence
         }
     }
 
-    private static string ClassifyAstReferenceRole(DashSpecAstNode root, string symbolName, int offset) =>
-        DashSpecAst.outlineLabelAt(offset, root);
-
-    private static string OldUnusedClassify(DashSpecAstNode root, string symbolName, int offset)
-    {
-        var chain = FindAncestorChainAtOffset(root, offset);
-        var leaf = chain.LastOrDefault();
-        return leaf switch
-        {
-            DashSpecAstNode.ModuleDeclaration m => m.Item.Directive switch
-            {
-                DashSpecModuleDirective.Dashboard => "declaration (module dashboard)",
-                DashSpecModuleDirective.Tab => "declaration (module section)",
-                DashSpecModuleDirective.Module mod => $"declaration (module {DashSpecModuleKindModule.toKeyword(mod.kind)})",
-                _ => "declaration (module)",
-            },
-            DashSpecAstNode.BlockDeclaration b when b.Item.Opener is DashSpecBlockOpener.Named named =>
-                string.Equals(named.identifier, symbolName, StringComparison.OrdinalIgnoreCase)
-                    ? $"declaration ({DashSpecBlockKeywordModule.toEndName(named.keyword)})"
-                    : $"header ({DashSpecBlockKeywordModule.toEndName(named.keyword)})",
-            DashSpecAstNode.BlockDeclaration b when b.Item.Opener is DashSpecBlockOpener.Anonymous anon =>
-                DashSpecBlockKeywordModule.toEndName(anon.keyword),
-            DashSpecAstNode.ImportDeclaration imp =>
-                FSharpOption<string>.get_IsSome(imp.Item.Kind) ? $"import {imp.Item.Kind.Value}" : "import",
-            DashSpecAstNode.PortDeclaration p =>
-                string.Equals(p.Item.PortName, symbolName, StringComparison.OrdinalIgnoreCase)
-                    ? "declaration (port)"
-                    : $"port type ({p.Item.PortName})",
-            DashSpecAstNode.FlowLinkDeclaration link =>
-                string.Equals(link.Item.FromNode, symbolName, StringComparison.OrdinalIgnoreCase)
-                    ? "flow link (source)"
-                    : string.Equals(link.Item.ToNode, symbolName, StringComparison.OrdinalIgnoreCase)
-                        ? "flow link (target)"
-                        : "flow link (port)",
-            DashSpecAstNode.ClauseDeclaration c => c.Item.Kind switch
-            {
-                ClauseKind.NamespaceClause => "namespace declaration",
-                ClauseKind.DefaultPortClause dp => $"default {(dp.direction.IsInput ? "input" : "output")} port",
-                ClauseKind.UsePresetClause up => $"use {up.target}",
-                ClauseKind.UseClause u => $"use {u.kind}",
-                ClauseKind.UseProviderClause => "use provider",
-                ClauseKind.FromClause => "source from",
-                ClauseKind.ScopeClause => "layout scope",
-                ClauseKind.DirectiveClause d => d.keyword,
-                _ => "clause",
-            },
-            DashSpecAstNode.PropertyAssignment p =>
-                string.Equals(p.Item.Key, symbolName, StringComparison.OrdinalIgnoreCase)
-                    ? $"property ({p.Item.Key})"
-                    : $"{p.Item.Key} = …",
-            DashSpecAstNode.TypeFieldDeclaration f =>
-                string.Equals(f.Item.FieldName, symbolName, StringComparison.OrdinalIgnoreCase)
-                    ? "declaration (field)"
-                    : $"field type ({f.Item.FieldName})",
-            DashSpecAstNode.CardReference => "card placement",
-            DashSpecAstNode.GridRowDeclaration => "layout grid cell",
-            DashSpecAstNode.TableRowDeclaration => "table row",
-            DashSpecAstNode.EndBlock e => $"end {DashSpecBlockKeywordModule.toEndName(e.Item.EndKeyword)}",
-            _ => "reference",
-        };
-    }
-
     private static IReadOnlyList<DashSpecAstNode> FindAncestorChainAtOffset(DashSpecAstNode root, int offset)
     {
         var chain = new List<DashSpecAstNode>();

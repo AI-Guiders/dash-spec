@@ -235,6 +235,14 @@
                         </div>
                     }
 
+                    @if (!string.IsNullOrWhiteSpace(chapter.EmbeddedReportUnit))
+                    {
+                        <section>
+                            <DashSpecEmbeddedReport CatalogEntryId="@chapter.EmbeddedReportUnit"
+                                                    SourceLabel="@($"doc:{chapter.Id}")" />
+                        </section>
+                    }
+
                     @foreach (var sub in chapter.SubSections)
                     {
                         <section>
@@ -247,6 +255,11 @@
                                         <p style="margin: 0 0 0.65rem;"><RichTextView Text="@paragraph" /></p>
                                     }
                                 </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(sub.EmbeddedReportUnit))
+                            {
+                                <DashSpecEmbeddedReport CatalogEntryId="@sub.EmbeddedReportUnit"
+                                                        SourceLabel="@($"doc:{chapter.Id}.{sub.Id}")" />
                             }
                         </section>
                     }
@@ -509,21 +522,20 @@
 
     private IReadOnlyList<DashSpecSymbolDoc> FindReferencedSymbols(DashSpecSymbolDoc memberItem)
     {
-        if (_book is null)
+        if (_book is null || memberItem.ReferencedSymbols.Length == 0)
         {
             return [];
         }
 
         var results = new List<DashSpecSymbolDoc>();
-        var tokens = memberItem.Signature.Split([' ', ':', ',', '|', '(', ')'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        foreach (var tok in tokens)
+        foreach (var symRef in memberItem.ReferencedSymbols)
         {
-            if (string.Equals(tok, memberItem.Id, StringComparison.OrdinalIgnoreCase) || tok.Length < 3)
+            if (string.Equals(symRef, memberItem.Id, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            if (_book.GlobalSymbolIndex.TryGetValue(tok, out var target) &&
+            if (_book.GlobalSymbolIndex.TryGetValue(symRef, out var target) &&
                 !string.Equals(target.Id, memberItem.Id, StringComparison.OrdinalIgnoreCase) &&
                 target.Kind is "type" or "module diagram" or "module presentation" or "module transform")
             {

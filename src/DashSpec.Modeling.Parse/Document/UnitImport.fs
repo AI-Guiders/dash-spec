@@ -219,10 +219,11 @@ module UnitImport =
             |> Option.defaultValue ""
         state.RegisterDashflow(DashflowModuleParser.parseModuleWithDefaults text catalog defaultProvider defaultTimeZone, path)
 
-    let private tryUnwrapUnit (text: string) : UnitGrammar.UnitEnvelope option =
+    let private tryUnwrapUnit (text: string) : (DashSpec.Modeling.Parse.Syntax.ParseTree * UnitGrammar.UnitEnvelope) option =
         try
             let tree = DashSpec.Modeling.Parse.Syntax.DashSpecSurfaceSyntax.parse text
             UnitGrammar.tryUnwrapAny tree.Root
+            |> Option.map (fun env -> tree, env)
         with _ ->
             None
 
@@ -261,6 +262,7 @@ module UnitImport =
     let private registerEnvelopeWithQualifier
         (path: string)
         (text: string)
+        (tree: DashSpec.Modeling.Parse.Syntax.ParseTree)
         (env: UnitGrammar.UnitEnvelope)
         (moduleKind: DocumentModuleKind)
         (state: ModuleImportState)
@@ -274,7 +276,7 @@ module UnitImport =
                 try reg qid with _ -> ()
             | _ -> ()
 
-        state.RegisterUnitDocs(Some path, text)
+        state.RegisterUnitDocsFromTree(Some path, tree)
 
         match env.Kind with
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Defaults ->
@@ -339,11 +341,12 @@ module UnitImport =
     let private registerEnvelope
         (path: string)
         (text: string)
+        (tree: DashSpec.Modeling.Parse.Syntax.ParseTree)
         (env: UnitGrammar.UnitEnvelope)
         (moduleKind: DocumentModuleKind)
         (state: ModuleImportState)
         =
-        registerEnvelopeWithQualifier path text env moduleKind state None
+        registerEnvelopeWithQualifier path text tree env moduleKind state None
 
     let registerUnitFile
         (path: string)
@@ -357,14 +360,14 @@ module UnitImport =
         let text = UnitSource.readUnit path
 
         match tryUnwrapUnit text with
-        | Some env ->
+        | Some(tree, env) ->
             let otherKind =
                 match importKind, importKindOfModuleKind env.Kind with
                 | Some expected, Some actual -> expected <> actual
                 | _ -> false
 
             if not otherKind then
-                registerEnvelope path text env moduleKind state
+                registerEnvelope path text tree env moduleKind state
         | None ->
             match importKind with
             | Some ImportKind.Types -> registerTypesFile path state
@@ -389,7 +392,7 @@ module UnitImport =
                 let envOpt = tryUnwrapUnit text
                 let role =
                     match envOpt with
-                    | Some env -> roleOfModuleKind env.Kind
+                    | Some(_, env) -> roleOfModuleKind env.Kind
                     | None -> UnitCompileRole.Consumer
                 role, path, text, envOpt, kind, qualifier)
 
@@ -397,13 +400,13 @@ module UnitImport =
             for role, path, text, envOpt, importKind, qualifier in prepared do
                 if role = phase then
                     match envOpt with
-                    | Some env ->
+                    | Some(tree, env) ->
                         let otherKind =
                             match importKind, importKindOfModuleKind env.Kind with
                             | Some expected, Some actual -> expected <> actual
                             | _ -> false
                         if not otherKind then
-                            registerEnvelopeWithQualifier path text env moduleKind state qualifier
+                            registerEnvelopeWithQualifier path text tree env moduleKind state qualifier
                     | None ->
                         registerUnitFile path moduleKind state importKind
 

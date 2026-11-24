@@ -38,6 +38,10 @@ type ModuleImportState() =
     let commandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     let symbolDocs = ResizeArray<DashSpecSymbolDoc>()
 
+    member this.RegisterUnitDocsFromTree(sourcePath: string option, tree: ParseTree) =
+        for d in DashSpecDocumentationExtractor.extractFromTree sourcePath this.TryResolveRawText tree do
+            symbolDocs.Add d
+
     member this.RegisterUnitDocs(sourcePath: string option, text: string) =
         for d in DashSpecDocumentationExtractor.extractFromText sourcePath this.TryResolveRawText text do
             symbolDocs.Add d
@@ -68,6 +72,7 @@ type ModuleImportState() =
         else
             let parsed = LanguageObjectRef.parse rawKey
             textBindings
+            |> Seq.rev
             |> Seq.tryPick (fun b ->
                 let bFull =
                     match b.Target.Kind with
