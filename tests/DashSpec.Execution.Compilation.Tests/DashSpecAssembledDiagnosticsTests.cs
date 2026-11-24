@@ -209,8 +209,8 @@ public sealed class DashSpecAssembledDiagnosticsTests
             Assert.Equal("host-telemetry.runtime.toml", compiled.EntryRuntimePath);
             Assert.Equal(12, compiled.Document.Cards.Count);
             Assert.NotNull(compiled.SlotPlane);
-            var route = compiled.SlotPlane.Routes.Values.Single();
-            Assert.Equal(12, route.Slots.Count);
+            var boardSlots = compiled.SlotPlane.Boards.Values.First(s => s.Count > 0);
+            Assert.Equal(12, boardSlots.Count);
             Assert.True(DashSpec.Execution.Runtime.CompiledRowTypes.Contains("TelemetryQueryRow"));
             Assert.True(DashSpec.Execution.Runtime.CompiledRowTypes.Contains("TelemetryLogRow"));
         }
