@@ -200,20 +200,33 @@ module DashSpecGrammarGraph =
                   kw "wire" "wire flow block"
                   kw "action" "action flow block" ]
             | DashSpecBlockKeyword.Page ->
-                [ kw "title" "Page title"
-                  kw "layout" "Page layout board"
-                  kw "toolbar" "toolbar chrome"
-                  kw "derive" "Usage date derive rule"
-                  kw "bind" "bind display block"
-                  kw "defaults" "Page filter defaults"
-                  kw "filter" "Page filter declaration"
-                  kw "phase" "Page phase block"
-                  kw "card" "Page card declaration"
-                  kw "data" "data flow block"
-                  kw "placement" "placement flow block"
-                  kw "show" "show flow block"
-                  kw "wire" "wire flow block"
-                  kw "action" "action flow block" ]
+                match parent with
+                | GrammarScope.Module DashSpecModuleKind.Documentation ->
+                    [ kw "title" "Chapter title"
+                      kw "symbols" "symbols = units | transforms | presentations | types | monitoring | rules | workspace | all"
+                      kw "role" "Filter units by role: declaration | consumer | root"
+                      kw "locality" "Filter transforms by locality: database | runtime"
+                      kw "severity" "Filter rules by severity: error | warning | info"
+                      kw "kind" "Filter symbols by module/symbol kind"
+                      kw "namespace" "Filter symbols by namespace prefix"
+                      kw "group_by" "Group symbols by: role | locality | severity | kind | namespace | none"
+                      kw "report" "Embed live .ds report entry"
+                      kw "section" "Nested documentation section block" ]
+                | _ ->
+                    [ kw "title" "Page title"
+                      kw "layout" "Page layout board"
+                      kw "toolbar" "toolbar chrome"
+                      kw "derive" "Usage date derive rule"
+                      kw "bind" "bind display block"
+                      kw "defaults" "Page filter defaults"
+                      kw "filter" "Page filter declaration"
+                      kw "phase" "Page phase block"
+                      kw "card" "Page card declaration"
+                      kw "data" "data flow block"
+                      kw "placement" "placement flow block"
+                      kw "show" "show flow block"
+                      kw "wire" "wire flow block"
+                      kw "action" "action flow block" ]
             | DashSpecBlockKeyword.Phase ->
                 [ kw "card" "Phase card declaration"
                   kw "filter" "Phase filter declaration"
@@ -386,10 +399,36 @@ module DashSpecGrammarGraph =
                 | "place" -> schemaProps PropertySchemas.placement "place"
                 | "limits" -> schemaProps PropertySchemas.cardLimits "limits"
                 | "legend" -> schemaProps PropertySchemas.legend "legend"
+                | "section" ->
+                    [ kw "title" "Section title"
+                      kw "symbols" "symbols = units | transforms | presentations | types | monitoring | rules | workspace | all"
+                      kw "role" "Filter units by role: declaration | consumer | root"
+                      kw "locality" "Filter transforms by locality: database | runtime"
+                      kw "severity" "Filter rules by severity: error | warning | info"
+                      kw "kind" "Filter symbols by module/symbol kind"
+                      kw "namespace" "Filter symbols by namespace prefix"
+                      kw "group_by" "Group symbols by: role | locality | severity | kind | namespace | none"
+                      kw "report" "Embed live .ds report entry"
+                      kw "section" "Nested documentation section block" ]
                 | _ ->
                     match DiagramKindRegistry.tryResolve name with
                     | true, spec -> schemaProps spec.Properties $"diagram {spec.Id}"
                     | false, _ -> []
+            | DashSpecBlockKeyword.Tab ->
+                match parent with
+                | GrammarScope.Module DashSpecModuleKind.Documentation
+                | GrammarScope.Block(_, _, GrammarScope.Module DashSpecModuleKind.Documentation) ->
+                    [ kw "title" "Section title"
+                      kw "symbols" "symbols = units | transforms | presentations | types | monitoring | rules | workspace | all"
+                      kw "role" "Filter units by role: declaration | consumer | root"
+                      kw "locality" "Filter transforms by locality: database | runtime"
+                      kw "severity" "Filter rules by severity: error | warning | info"
+                      kw "kind" "Filter symbols by module/symbol kind"
+                      kw "namespace" "Filter symbols by namespace prefix"
+                      kw "group_by" "Group symbols by: role | locality | severity | kind | namespace | none"
+                      kw "report" "Embed live .ds report entry"
+                      kw "section" "Nested documentation section block" ]
+                | _ -> []
             | _ -> []
 
         closeStarter @ bodyStarters
@@ -445,6 +484,14 @@ module DashSpecGrammarGraph =
             [ GrammarExpectation.ValueDomain("type_effect", [ "identity"; "projection"; "extend"; "compose"; "require_equal"; "opaque" ]) ]
         | "locality" ->
             [ GrammarExpectation.ValueDomain("locality", [ "database"; "runtime" ]) ]
+        | "symbols" | "category" ->
+            [ GrammarExpectation.ValueDomain("symbols", [ "units"; "transforms"; "presentations"; "types"; "monitoring"; "rules"; "workspace"; "all" ]) ]
+        | "role" ->
+            [ GrammarExpectation.ValueDomain("role", [ "declaration"; "consumer"; "root" ]) ]
+        | "severity" ->
+            [ GrammarExpectation.ValueDomain("severity", [ "error"; "warning"; "info" ]) ]
+        | "group_by" | "groupby" ->
+            [ GrammarExpectation.ValueDomain("group_by", [ "role"; "locality"; "severity"; "kind"; "namespace"; "none" ]) ]
         | "single" | "stacked" | "fill" | "sticky" | "fold" | "collapse_duplicate" | "topbar" | "settings" | "requires_block" ->
             [ GrammarExpectation.ValueDomain(propertyKey, [ "true"; "false" ]) ]
         | "apply" | "mode" ->

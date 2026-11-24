@@ -232,6 +232,16 @@
   gap: 0.1rem;
 }
 
+.dox-nav-subgroup-label {
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 0.35rem 0.45rem 0.1rem;
+  opacity: 0.85;
+}
+
 .dox-nav-item {
   display: flex;
   align-items: center;

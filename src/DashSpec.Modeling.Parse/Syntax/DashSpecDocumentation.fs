@@ -4,9 +4,19 @@ open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open DashSpec.Modeling.Core
+open DashSpec.Modeling.Parse
 
 /// <summary>
-/// Typed documentation node extracted from <c>///</c> doc comments and AST structure
+/// Typed key-value facet attached to a <see cref="DashSpecSymbolDoc"/> for Doxygen query/filtering/grouping
+/// (e.g., <c>role = declaration</c>, <c>locality = database</c>, <c>severity = error</c>, <c>type_effect = projection</c>).
+/// </summary>
+[<CLIMutable>]
+type DashSpecSymbolTag =
+    { TagKey: string
+      TagValue: string }
+
+/// <summary>
+/// Typed documentation node extracted from <c>///</c> doc comments, AST structure, and <see cref="DashSpecGrammarGraph"/>
 /// during compilation (DASHSPEC-ADR-0138).
 /// </summary>
 [<CLIMutable>]
@@ -19,8 +29,19 @@ type DashSpecSymbolDoc =
       Markdown: string
       SourcePath: string option
       Line: int
+      Tags: DashSpecSymbolTag[]
       ReferencedSymbols: string[]
       Children: DashSpecSymbolDoc[] }
+
+module DashSpecSymbolDoc =
+
+    let tryGetTag (key: string) (doc: DashSpecSymbolDoc) : string option =
+        doc.Tags
+        |> Array.tryPick (fun t ->
+            if String.Equals(t.TagKey, key, StringComparison.OrdinalIgnoreCase) then
+                Some t.TagValue
+            else
+                None)
 
 module DashSpecDocumentationExtractor =
 
@@ -45,6 +66,7 @@ module DashSpecDocumentationExtractor =
                   yield $"{p}.{symbolId}.doc"
               | _ -> ()
               yield $"{kind}.{symbolId}.doc"
+              yield $"rule.{symbolId}"
               yield $"{symbolId}.doc" ]
 
         let baseText =
@@ -106,6 +128,139 @@ module DashSpecDocumentationExtractor =
             | _ -> ()
         refs |> Seq.distinctBy (fun s -> s.ToLowerInvariant()) |> Seq.toArray
 
+    let private collectPropertyTags (members: DashSpecAstNode[]) : DashSpecSymbolTag[] =
+        let tags = ResizeArray<DashSpecSymbolTag>()
+        for m in members do
+            match m with
+            | DashSpecAstNode.PropertyAssignment p ->
+                let k = p.Key.Trim().ToLowerInvariant()
+                match k with
+                | "locality"
+                | "type_effect"
+                | "requires_block"
+                | "scope"
+                | "language"
+                | "role"
+                | "severity" ->
+                    tags.Add({ TagKey = k; TagValue = p.Value.Text.Trim() })
+                | _ -> ()
+            | DashSpecAstNode.ClauseDeclaration c ->
+                match c.Kind with
+                | ClauseKind.DirectiveClause("scope", args) when args.Length > 0 ->
+                    tags.Add({ TagKey = "scope"; TagValue = args.[0].Trim() })
+                | _ -> ()
+            | _ -> ()
+        tags.ToArray()
+
+    /// Extract grammar starter keywords, blocks, and property schemas for a given <c>module &lt;unit&gt;</c>
+    /// directly from <see cref="DashSpecGrammarGraph"/>.
+    let buildUnitGrammarChildren
+        (unitKeyword: string)
+        (ns: string option)
+        (sourcePath: string option)
+        (line: int)
+        : DashSpecSymbolDoc[] =
+        let modKind = DashSpecModuleKind.ofKeyword unitKeyword false
+        let expectations =
+            DashSpecGrammarGraph.containerStarters (DashSpecGrammarGraph.GrammarScope.Module modKind)
+        let items = ResizeArray<DashSpecSymbolDoc>()
+        let seen = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+
+        let addGrammarChild (kind: string) (id: string) (sigText: string) (desc: string) (subChildren: DashSpecSymbolDoc[]) =
+            let dedupKey = $"{kind}:{id}"
+            if seen.Add dedupKey then
+                items.Add
+                    { Kind = kind
+                      Id = id
+                      Title = None
+                      Namespace = ns
+                      Signature = sigText
+                      Markdown = desc
+                      SourcePath = sourcePath
+                      Line = line
+                      Tags = [||]
+                      ReferencedSymbols = [||]
+                      Children = subChildren }
+
+        for exp in expectations do
+            match exp with
+            | DashSpecGrammarGraph.GrammarExpectation.Keyword(word, detail) ->
+                let blockSubChildren =
+                    match DashSpecBlockKeyword.tryOfName word with
+                    | Some bkw ->
+                        let blockScope =
+                            DashSpecGrammarGraph.GrammarScope.Block(
+                                bkw,
+                                None,
+                                DashSpecGrammarGraph.GrammarScope.Module modKind)
+                        DashSpecGrammarGraph.containerStarters blockScope
+                        |> List.choose (function
+                            | DashSpecGrammarGraph.GrammarExpectation.Keyword(bw, bd) ->
+                                Some
+                                    { Kind = "clause"
+                                      Id = bw
+                                      Title = None
+                                      Namespace = ns
+                                      Signature = bw
+                                      Markdown = bd
+                                      SourcePath = sourcePath
+                                      Line = line
+                                      Tags = [||]
+                                      ReferencedSymbols = [||]
+                                      Children = [||] }
+                            | DashSpecGrammarGraph.GrammarExpectation.PropertyKey(spec, ctx) ->
+                                Some
+                                    { Kind = "property"
+                                      Id = spec.Name
+                                      Title = None
+                                      Namespace = ns
+                                      Signature = $"{spec.Name} = <{spec.ValueType}>"
+                                      Markdown = $"Свойство блока `{ctx}`."
+                                      SourcePath = sourcePath
+                                      Line = line
+                                      Tags = [||]
+                                      ReferencedSymbols = [||]
+                                      Children = [||] }
+                            | _ -> None)
+                        |> List.distinctBy (fun c -> c.Id.ToLowerInvariant())
+                        |> List.toArray
+                    | None -> [||]
+
+                let isBlock = blockSubChildren.Length > 0 || DashSpecBlockKeyword.isNamedBlockKeyword word
+                let childKind = if isBlock then "block" else "clause"
+                let sigText =
+                    if DashSpecBlockKeyword.isNamedBlockKeyword word then
+                        $"{word} <id> … end {word}"
+                    elif isBlock then
+                        $"{word} … end {word}"
+                    else
+                        detail
+                addGrammarChild childKind word sigText detail blockSubChildren
+            | DashSpecGrammarGraph.GrammarExpectation.PropertyKey(spec, ctx) ->
+                let domainStr =
+                    DashSpecGrammarGraph.propertyValueDomain spec.Name
+                    |> List.tryPick (function
+                        | DashSpecGrammarGraph.GrammarExpectation.ValueDomain(_, vals) ->
+                            Some(String.Join(" | ", vals))
+                        | _ -> None)
+                    |> Option.defaultValue $"{spec.ValueType}"
+                addGrammarChild
+                    "property"
+                    spec.Name
+                    $"{spec.Name} = {domainStr}"
+                    $"Допустимое свойство модуля `{ctx}`."
+                    [||]
+            | DashSpecGrammarGraph.GrammarExpectation.DiagramKindId ->
+                addGrammarChild
+                    "block"
+                    "<diagram_kind>"
+                    "line | area | bar | donut | pie | heatmap | histogram | scatter | treemap | windrose | box | gauge | gantt | number | table"
+                    "Блок визуализации диаграммы (`<kind> … end <kind>`)."
+                    [||]
+            | _ -> ()
+
+        items.ToArray()
+
     let rec private extractBlockChildren
         (text: string)
         (sourcePath: string option)
@@ -138,6 +293,7 @@ module DashSpecDocumentationExtractor =
                       Markdown = md
                       SourcePath = sourcePath
                       Line = lineOfOffset text f.Span.Start
+                      Tags = [| { TagKey = "field_type"; TagValue = typeName } |]
                       ReferencedSymbols = fieldRefs
                       Children = [||] }
             | DashSpecAstNode.PortDeclaration p ->
@@ -165,6 +321,7 @@ module DashSpecDocumentationExtractor =
                       Markdown = md
                       SourcePath = sourcePath
                       Line = lineOfOffset text p.Span.Start
+                      Tags = [| { TagKey = "port_role"; TagValue = roleStr } |]
                       ReferencedSymbols = portRefs
                       Children = [||] }
             | DashSpecAstNode.PropertyAssignment p ->
@@ -172,7 +329,12 @@ module DashSpecDocumentationExtractor =
                 let isParam =
                     p.KeyTokens.Length = 2
                     && String.Equals(p.KeyTokens.[0].Text, "param", StringComparison.OrdinalIgnoreCase)
-                if isParam || not (String.IsNullOrWhiteSpace rawMd) then
+                let isTopConfig =
+                    parentKind = "presentation"
+                    || parentKind = "defaults"
+                    || parentKind = "palette"
+                    || parentKind = "transform"
+                if isParam || isTopConfig || not (String.IsNullOrWhiteSpace rawMd) then
                     let propId = if isParam then p.KeyTokens.[1].Text else p.Key
                     let propKind = if isParam then "param" else "property"
                     let sigText = $"{p.Key} = {p.ValueText}"
@@ -186,6 +348,7 @@ module DashSpecDocumentationExtractor =
                           Markdown = md
                           SourcePath = sourcePath
                           Line = lineOfOffset text p.Span.Start
+                          Tags = [||]
                           ReferencedSymbols = collectPropertyRefs p.Value
                           Children = [||] }
             | DashSpecAstNode.BlockDeclaration innerBlock ->
@@ -209,12 +372,14 @@ module DashSpecDocumentationExtractor =
                           Markdown = md
                           SourcePath = sourcePath
                           Line = lineOfOffset text innerBlock.Span.Start
+                          Tags = collectPropertyTags innerBlock.Members
                           ReferencedSymbols = collectBlockRefs innerBlock.Members innerBlock.TypeAnnotation
                           Children = grandChildren }
                 | DashSpecBlockOpener.Anonymous kw ->
                     let childKind = DashSpecBlockKeyword.toEndName kw
                     let rawMd = nodeDoc docs innerBlock.Id
-                    if not (String.IsNullOrWhiteSpace rawMd) then
+                    let grandChildren = extractBlockChildren text sourcePath ns docs tryResolveText childKind childKind innerBlock.Members
+                    if not (String.IsNullOrWhiteSpace rawMd) || grandChildren.Length > 0 then
                         children.Add
                             { Kind = childKind
                               Id = childKind
@@ -224,8 +389,9 @@ module DashSpecDocumentationExtractor =
                               Markdown = rawMd
                               SourcePath = sourcePath
                               Line = lineOfOffset text innerBlock.Span.Start
+                              Tags = collectPropertyTags innerBlock.Members
                               ReferencedSymbols = collectBlockRefs innerBlock.Members innerBlock.TypeAnnotation
-                              Children = [||] }
+                              Children = grandChildren }
             | DashSpecAstNode.TableRowDeclaration row ->
                 let rawMd = nodeDoc docs row.Id
                 match row.Kind with
@@ -233,19 +399,61 @@ module DashSpecDocumentationExtractor =
                 | TableRowKind.Separator -> ()
                 | _ when row.Cells.Length > 0 && (not (String.IsNullOrWhiteSpace rawMd) || parentKind = "registry") ->
                     let rowId = row.Cells.[0].Trim()
-                    let sigText = "| " + String.Join(" | ", row.Cells) + " |"
-                    let md = resolveLocalizedMarkdown tryResolveText parentKind rowId (Some parentId) rawMd
-                    children.Add
-                        { Kind = "row"
-                          Id = rowId
-                          Title = if row.Cells.Length > 1 then Some(row.Cells.[1].Trim()) else None
-                          Namespace = ns
-                          Signature = sigText
-                          Markdown = md
-                          SourcePath = sourcePath
-                          Line = lineOfOffset text row.Span.Start
-                          ReferencedSymbols = [||]
-                          Children = [||] }
+                    let rowLine = lineOfOffset text row.Span.Start
+                    if parentKind = "registry" && String.Equals(parentId, "units", StringComparison.OrdinalIgnoreCase) && row.Cells.Length >= 3 then
+                        let importAs = row.Cells.[1].Trim()
+                        let role = row.Cells.[2].Trim().ToLowerInvariant()
+                        let importSig =
+                            if importAs = "-" || String.IsNullOrWhiteSpace importAs then
+                                $"module {rowId} <id> (root entry unit)"
+                            else
+                                $"module {rowId} <id>  |  import {importAs} from <Namespace>"
+                        let md = resolveLocalizedMarkdown tryResolveText "unit" rowId (Some parentId) rawMd
+                        let grammarChildren = buildUnitGrammarChildren rowId ns sourcePath rowLine
+                        children.Add
+                            { Kind = "unit"
+                              Id = rowId
+                              Title = Some $"module {rowId} ({role})"
+                              Namespace = ns
+                              Signature = importSig
+                              Markdown = md
+                              SourcePath = sourcePath
+                              Line = rowLine
+                              Tags =
+                                  [| { TagKey = "role"; TagValue = role }
+                                     { TagKey = "import_as"; TagValue = importAs } |]
+                              ReferencedSymbols = [||]
+                              Children = grammarChildren }
+                    elif parentKind = "registry" && String.Equals(parentId, "rules", StringComparison.OrdinalIgnoreCase) && row.Cells.Length >= 2 then
+                        let severity = row.Cells.[1].Trim().ToLowerInvariant()
+                        let md = resolveLocalizedMarkdown tryResolveText "rule" rowId (Some parentId) rawMd
+                        children.Add
+                            { Kind = "rule"
+                              Id = rowId
+                              Title = Some $"[{severity.ToUpperInvariant()}] {rowId}"
+                              Namespace = ns
+                              Signature = $"rule {rowId} (severity = {severity})"
+                              Markdown = md
+                              SourcePath = sourcePath
+                              Line = rowLine
+                              Tags = [| { TagKey = "severity"; TagValue = severity } |]
+                              ReferencedSymbols = [||]
+                              Children = [||] }
+                    else
+                        let sigText = "| " + String.Join(" | ", row.Cells) + " |"
+                        let md = resolveLocalizedMarkdown tryResolveText parentKind rowId (Some parentId) rawMd
+                        children.Add
+                            { Kind = "row"
+                              Id = rowId
+                              Title = if row.Cells.Length > 1 then Some(row.Cells.[1].Trim()) else None
+                              Namespace = ns
+                              Signature = sigText
+                              Markdown = md
+                              SourcePath = sourcePath
+                              Line = rowLine
+                              Tags = [||]
+                              ReferencedSymbols = [||]
+                              Children = [||] }
                 | _ -> ()
             | _ -> ()
         children.ToArray()
@@ -301,6 +509,7 @@ module DashSpecDocumentationExtractor =
                                       Markdown = bMd
                                       SourcePath = sourcePath
                                       Line = lineOfOffset tree.Text b.Span.Start
+                                      Tags = collectPropertyTags b.Members
                                       ReferencedSymbols = collectBlockRefs b.Members b.TypeAnnotation
                                       Children = bChildren }
                             | DashSpecBlockOpener.Anonymous kw ->
@@ -310,7 +519,8 @@ module DashSpecDocumentationExtractor =
                                     collectNamedBlocks b.Members acc
                                 else
                                     let rawBMd = nodeDoc docs b.Id
-                                    if not (String.IsNullOrWhiteSpace rawBMd) then
+                                    let bChildren = extractBlockChildren tree.Text sourcePath ns docs tryResolveText bKind bKind b.Members
+                                    if not (String.IsNullOrWhiteSpace rawBMd) || bChildren.Length > 0 then
                                         acc.Add
                                             { Kind = bKind
                                               Id = bKind
@@ -320,8 +530,9 @@ module DashSpecDocumentationExtractor =
                                               Markdown = rawBMd
                                               SourcePath = sourcePath
                                               Line = lineOfOffset tree.Text b.Span.Start
+                                              Tags = collectPropertyTags b.Members
                                               ReferencedSymbols = collectBlockRefs b.Members b.TypeAnnotation
-                                              Children = [||] }
+                                              Children = bChildren }
                         | _ -> ()
 
                 let moduleChildren = ResizeArray<DashSpecSymbolDoc>()
@@ -337,6 +548,20 @@ module DashSpecDocumentationExtractor =
                             DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration b)
                         | _ -> None)
 
+                let moduleTags = collectPropertyTags m.Members
+                let sigSuffix =
+                    let tagParts =
+                        moduleTags
+                        |> Array.choose (fun t ->
+                            if t.TagKey = "locality" || t.TagKey = "type_effect" then
+                                Some $"{t.TagKey} = {t.TagValue}"
+                            else
+                                None)
+                    if tagParts.Length > 0 then
+                        " [" + String.Join(", ", tagParts) + "]"
+                    else
+                        ""
+
                 results.Add
                     { Kind = $"module {unitKind}"
                       Id = unitId
@@ -344,11 +569,12 @@ module DashSpecDocumentationExtractor =
                       Namespace = ns
                       Signature =
                           match ns with
-                          | Some n -> $"module {unitKind} {unitId} (namespace {n})"
-                          | None -> $"module {unitKind} {unitId}"
+                          | Some n -> $"module {unitKind} {unitId} (namespace {n}){sigSuffix}"
+                          | None -> $"module {unitKind} {unitId}{sigSuffix}"
                       Markdown = moduleMd
                       SourcePath = sourcePath
                       Line = lineOfOffset tree.Text m.Span.Start
+                      Tags = moduleTags
                       ReferencedSymbols = collectBlockRefs m.Members None
                       Children = moduleChildren.ToArray() }
             | _ -> ()
@@ -426,9 +652,33 @@ module DocumentationSymbolsCategory =
         | DocumentationSymbolsCategory.All -> "all"
 
 /// <summary>
-/// One chapter/page in a <c>module documentation &lt;id&gt;</c> book (DASHSPEC-ADR-0138).
-/// Combines authored <c>///</c> Markdown narrative, sub-sections, Doxygen symbol-domain tables
-/// (<c>symbols = units | transforms | presentations | types | monitoring | rules | workspace</c>),
+/// Declarative grouping axis for <c>group_by = ...</c> inside <c>module documentation &lt;id&gt;</c>.
+/// </summary>
+[<RequireQualifiedAccess>]
+type DocumentationGroupBy =
+    | Role
+    | Locality
+    | Severity
+    | Kind
+    | Namespace
+    | NoGrouping
+
+module DocumentationGroupBy =
+
+    let tryParse (raw: string) : DocumentationGroupBy option =
+        match raw.Trim().ToLowerInvariant() with
+        | "role" -> Some DocumentationGroupBy.Role
+        | "locality" -> Some DocumentationGroupBy.Locality
+        | "severity" -> Some DocumentationGroupBy.Severity
+        | "kind" -> Some DocumentationGroupBy.Kind
+        | "namespace" -> Some DocumentationGroupBy.Namespace
+        | "none" -> Some DocumentationGroupBy.NoGrouping
+        | _ -> None
+
+/// <summary>
+/// One chapter/page or sub-section in a <c>module documentation &lt;id&gt;</c> book (DASHSPEC-ADR-0138).
+/// Combines authored <c>///</c> Markdown narrative, sub-sections, Doxygen symbol-domain queries
+/// (<c>symbols = ...</c>, <c>role = ...</c>, <c>locality = ...</c>, <c>severity = ...</c>, <c>kind = ...</c>, <c>group_by = ...</c>),
 /// and live embedded <c>.ds</c> reports (<c>report = "..."</c>).
 /// </summary>
 [<CLIMutable>]
@@ -437,6 +687,12 @@ type DocumentationPageDefinition =
       Title: string
       Markdown: string
       SymbolsCategory: DocumentationSymbolsCategory option
+      RoleFilter: string option
+      LocalityFilter: string option
+      SeverityFilter: string option
+      KindFilter: string option
+      NamespaceFilter: string option
+      GroupBy: DocumentationGroupBy option
       EmbeddedReportUnit: string option
       Sections: DocumentationPageDefinition[] }
 
@@ -462,16 +718,29 @@ module DocumentationModuleParser =
             DashSpecAst.tryTitle (DashSpecAstNode.BlockDeclaration block)
         let mutable propTitle: string option = None
         let mutable symbolsCat: DocumentationSymbolsCategory option = None
+        let mutable roleFilter: string option = None
+        let mutable localityFilter: string option = None
+        let mutable severityFilter: string option = None
+        let mutable kindFilter: string option = None
+        let mutable namespaceFilter: string option = None
+        let mutable groupBy: DocumentationGroupBy option = None
         let mutable embeddedReport: string option = None
         let subSections = ResizeArray<DocumentationPageDefinition>()
 
         for m in block.Members do
             match m with
             | DashSpecAstNode.PropertyAssignment p ->
+                let v = p.Value.Text.Trim()
                 match p.Key.Trim().ToLowerInvariant() with
-                | "title" | "label" -> propTitle <- Some p.Value.Text
-                | "symbols" | "category" -> symbolsCat <- DocumentationSymbolsCategory.tryParse p.Value.Text
-                | "report" | "embed" -> embeddedReport <- Some p.Value.Text
+                | "title" | "label" -> propTitle <- Some v
+                | "symbols" | "category" -> symbolsCat <- DocumentationSymbolsCategory.tryParse v
+                | "role" -> roleFilter <- Some v
+                | "locality" -> localityFilter <- Some v
+                | "severity" -> severityFilter <- Some v
+                | "kind" -> kindFilter <- Some v
+                | "namespace" -> namespaceFilter <- Some v
+                | "group_by" | "groupby" -> groupBy <- DocumentationGroupBy.tryParse v
+                | "report" | "embed" -> embeddedReport <- Some v
                 | _ -> ()
             | DashSpecAstNode.BlockDeclaration childBlock ->
                 match childBlock.Opener with
@@ -492,6 +761,12 @@ module DocumentationModuleParser =
           Title = headerTitle |> Option.orElse propTitle |> Option.defaultValue pageId
           Markdown = md
           SymbolsCategory = symbolsCat
+          RoleFilter = roleFilter
+          LocalityFilter = localityFilter
+          SeverityFilter = severityFilter
+          KindFilter = kindFilter
+          NamespaceFilter = namespaceFilter
+          GroupBy = groupBy
           EmbeddedReportUnit = embeddedReport
           Sections = subSections.ToArray() }
 

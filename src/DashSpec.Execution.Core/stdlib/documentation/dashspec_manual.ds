@@ -1,5 +1,6 @@
 /// Официальное руководство и справочник стандартной библиотеки языка DashSpec (`stdlib`),
-/// автоматически собираемое компилятором из документирующих комментариев `///` и таблиц `module texts` (DASHSPEC-ADR-0138).
+/// автоматически собираемое компилятором из документирующих комментариев `///`, графа грамматики `DashSpecGrammarGraph`
+/// и таблиц локализации `module texts` (DASHSPEC-ADR-0138).
 module documentation dashspec_manual
 namespace DashSpec.Std.Documentation
 
@@ -12,11 +13,17 @@ title = "DashSpec Language & Standard Library Reference"
 /// без ручного HTML/CSS или императивного кода.
 page overview as "Обзор и архитектура"
 
-  /// Язык DashSpec разделён на **декларативные модули** (`types`, `presentation`, `layout`, `transform`, `defaults`, `texts`, `runtime`)
-  /// и **потребляющие модули** (`flow`, `diagram`, `section`, `dashboard`, `catalog`, `documentation`).
+  /// Язык DashSpec разделён на три архитектурных эшелона модулей:
+  /// - **Декларативные модули (`role = declaration`)** — объявляют типы строк (`types`), шаги трансформаций (`transform`),
+  ///   пресеты оформления (`presentation`), сетки (`layout`), палитры (`palette`), тултипы (`tooltip`), дефолты (`defaults`),
+  ///   таблицы локализации (`texts`), манифесты среды (`runtime`), клавиатурные команды (`commands`) и реестры (`registry`).
+  /// - **Потребляющие и компонующие модули (`role = consumer`)** — строят из деклараций графы потоков данных (`flow`),
+  ///   визуализации (`diagram`), секции отчётов (`section`), многосекционные дашборды (`dashboard`), каталоги (`catalog`)
+  ///   и интерактивные книги документации (`documentation`).
+  /// - **Корневые модули (`role = root`)** — точки входа приложения (`module host`), связывающие каталог отчётов, тему и поверхности оболочки.
   ///
   /// Все модули начинаются с заголовка `module <kind> <id>` и пространства имён `namespace <Qualified.Name>`,
-  /// а связываются через явный импорт `import <kind> from <Namespace>`.
+  /// а связываются через явный импорт `import <import_as> from <Namespace>`.
   section architecture as "Модульная архитектура языка"
   end section
 
@@ -28,33 +35,71 @@ page overview as "Обзор и архитектура"
   section self_documenting as "Самодокументируемый код и i18n"
   end section
 
+  /// Подъязык `module documentation <id>` позволяет декларативно собирать документацию по языку и рабочему каталогу:
+  /// - **`symbols`** — выбор домена символов (`units`, `transforms`, `presentations`, `types`, `monitoring`, `rules`, `workspace`, `all`).
+  /// - **`role` / `locality` / `severity` / `kind` / `namespace`** — фильтрация символов внутри главы или подсекции (`section`).
+  /// - **`group_by`** — автоматическая разбивка символов по классам (`role`, `locality`, `severity`, `kind`, `namespace`).
+  /// - **`report`** — встраивание живого интерактивного `.ds`-отчёта прямо внутрь страницы документации.
+  section documentation_dsl as "Подъязык книг документации (module documentation)"
+  end section
+
   /// В веб-интерфейсе `DashSpec.Host`:
   /// - **Левое меню и вкладки** переключают отчёты, секции и подстраницы с сохранением истории браузера (кнопки «Назад» и «Вперёд»).
   /// - **Панель фильтров** позволяет сузить диапазон дат, измерения и лимит `TOP N`.
   /// - **Шапка каждой карточки** содержит кнопки полноэкранного просмотра и выгрузки данных в `CSV` / `XLSX`.
-  section viewer_guide as "Работа с дашбордом и экспорт"
-  end section
-
-  /// Администрирование и эксплуатация `DashSpec.Host`:
-  /// - **`/admin/access`** — настройка API-ключа, Git-синхронизации каталога, часового пояса и темы оформления (`WitDB`).
-  /// - **`/admin/monitoring`** — встроенный самодокументируемый отчёт `stdlib/monitoring/self_monitoring.ds` поверх `host-telemetry.witdb`.
-  /// - **CLI `dsc`** — проверка спецификаций (`dsc validate`), компиляция типов (`dsc build types`), SQL-представлений (`dsc build views`) и генерация документации (`dsc doc`).
-  section admin_and_cli as "Администрирование и CLI dsc"
+  /// - **Администрирование (`/admin/access`, `/admin/monitoring`)** и **CLI `dsc`** (`dsc validate`, `dsc build types`, `dsc build views`, `dsc doc`) обеспечивают диагностику и сборку.
+  section viewer_and_cli as "Работа с дашбордом, администрирование и CLI dsc"
   end section
 
 end page
 
-/// Полный реестр видов модулей (`module <kind> <id>`), ключевых слов импорта (`import <import_as> from ...`)
-/// и их ролей в конвейере компиляции (`declaration`, `consumer`, `root`).
+/// Полный справочник всех 18 видов модулей (`module <kind> <id>`), их синтаксиса импорта (`import <import_as> from <Namespace>`),
+/// допустимых блоков и свойств из графа грамматики `DashSpecGrammarGraph`, сгруппированных по роли в конвейере компиляции.
 page language_units as "Модули языка (Units)"
   symbols = "units"
+  group_by = "role"
+
+  /// Базовые кирпичики спецификации: схемы типов, трансформации, пресеты оформления, сетки, локализация и настройки среды.
+  /// Импортируются потребляющими модулями через `import <import_as> from <Namespace>`.
+  section declaration_units as "Декларативные модули (Declaration)"
+    symbols = "units"
+    role = "declaration"
+  end section
+
+  /// Модули композиции, собирающие декларации в направленные потоки данных (`flow`), диаграммы (`diagram`),
+  /// вкладки (`section`), дашборды (`dashboard`), каталоги (`catalog`) и книги документации (`documentation`).
+  section consumer_units as "Потребляющие модули (Consumer)"
+    symbols = "units"
+    role = "consumer"
+  end section
+
+  /// Корневая точка входа хоста (`module host`), определяющая стартовый каталог и параметры оболочки.
+  section root_units as "Корневые модули (Root)"
+    symbols = "units"
+    role = "root"
+  end section
 end page
 
 /// Встроенные декларации трансформаций потоков данных (`transform use <id>`).
-/// Разделяются по месту исполнения (`locality`) на **`database`** (компилируются в SQL-запрос слота)
-/// и **`runtime`** (исполняются в памяти над `TypedRowBatch`).
+/// Разделяются по классу исполнения (`locality`) на **`database`** (компилируются в SQL-запрос слота на стороне СУБД)
+/// и **`runtime`** (исполняются в памяти хоста над `TypedRowBatch`).
 page dataflow_transforms as "Трансформации (Transforms)"
   symbols = "transforms"
+  group_by = "locality"
+
+  /// Трансформации с `locality = database`: транслируются компилятором непосредственно в SQL (`GROUP BY`, `ORDER BY`)
+  /// и выполняются движком базы данных до передачи строк в память хоста.
+  section database_transforms as "SQL-трансформации на стороне БД (Database)"
+    symbols = "transforms"
+    locality = "database"
+  end section
+
+  /// Трансформации с `locality = runtime`: выполняются конвейером `DashflowCardDataPipeline` в памяти над типизированным батчем `TypedRowBatch`
+  /// (часовые пояса, округление, визуальная группировка, ранжирование `TOP N` с бакетом «Прочие»).
+  section runtime_transforms as "Трансформации в памяти (Runtime)"
+    symbols = "transforms"
+    locality = "runtime"
+  end section
 end page
 
 /// Стандартные пресеты визуального оформления карточек, графиков и таблиц из пространства имён `DashSpec.Std`.
@@ -63,7 +108,8 @@ page presentation_presets as "Пресеты оформления (Presentations
   symbols = "presentations"
 end page
 
-/// Базовые структурные типы времени, дат и календарных периодов стандартной библиотеки (`DashSpec.Std`).
+/// Базовые структурные типы времени, дат и календарных периодов стандартной библиотеки (`DashSpec.Std`),
+/// доступные во всех модулях `types` и `flow`.
 page standard_types as "Стандартные типы (Types)"
   symbols = "types"
 end page
@@ -72,16 +118,37 @@ end page
 /// работающие поверх реляционной БД `host-telemetry.witdb`.
 page self_monitoring_docs as "Самодиагностика (Self-Monitoring)"
   symbols = "monitoring"
+  group_by = "kind"
 end page
 
 /// Полный перечень правил статического анализатора и проверок компилятора (`stdlib/rules/rules.ds`)
-/// с локализованными текстами диагностик.
+/// с разбивкой по уровню критичности (`error`, `warning`, `info`) и локализованными текстами диагностик.
 page compiler_rules as "Правила компилятора (Rules)"
   symbols = "rules"
+  group_by = "severity"
+
+  /// Нарушения синтаксиса, структуры блоков, областей видимости и системы типов, блокирующие сборку спецификации.
+  section error_rules as "Ошибки компиляции (Error)"
+    symbols = "rules"
+    severity = "error"
+  end section
+
+  /// Предупреждения статического анализатора о потенциальных проблемах (неиспользуемые фильтры, отсутствие пресета или фильтрации потока).
+  section warning_rules as "Предупреждения (Warning)"
+    symbols = "rules"
+    severity = "warning"
+  end section
+
+  /// Рекомендации по стилю, заголовкам и явному оформлению карточек и вкладок.
+  section info_rules as "Рекомендации (Info)"
+    symbols = "rules"
+    severity = "info"
+  end section
 end page
 
 /// Автоматически извлечённая документация по всем модулям, типам строк (`type`), потокам (`flow`),
-/// диаграммам (`diagram`) и отчётам (`section` / `dashboard`) текущего рабочего каталога.
+/// диаграммам (`diagram`) и отчётам (`section` / `dashboard`) текущего рабочего каталога с группировкой по виду модуля.
 page workspace_reference as "Каталог отчётов (Workspace API)"
   symbols = "workspace"
+  group_by = "kind"
 end page

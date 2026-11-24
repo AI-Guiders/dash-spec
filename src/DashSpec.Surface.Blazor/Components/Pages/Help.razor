@@ -51,22 +51,41 @@
                             }
                         </button>
 
-                        @if (isExpanded && units.Count > 0)
+                        @if (isExpanded && pageItem.SymbolSections.Count > 0)
                         {
                             <ul class="dox-nav-items">
-                                @foreach (var unit in units)
+                                @foreach (var sec in pageItem.SymbolSections)
                                 {
-                                    var isSymActive = _activeSymbol is not null &&
-                                                      string.Equals(_activeSymbol.Id, unit.Id, StringComparison.OrdinalIgnoreCase) &&
-                                                      string.Equals(_activeSymbol.Kind, unit.Kind, StringComparison.OrdinalIgnoreCase);
-                                    <li>
-                                        <button type="button"
-                                                class="dox-nav-item @(isSymActive ? "is-active" : null)"
-                                                title="@unit.Signature"
-                                                @onclick="() => SelectSymbol(pageItem, unit)">
-                                            <span>@unit.Id</span>
-                                        </button>
-                                    </li>
+                                    var secUnits = FilterSymbolList(sec.Units);
+                                    if (secUnits.Count == 0)
+                                    {
+                                        continue;
+                                    }
+
+                                    @if (pageItem.SymbolSections.Count > 1)
+                                    {
+                                        <li class="dox-nav-subgroup-label">@FormatNavGroupBadge(sec.CategoryId, sec.CategoryTitle) (@secUnits.Count)</li>
+                                    }
+
+                                    @foreach (var unit in secUnits)
+                                    {
+                                        var isSymActive = _activeSymbol is not null &&
+                                                          string.Equals(_activeSymbol.Id, unit.Id, StringComparison.OrdinalIgnoreCase) &&
+                                                          string.Equals(_activeSymbol.Kind, unit.Kind, StringComparison.OrdinalIgnoreCase);
+                                        var badgeTag = GetSymbolPrimaryBadge(unit);
+                                        <li>
+                                            <button type="button"
+                                                    class="dox-nav-item @(isSymActive ? "is-active" : null)"
+                                                    title="@unit.Signature"
+                                                    @onclick="() => SelectSymbol(pageItem, unit)">
+                                                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">@unit.Id</span>
+                                                @if (!string.IsNullOrWhiteSpace(badgeTag))
+                                                {
+                                                    <span class="badge" style="font-size: 0.65rem; padding: 0.05rem 0.3rem;">@badgeTag</span>
+                                                }
+                                            </button>
+                                        </li>
+                                    }
                                 }
                             </ul>
                         }
@@ -109,7 +128,13 @@
                                 <div class="muted" style="font-family: ui-monospace, Consolas, monospace; font-size: 0.88rem; margin-top: 0.2rem;">@sym.Kind @sym.Id</div>
                             }
                         </div>
-                        <span class="badge">@sym.Kind</span>
+                        <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                            @foreach (var tag in sym.Tags)
+                            {
+                                <span class="badge">@tag.TagKey = @tag.TagValue</span>
+                            }
+                            <span class="badge">@sym.Kind</span>
+                        </div>
                     </header>
 
                     <div class="dox-decl-box">
@@ -130,7 +155,7 @@
                         </div>
                     }
 
-                    @* Group children by Doxygen member kind (type, field, port, param, source, transformer, card, filter, row, property) *@
+                    @* Group children by Doxygen member kind (block, clause, type, field, port, param, source, transformer, card, filter, row, property) *@
                     @foreach (var group in sym.Children.GroupBy(c => c.Kind))
                     {
                         <section>
@@ -139,7 +164,7 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 24%;">Identifier</th>
-                                        <th style="width: 30%;">Declaration / Type</th>
+                                        <th style="width: 30%;">Declaration / Syntax</th>
                                         <th>Description</th>
                                     </tr>
                                 </thead>
@@ -151,7 +176,7 @@
                                             : null;
                                         <tr>
                                             <td>
-                                                @if (memberItem.Children.Length > 0)
+                                                @if (memberItem.Children.Length > 0 && memberItem.Kind is not "block")
                                                 {
                                                     <button type="button"
                                                             class="dox-sym-link"
@@ -191,7 +216,7 @@
                                                 @if (memberItem.Children.Length > 0)
                                                 {
                                                     <div style="margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.2rem;">
-                                                        @foreach (var sub in memberItem.Children)
+                                                        @foreach (var sub in memberItem.Children.Take(16))
                                                         {
                                                             <div style="font-size: 0.8rem;">
                                                                 <code>@sub.Signature</code>
@@ -200,6 +225,10 @@
                                                                     <span class="muted"> — <RichTextView Text="@sub.Markdown" /></span>
                                                                 }
                                                             </div>
+                                                        }
+                                                        @if (memberItem.Children.Length > 16)
+                                                        {
+                                                            <div class="muted" style="font-size: 0.76rem;">+@(memberItem.Children.Length - 16) more grammar clauses/properties</div>
                                                         }
                                                     </div>
                                                 }
@@ -245,8 +274,20 @@
 
                     @foreach (var sub in chapter.SubSections)
                     {
+                        var subUnits = FilteredPageUnits(sub);
+                        if (!string.IsNullOrWhiteSpace(_search) && subUnits.Count == 0 && !PageMatchesSearch(sub))
+                        {
+                            continue;
+                        }
+
                         <section>
-                            <h2 class="dox-section-title">@sub.Title</h2>
+                            <h2 class="dox-section-title">
+                                @sub.Title
+                                @if (subUnits.Count > 0)
+                                {
+                                    <span class="muted" style="font-weight: 400; font-size: 0.92rem;"> (@subUnits.Count)</span>
+                                }
+                            </h2>
                             @if (!string.IsNullOrWhiteSpace(sub.Markdown))
                             {
                                 <div class="dox-prose">
@@ -261,72 +302,33 @@
                                 <DashSpecEmbeddedReport CatalogEntryId="@sub.EmbeddedReportUnit"
                                                         SourceLabel="@($"doc:{chapter.Id}.{sub.Id}")" />
                             }
+                            @foreach (var subSec in sub.SymbolSections)
+                            {
+                                var secUnits = FilterSymbolList(subSec.Units);
+                                if (secUnits.Count == 0)
+                                {
+                                    continue;
+                                }
+                                @RenderSymbolTable(chapter, secUnits)
+                            }
                         </section>
                     }
 
-                    @foreach (var sec in chapter.SymbolSections)
+                    @if (!chapter.SubSections.Any(s => s.SymbolSections.Count > 0))
                     {
-                        var units = FilterSymbolList(sec.Units);
-                        if (units.Count == 0)
+                        @foreach (var sec in chapter.SymbolSections)
                         {
-                            continue;
-                        }
+                            var units = FilterSymbolList(sec.Units);
+                            if (units.Count == 0)
+                            {
+                                continue;
+                            }
 
-                        <section>
-                            <h2 class="dox-section-title">@sec.CategoryTitle (@units.Count)</h2>
-                            <table class="dox-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 24%;">Module / Symbol</th>
-                                        <th style="width: 24%;">Namespace / Source</th>
-                                        <th>Summary</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var unit in units)
-                                    {
-                                        var uTitle = FSharpOption<string>.get_IsSome(unit.Title) && !string.IsNullOrWhiteSpace(unit.Title.Value)
-                                            ? unit.Title.Value
-                                            : null;
-                                        var uNs = FSharpOption<string>.get_IsSome(unit.Namespace) ? unit.Namespace.Value : "—";
-                                        var uSrc = FSharpOption<string>.get_IsSome(unit.SourcePath) ? $"{unit.SourcePath.Value}:{unit.Line}" : null;
-                                        <tr>
-                                            <td>
-                                                <button type="button"
-                                                        class="dox-sym-link"
-                                                        @onclick="() => SelectSymbol(chapter, unit)">
-                                                    @unit.Id
-                                                </button>
-                                                <div class="muted" style="font-size: 0.75rem; font-family: ui-monospace, Consolas, monospace;">@unit.Kind</div>
-                                            </td>
-                                            <td>
-                                                <code style="font-size: 0.78rem;">@uNs</code>
-                                                @if (!string.IsNullOrWhiteSpace(uSrc))
-                                                {
-                                                    <div class="muted" style="font-size: 0.73rem; margin-top: 0.15rem;">@uSrc</div>
-                                                }
-                                            </td>
-                                            <td>
-                                                @if (!string.IsNullOrWhiteSpace(uTitle))
-                                                {
-                                                    <div style="font-weight: 600; margin-bottom: 0.2rem;">@uTitle</div>
-                                                }
-                                                @if (!string.IsNullOrWhiteSpace(unit.Markdown))
-                                                {
-                                                    <RichTextView Text="@unit.Markdown" />
-                                                }
-                                                @if (unit.Children.Length > 0)
-                                                {
-                                                    <div class="muted" style="font-size: 0.76rem; margin-top: 0.25rem;">
-                                                        Members: @string.Join(", ", unit.Children.Take(6).Select(c => c.Id))@(unit.Children.Length > 6 ? $" (+{unit.Children.Length - 6})" : "")
-                                                    </div>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </section>
+                            <section>
+                                <h2 class="dox-section-title">@sec.CategoryTitle (@units.Count)</h2>
+                                @RenderSymbolTable(chapter, units)
+                            </section>
+                        }
                     }
                 }
             </article>
@@ -344,7 +346,7 @@
                             @foreach (var item in grp.Take(12))
                             {
                                 <li style="padding-left: 0.55rem;">
-                                    @if (item.Children.Length > 0)
+                                    @if (item.Children.Length > 0 && item.Kind is not "block")
                                     {
                                         <button type="button"
                                                 class="dox-crumb-btn"
@@ -372,9 +374,13 @@
                         }
                         @foreach (var sec in _activePage.SymbolSections)
                         {
-                            @foreach (var u in FilterSymbolList(sec.Units).Take(18))
+                            @if (_activePage.SymbolSections.Count > 1)
                             {
-                                <li>
+                                <li class="muted" style="margin-top: 0.25rem; font-weight: 600;">@FormatNavGroupBadge(sec.CategoryId, sec.CategoryTitle)</li>
+                            }
+                            @foreach (var u in FilterSymbolList(sec.Units).Take(16))
+                            {
+                                <li style="padding-left: 0.35rem;">
                                     <button type="button"
                                             class="dox-crumb-btn"
                                             style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;"
@@ -413,14 +419,72 @@
         }
     }
 
+    private RenderFragment RenderSymbolTable(DashSpecCompiledBookPage chapter, IReadOnlyList<DashSpecSymbolDoc> units) => __builder =>
+    {
+        <table class="dox-table">
+            <thead>
+                <tr>
+                    <th style="width: 24%;">Symbol / Unit</th>
+                    <th style="width: 28%;">Declaration / Class</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var unit in units)
+                {
+                    var uTitle = FSharpOption<string>.get_IsSome(unit.Title) && !string.IsNullOrWhiteSpace(unit.Title.Value)
+                        ? unit.Title.Value
+                        : null;
+                    var uSrc = FSharpOption<string>.get_IsSome(unit.SourcePath) ? $"{unit.SourcePath.Value}:{unit.Line}" : null;
+                    <tr>
+                        <td>
+                            <button type="button"
+                                    class="dox-sym-link"
+                                    @onclick="() => SelectSymbol(chapter, unit)">
+                                @unit.Id
+                            </button>
+                            <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.2rem;">
+                                <span class="muted" style="font-size: 0.74rem; font-family: ui-monospace, Consolas, monospace;">@unit.Kind</span>
+                                @foreach (var tag in unit.Tags)
+                                {
+                                    <span class="badge" style="font-size: 0.67rem; padding: 0.05rem 0.35rem;">@tag.TagKey: @tag.TagValue</span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <code style="font-size: 0.78rem;">@unit.Signature</code>
+                            @if (!string.IsNullOrWhiteSpace(uSrc))
+                            {
+                                <div class="muted" style="font-size: 0.72rem; margin-top: 0.15rem;">@uSrc</div>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(uTitle) && !string.Equals(uTitle, unit.Id, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <div style="font-weight: 600; margin-bottom: 0.2rem;">@uTitle</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(unit.Markdown))
+                            {
+                                <RichTextView Text="@unit.Markdown" />
+                            }
+                            @if (unit.Children.Length > 0)
+                            {
+                                <div class="muted" style="font-size: 0.76rem; margin-top: 0.25rem;">
+                                    Grammar / Members: @string.Join(", ", unit.Children.Take(8).Select(c => c.Id))@(unit.Children.Length > 8 ? $" (+{unit.Children.Length - 8})" : "")
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    };
+
     private void SelectChapter(DashSpecCompiledBookPage page)
     {
         _activePage = page;
         _activeSymbol = null;
-        if (!_expandedPages.Add(page.Id))
-        {
-            // Keep open when selected
-        }
+        _expandedPages.Add(page.Id);
     }
 
     private void SelectSymbol(DashSpecCompiledBookPage? parentPage, DashSpecSymbolDoc symbol)
@@ -498,15 +562,37 @@
         doc.Signature.Contains(q, StringComparison.OrdinalIgnoreCase) ||
         doc.Markdown.Contains(q, StringComparison.OrdinalIgnoreCase) ||
         (FSharpOption<string>.get_IsSome(doc.Title) && doc.Title.Value.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
+        doc.Tags.Any(t => t.TagValue.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
         doc.Children.Any(c => SymbolMatches(c, q));
 
     private static IReadOnlyList<string> SplitParagraphs(string markdown) =>
         markdown
             .Split(["\r\n\r\n", "\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
+    private static string? GetSymbolPrimaryBadge(DashSpecSymbolDoc unit) =>
+        DashSpecDocGenerator.TryGetSymbolTag(unit, "locality")
+        ?? DashSpecDocGenerator.TryGetSymbolTag(unit, "role")
+        ?? DashSpecDocGenerator.TryGetSymbolTag(unit, "severity");
+
+    private static string FormatNavGroupBadge(string categoryId, string categoryTitle) =>
+        categoryId.ToLowerInvariant() switch
+        {
+            "declaration" => "Declaration",
+            "consumer" => "Consumer",
+            "root" => "Root",
+            "database" => "Database (SQL)",
+            "runtime" => "Runtime (In-Memory)",
+            "error" => "Errors",
+            "warning" => "Warnings",
+            "info" => "Info",
+            _ => categoryTitle.Length > 28 ? categoryId : categoryTitle,
+        };
+
     private static string FormatMemberGroupTitle(string kind) =>
         kind.ToLowerInvariant() switch
         {
+            "block" => "Grammar Blocks (<block> … end <block>)",
+            "clause" => "Grammar Clauses & Statements",
             "type" => "Data Types (type)",
             "field" => "Fields",
             "port" => "Ports",
@@ -537,7 +623,7 @@
 
             if (_book.GlobalSymbolIndex.TryGetValue(symRef, out var target) &&
                 !string.Equals(target.Id, memberItem.Id, StringComparison.OrdinalIgnoreCase) &&
-                target.Kind is "type" or "module diagram" or "module presentation" or "module transform")
+                target.Kind is "type" or "unit" or "module diagram" or "module presentation" or "module transform")
             {
                 if (!results.Any(r => string.Equals(r.Id, target.Id, StringComparison.OrdinalIgnoreCase)))
                 {

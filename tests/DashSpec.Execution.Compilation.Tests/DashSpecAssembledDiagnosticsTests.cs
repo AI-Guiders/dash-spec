@@ -236,12 +236,24 @@ public sealed class DashSpecAssembledDiagnosticsTests
             var stdlibCat = DashSpecDocGenerator.BuildStdlibCatalog("ru-RU");
             Assert.True(stdlibCat.SymbolIndex.TryGetValue("round", out var roundDoc));
             Assert.Contains("decimal", roundDoc.Markdown);
+            Assert.Equal("runtime", DashSpecDocGenerator.TryGetSymbolTag(roundDoc, "locality"));
+            Assert.True(stdlibCat.SymbolIndex.TryGetValue("unit.flow", out var flowUnitDoc));
+            Assert.Equal("consumer", DashSpecDocGenerator.TryGetSymbolTag(flowUnitDoc, "role"));
+            Assert.NotEmpty(flowUnitDoc.Children);
+            Assert.True(stdlibCat.SymbolIndex.TryGetValue("DateTime", out var dtTypeDoc));
+            Assert.Equal("type", dtTypeDoc.Kind);
             var md = DashSpecDocGenerator.RenderMarkdown(stdlibCat);
             Assert.Contains("module transform round", md);
 
             var book = DashSpecDocGenerator.BuildDocumentationBook(tempDir, "ru-RU");
             Assert.Equal("dashspec_manual", book.Id);
             Assert.True(book.Pages.Count >= 7);
+            var unitsPage = book.Pages.First(p => p.Id == "language_units");
+            Assert.Equal(3, unitsPage.SymbolSections.Count); // declaration, consumer, root
+            var transformsPage = book.Pages.First(p => p.Id == "dataflow_transforms");
+            Assert.Equal(2, transformsPage.SymbolSections.Count); // database, runtime
+            var rulesPage = book.Pages.First(p => p.Id == "compiler_rules");
+            Assert.Equal(3, rulesPage.SymbolSections.Count); // error, warning, info
         }
         finally
         {

@@ -39,8 +39,8 @@ public sealed record DashSpecCompiledBook(
 /// <summary>
 /// Self-documenting language &amp; workspace documentation generator (DASHSPEC-ADR-0138).
 /// Builds structured documentation catalogs and Markdown reference books directly from
-/// <c>///</c> doc comments and <c>module texts</c> localization tables across <c>stdlib</c>
-/// and user <c>.ds</c> workspaces.
+/// <c>///</c> doc comments, <c>DashSpecGrammarGraph</c> grammar projections, and <c>module texts</c>
+/// localization tables across <c>stdlib</c> and user <c>.ds</c> workspaces.
 /// </summary>
 public static class DashSpecDocGenerator
 {
@@ -86,7 +86,18 @@ public static class DashSpecDocGenerator
             {
                 if (resName.StartsWith("stdlib/units/", StringComparison.OrdinalIgnoreCase))
                 {
-                    unitDocs.Add(doc);
+                    // Promote each language unit row from `module registry units` to a first-class navigable symbol
+                    var promotedUnits = doc.Children
+                        .Where(c => string.Equals(c.Kind, "unit", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    if (promotedUnits.Count > 0)
+                    {
+                        unitDocs.AddRange(promotedUnits);
+                    }
+                    else
+                    {
+                        unitDocs.Add(doc);
+                    }
                 }
                 else if (resName.StartsWith("stdlib/transforms/", StringComparison.OrdinalIgnoreCase))
                 {
@@ -98,43 +109,33 @@ public static class DashSpecDocGenerator
                 }
                 else if (resName.StartsWith("stdlib/types/", StringComparison.OrdinalIgnoreCase))
                 {
-                    typeDocs.Add(doc);
+                    // Promote individual `type <Name>` blocks to first-class navigable symbols
+                    var promotedTypes = doc.Children
+                        .Where(c => string.Equals(c.Kind, "type", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    if (promotedTypes.Count > 0)
+                    {
+                        typeDocs.AddRange(promotedTypes);
+                    }
+                    else
+                    {
+                        typeDocs.Add(doc);
+                    }
                 }
                 else if (resName.StartsWith("stdlib/rules/", StringComparison.OrdinalIgnoreCase))
                 {
-                    var enrichedChildren = doc.Children
-                        .Select(c =>
-                        {
-                            var resolvedOpt = state.TryResolveRawText($"rule.{c.Id}");
-                            if (string.IsNullOrWhiteSpace(c.Markdown) &&
-                                FSharpOption<string>.get_IsSome(resolvedOpt))
-                            {
-                                return new DashSpecSymbolDoc(
-                                    c.Kind,
-                                    c.Id,
-                                    c.Title,
-                                    c.Namespace,
-                                    c.Signature,
-                                    resolvedOpt.Value,
-                                    c.SourcePath,
-                                    c.Line,
-                                    c.ReferencedSymbols,
-                                    c.Children);
-                            }
-                            return c;
-                        })
-                        .ToArray();
-                    ruleDocs.Add(new DashSpecSymbolDoc(
-                        doc.Kind,
-                        doc.Id,
-                        doc.Title,
-                        doc.Namespace,
-                        doc.Signature,
-                        doc.Markdown,
-                        doc.SourcePath,
-                        doc.Line,
-                        doc.ReferencedSymbols,
-                        enrichedChildren));
+                    // Promote each compiler rule from `module registry rules` to a first-class navigable symbol
+                    var promotedRules = doc.Children
+                        .Where(c => string.Equals(c.Kind, "rule", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    if (promotedRules.Count > 0)
+                    {
+                        ruleDocs.AddRange(promotedRules);
+                    }
+                    else
+                    {
+                        ruleDocs.Add(doc);
+                    }
                 }
                 else if (resName.StartsWith("stdlib/monitoring/", StringComparison.OrdinalIgnoreCase))
                 {
@@ -322,8 +323,9 @@ public static class DashSpecDocGenerator
         }
 
         var parsed = DocumentationModuleParser.parse(docModuleText);
+        var isRu = lang.StartsWith("ru", StringComparison.OrdinalIgnoreCase);
         var compiledPages = parsed.Pages
-            .Select(p => CompileBookPage(p, stdlib, workspace))
+            .Select(p => CompileBookPage(p, stdlib, workspace, isRu))
             .ToList();
 
         return new DashSpecCompiledBook(
@@ -338,7 +340,8 @@ public static class DashSpecDocGenerator
     private static DashSpecCompiledBookPage CompileBookPage(
         DocumentationPageDefinition page,
         DashSpecDocCatalog stdlib,
-        DashSpecDocCatalog workspace)
+        DashSpecDocCatalog workspace,
+        bool isRu)
     {
         var catOpt = FSharpOption<DocumentationSymbolsCategory>.get_IsSome(page.SymbolsCategory)
             ? page.SymbolsCategory.Value
@@ -350,7 +353,7 @@ public static class DashSpecDocGenerator
             ? page.EmbeddedReportUnit.Value.Trim()
             : null;
 
-        IReadOnlyList<DashSpecDocSection> symbolSections = catOpt switch
+        IReadOnlyList<DashSpecDocSection> rawSections = catOpt switch
         {
             { IsWorkspace: true } => workspace.Sections,
             { IsAll: true } => stdlib.Sections.Concat(workspace.Sections).ToList(),
@@ -360,8 +363,10 @@ public static class DashSpecDocGenerator
             _ => [],
         };
 
+        var filteredSections = FilterAndGroupSections(page, rawSections, isRu);
+
         var subSections = page.Sections
-            .Select(s => CompileBookPage(s, stdlib, workspace))
+            .Select(s => CompileBookPage(s, stdlib, workspace, isRu))
             .ToList();
 
         return new DashSpecCompiledBookPage(
@@ -371,7 +376,167 @@ public static class DashSpecDocGenerator
             catId,
             reportUnit,
             subSections,
-            symbolSections);
+            filteredSections);
+    }
+
+    private static IReadOnlyList<DashSpecDocSection> FilterAndGroupSections(
+        DocumentationPageDefinition page,
+        IReadOnlyList<DashSpecDocSection> rawSections,
+        bool isRu)
+    {
+        if (rawSections.Count == 0)
+        {
+            return [];
+        }
+
+        var roleFilter = FSharpOption<string>.get_IsSome(page.RoleFilter) ? page.RoleFilter.Value : null;
+        var localityFilter = FSharpOption<string>.get_IsSome(page.LocalityFilter) ? page.LocalityFilter.Value : null;
+        var severityFilter = FSharpOption<string>.get_IsSome(page.SeverityFilter) ? page.SeverityFilter.Value : null;
+        var kindFilter = FSharpOption<string>.get_IsSome(page.KindFilter) ? page.KindFilter.Value : null;
+        var nsFilter = FSharpOption<string>.get_IsSome(page.NamespaceFilter) ? page.NamespaceFilter.Value : null;
+        var groupByOpt = FSharpOption<DocumentationGroupBy>.get_IsSome(page.GroupBy) ? page.GroupBy.Value : null;
+
+        bool MatchesFilters(DashSpecSymbolDoc doc)
+        {
+            if (!string.IsNullOrWhiteSpace(roleFilter))
+            {
+                var role = TryGetSymbolTag(doc, "role");
+                if (!string.Equals(role, roleFilter, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(localityFilter))
+            {
+                var loc = TryGetSymbolTag(doc, "locality");
+                if (!string.Equals(loc, localityFilter, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(severityFilter))
+            {
+                var sev = TryGetSymbolTag(doc, "severity");
+                if (!string.Equals(sev, severityFilter, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(kindFilter))
+            {
+                var normKind = doc.Kind.StartsWith("module ", StringComparison.OrdinalIgnoreCase)
+                    ? doc.Kind[7..].Trim()
+                    : doc.Kind;
+                if (!string.Equals(doc.Kind, kindFilter, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(normKind, kindFilter, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(nsFilter))
+            {
+                var ns = FSharpOption<string>.get_IsSome(doc.Namespace) ? doc.Namespace.Value : "";
+                if (!ns.StartsWith(nsFilter, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if (groupByOpt is null || groupByOpt.IsNoGrouping)
+        {
+            var result = new List<DashSpecDocSection>();
+            foreach (var sec in rawSections)
+            {
+                var matching = sec.Units.Where(MatchesFilters).ToList();
+                if (matching.Count > 0)
+                {
+                    result.Add(new DashSpecDocSection(sec.CategoryId, sec.CategoryTitle, matching));
+                }
+            }
+            return result;
+        }
+
+        var allMatching = rawSections
+            .SelectMany(s => s.Units)
+            .Where(MatchesFilters)
+            .ToList();
+
+        if (allMatching.Count == 0)
+        {
+            return [];
+        }
+
+        string GroupKey(DashSpecSymbolDoc doc) =>
+            groupByOpt switch
+            {
+                { IsRole: true } => TryGetSymbolTag(doc, "role") ?? "other",
+                { IsLocality: true } => TryGetSymbolTag(doc, "locality") ?? "other",
+                { IsSeverity: true } => TryGetSymbolTag(doc, "severity") ?? "other",
+                { IsKind: true } => doc.Kind,
+                { IsNamespace: true } => FSharpOption<string>.get_IsSome(doc.Namespace) ? doc.Namespace.Value : "global",
+                _ => "all",
+            };
+
+        int GroupOrder(string key) =>
+            (groupByOpt, key.ToLowerInvariant()) switch
+            {
+                ({ IsRole: true }, "declaration") => 0,
+                ({ IsRole: true }, "consumer") => 1,
+                ({ IsRole: true }, "root") => 2,
+                ({ IsLocality: true }, "database") => 0,
+                ({ IsLocality: true }, "runtime") => 1,
+                ({ IsSeverity: true }, "error") => 0,
+                ({ IsSeverity: true }, "warning") => 1,
+                ({ IsSeverity: true }, "info") => 2,
+                ({ IsKind: true }, var k) => SectionOrder(k),
+                _ => 10,
+            };
+
+        string GroupTitle(string key) =>
+            (groupByOpt, key.ToLowerInvariant(), isRu) switch
+            {
+                ({ IsRole: true }, "declaration", true) => "Декларативные модули (role = declaration)",
+                ({ IsRole: true }, "declaration", false) => "Declaration Modules (role = declaration)",
+                ({ IsRole: true }, "consumer", true) => "Потребляющие и компонующие модули (role = consumer)",
+                ({ IsRole: true }, "consumer", false) => "Consumer & Composition Modules (role = consumer)",
+                ({ IsRole: true }, "root", true) => "Корневые точки входа (role = root)",
+                ({ IsRole: true }, "root", false) => "Root Entry Modules (role = root)",
+                ({ IsLocality: true }, "database", true) => "Реляционные SQL-трансформации на стороне БД (locality = database)",
+                ({ IsLocality: true }, "database", false) => "Database SQL Transforms (locality = database)",
+                ({ IsLocality: true }, "runtime", true) => "Трансформации в памяти хоста (locality = runtime)",
+                ({ IsLocality: true }, "runtime", false) => "In-Memory Runtime Transforms (locality = runtime)",
+                ({ IsSeverity: true }, "error", true) => "Ошибки компиляции (severity = error)",
+                ({ IsSeverity: true }, "error", false) => "Compiler Errors (severity = error)",
+                ({ IsSeverity: true }, "warning", true) => "Предупреждения анализатора (severity = warning)",
+                ({ IsSeverity: true }, "warning", false) => "Static Analysis Warnings (severity = warning)",
+                ({ IsSeverity: true }, "info", true) => "Информационные рекомендации (severity = info)",
+                ({ IsSeverity: true }, "info", false) => "Informational Hints (severity = info)",
+                ({ IsKind: true }, _, _) => FormatWorkspaceKindTitle(key, isRu),
+                _ => key,
+            };
+
+        return allMatching
+            .GroupBy(GroupKey, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => GroupOrder(g.Key))
+            .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new DashSpecDocSection(
+                g.Key,
+                GroupTitle(g.Key),
+                g.ToList()))
+            .ToList();
+    }
+
+    public static string? TryGetSymbolTag(DashSpecSymbolDoc doc, string key)
+    {
+        var opt = DashSpecSymbolDocModule.tryGetTag(key, doc);
+        return FSharpOption<string>.get_IsSome(opt) ? opt.Value : null;
     }
 
     public static string RenderMarkdown(DashSpecDocCatalog catalog)
@@ -483,6 +648,7 @@ public static class DashSpecDocGenerator
             "module presentation" => 8,
             "module defaults" => 9,
             "module texts" => 10,
+            "module documentation" => 11,
             _ => 20,
         };
 
@@ -500,6 +666,7 @@ public static class DashSpecDocGenerator
             ("module presentation", true) => "Пресеты оформления (module presentation)",
             ("module defaults", true) => "Настройки по умолчанию (module defaults)",
             ("module texts", true) => "Локализация и тексты (module texts)",
+            ("module documentation", true) => "Книги документации (module documentation)",
             _ => kind,
         };
 }

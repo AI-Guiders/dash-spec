@@ -38,7 +38,6 @@
     <Compile Include="Syntax\DashSpecSurfaceSyntax.fs" />
     <Compile Include="Syntax\SyntaxTreeParser.fs" />
     <Compile Include="Syntax\SyntaxTree.fs" />
-    <Compile Include="Syntax\DashSpecDocumentation.fs" />
     <Compile Include="Syntax\DashSpecSyntaxClassifier.fs" />
     <Compile Include="Construct.fs" />
     <Compile Include="PropertySchemas.fs" />
@@ -66,6 +65,7 @@
     <Compile Include="Diagram\DiagramTypes.fs" />
     <Compile Include="Diagram\DiagramKindRegistry.fs" />
     <Compile Include="Syntax\DashSpecGrammarGraph.fs" />
+    <Compile Include="Syntax\DashSpecDocumentation.fs" />
     <Compile Include="Diagram\TableDiagramParser.fs" />
     <Compile Include="Diagram\DiagramParser.fs" />
     <Compile Include="Diagram\InspectPresentationParser.fs" />
