@@ -41,6 +41,7 @@
     <ProjectReference Include="..\DashSpec.Execution.Compilation\DashSpec.Execution.Compilation.csproj" />
     <ProjectReference Include="..\..\connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
     <ProjectReference Include="..\..\connectors\DashSpec.Connector.Postgres\DashSpec.Connector.Postgres.csproj" />
+    <ProjectReference Include="..\..\connectors\DashSpec.Connector.WitDb\DashSpec.Connector.WitDb.csproj" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Export\DashSpec.Plugin.Export.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.ViewSwitch\DashSpec.Plugin.ViewSwitch.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\plugins\DashSpec.Plugin.Commands\DashSpec.Plugin.Commands.csproj" ReferenceOutputAssembly="false" />
@@ -53,6 +54,8 @@
       <_ConnectorPluginDll>$(_ConnectorOutDir)DashSpec.Connector.SqlServer.dll</_ConnectorPluginDll>
       <_PostgresConnectorOutDir>..\..\connectors\DashSpec.Connector.Postgres\bin\$(Configuration)\$(TargetFramework)\</_PostgresConnectorOutDir>
       <_PostgresConnectorPluginDll>$(_PostgresConnectorOutDir)DashSpec.Connector.Postgres.dll</_PostgresConnectorPluginDll>
+      <_WitDbConnectorOutDir>..\..\connectors\DashSpec.Connector.WitDb\bin\$(Configuration)\$(TargetFramework)\</_WitDbConnectorOutDir>
+      <_WitDbConnectorPluginDll>$(_WitDbConnectorOutDir)DashSpec.Connector.WitDb.dll</_WitDbConnectorPluginDll>
       <_ExportOutDir>..\..\plugins\DashSpec.Plugin.Export\bin\$(Configuration)\$(TargetFramework)\</_ExportOutDir>
       <_ExportPluginDll>$(_ExportOutDir)DashSpec.Plugin.Export.dll</_ExportPluginDll>
       <_ViewSwitchOutDir>..\..\plugins\DashSpec.Plugin.ViewSwitch\bin\$(Configuration)\$(TargetFramework)\</_ViewSwitchOutDir>
@@ -73,6 +76,7 @@
     <MakeDir Directories="$(OutputPath)plugins" />
     <Copy SourceFiles="$(_ConnectorPluginDll)" DestinationFolder="$(OutputPath)connectors\" SkipUnchangedFiles="true" Condition="Exists('$(_ConnectorPluginDll)')" />
     <Copy SourceFiles="$(_PostgresConnectorPluginDll)" DestinationFolder="$(OutputPath)connectors\" SkipUnchangedFiles="true" Condition="Exists('$(_PostgresConnectorPluginDll)')" />
+    <Copy SourceFiles="$(_WitDbConnectorPluginDll)" DestinationFolder="$(OutputPath)connectors\" SkipUnchangedFiles="true" Condition="Exists('$(_WitDbConnectorPluginDll)')" />
     <Copy SourceFiles="$(_ExportPluginDll)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" Condition="Exists('$(_ExportPluginDll)')" />
     <Copy SourceFiles="$(_ViewSwitchPluginDll)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" Condition="Exists('$(_ViewSwitchPluginDll)')" />
     <Copy SourceFiles="@(_CommandsPluginFiles)" DestinationFolder="$(OutputPath)plugins\" SkipUnchangedFiles="true" />

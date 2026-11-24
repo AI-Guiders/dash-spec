@@ -1,0 +1,24 @@
+module flow host_telemetry_flows
+namespace DashSpec.Std.Monitoring.Flows
+
+import types from DashSpec.Std.Monitoring.Types
+
+source src_queries {
+  use provider witdb
+  from sql query "SELECT CAST(TimestampUtc AS TEXT) AS TimestampUtc, ConnectorId, Kind, DurationMs, RowCount, Status, SqlPreview FROM query_telemetry ORDER BY TimestampUtc DESC"
+  ports
+    default output rows
+    output stream rows: TelemetryQueryRow
+  end ports
+}
+
+source src_logs {
+  use provider witdb
+  from sql query "SELECT CAST(TimestampUtc AS TEXT) AS TimestampUtc, Level, Category, Message FROM host_logs ORDER BY TimestampUtc DESC"
+  ports
+    default output rows
+    output stream rows: TelemetryLogRow
+  end ports
+}
+
+end flow

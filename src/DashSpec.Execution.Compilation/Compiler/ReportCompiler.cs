@@ -72,4 +72,10 @@ public sealed class ReportCompiler : IReportCompiler
 
         return hostEntry is not null ? Path.GetFullPath(hostEntry.Path) : null;
     }
+
+    public string ReadEmbeddedUnit(string logicalPath)
+    {
+        ExecutionDashSpecParser.EnsureModuleParsersRegistered();
+        return DashSpec.Modeling.Parse.Document.UnitSource.readUnit(logicalPath);
+    }
 }

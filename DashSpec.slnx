@@ -27,6 +27,7 @@
   <Project Path="src\DashSpec.Modeling.Language.Adapters.DashSpec\DashSpec.Modeling.Language.Adapters.DashSpec.fsproj" />
 
   <Project Path="connectors\DashSpec.Connector.SqlServer\DashSpec.Connector.SqlServer.csproj" />
+  <Project Path="connectors\DashSpec.Connector.WitDb\DashSpec.Connector.WitDb.csproj" />
   <Folder Name="/plugins/" />
   <Folder Name="/plugins/filter/" />
   <Folder Name="/plugins/viz/" />

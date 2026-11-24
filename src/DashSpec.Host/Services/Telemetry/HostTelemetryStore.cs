@@ -80,7 +80,7 @@ public sealed class HostTelemetryStore : BackgroundService
             ? Math.Round((double)Interlocked.Read(ref _totalQueryDurationMs) / total, 1)
             : 0;
 
-    public void InitializeDatabase(string hostSettingsDbPath)
+    public void InitializeDatabase(string hostSettingsDbPath, DashSpec.Compiler.Contract.IReportCompiler reportCompiler)
     {
         var dir = Path.GetDirectoryName(Path.GetFullPath(hostSettingsDbPath))
                   ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DashSpec");
@@ -101,8 +101,8 @@ public sealed class HostTelemetryStore : BackgroundService
             """);
         RuntimeTomlPath = runtimeTomlPath;
 
-        var selfMonitorDir = Path.Combine(dir, "self-monitoring");
-        EnsureSelfMonitoringSpecCorpus(selfMonitorDir, runtimeTomlPath);
+        SelfMonitoringSpecText = reportCompiler.ReadEmbeddedUnit("stdlib/monitoring/self_monitoring.ds");
+        SelfMonitoringSpecPath = Path.Combine(dir, "self_monitoring.ds");
 
         using var conn = new WitDbConnection(_connectionString);
         conn.Open();
@@ -378,161 +378,6 @@ public sealed class HostTelemetryStore : BackgroundService
     {
         using var cmd = new WitDbCommand(sql, conn);
         cmd.ExecuteNonQuery();
-    }
-
-    private void EnsureSelfMonitoringSpecCorpus(string selfMonitorDir, string runtimeTomlPath)
-    {
-        Directory.CreateDirectory(selfMonitorDir);
-        var localRuntimeToml = Path.Combine(selfMonitorDir, "telemetry.runtime.toml");
-        File.Copy(runtimeTomlPath, localRuntimeToml, overwrite: true);
-
-        var typesAndFlowsDs = """
-            module types host_telemetry_types
-            namespace DashSpec.Std.Monitoring
-
-            type TelemetryKpiRow
-              val: int
-            end type
-
-            type TelemetryMemoryRow
-              TimestampUtc: string
-              WorkingSetMb: float
-              ManagedHeapMb: float
-              ThreadPoolThreads: int
-            end type
-
-            type TelemetryQueryRow
-              TimestampUtc: string
-              ConnectorId: string
-              Kind: string
-              DurationMs: int
-              RowCount: int
-              Status: string
-              SqlPreview: string
-            end type
-
-            type TelemetryLogRow
-              TimestampUtc: string
-              Level: string
-              Category: string
-              Message: string
-            end type
-
-            end types host_telemetry_types
-
-            module flow host_telemetry_flows
-            namespace DashSpec.Std.Monitoring
-
-            source src_metrics {
-              use provider witdb
-              from sql query "SELECT CAST(TimestampUtc AS TEXT) AS TimestampUtc, WorkingSetMb, ManagedHeapMb, ThreadPoolThreads FROM host_metrics ORDER BY TimestampUtc DESC"
-              ports
-                default output rows
-                output stream rows: TelemetryMemoryRow
-              end ports
-            }
-
-            source src_queries {
-              use provider witdb
-              from sql query "SELECT CAST(TimestampUtc AS TEXT) AS TimestampUtc, ConnectorId, Kind, DurationMs, RowCount, Status, SqlPreview FROM query_telemetry ORDER BY TimestampUtc DESC"
-              ports
-                default output rows
-                output stream rows: TelemetryQueryRow
-              end ports
-            }
-
-            source src_logs {
-              use provider witdb
-              from sql query "SELECT CAST(TimestampUtc AS TEXT) AS TimestampUtc, Level, Category, Message FROM host_logs ORDER BY TimestampUtc DESC"
-              ports
-                default output rows
-                output stream rows: TelemetryLogRow
-              end ports
-            }
-
-            end flow host_telemetry_flows
-            """;
-
-        File.WriteAllText(Path.Combine(selfMonitorDir, "telemetry-flows.ds"), typesAndFlowsDs);
-
-        var diagramsDs = """
-            module diagram diag_telemetry_queries
-            namespace DashSpec.Std.Monitoring
-
-            table
-              columns
-                column "TimestampUtc" "Time (UTC)" "text" size=content align=left
-                column "ConnectorId" "Connector" "text" size=content align=center
-                column "Kind" "Kind" "text" size=content align=center
-                column "DurationMs" "Duration (ms)" "integer" size=content align=right
-                column "RowCount" "Rows" "integer" size=content align=right
-                column "Status" "Status" "text" size=content align=center
-                column "SqlPreview" "SQL Preview" "text" size=fill align=left
-              end columns
-            end table
-
-            end diagram diag_telemetry_queries
-
-            module diagram diag_telemetry_logs
-            namespace DashSpec.Std.Monitoring
-
-            table
-              columns
-                column "TimestampUtc" "Time (UTC)" "text" size=content align=left
-                column "Level" "Level" "text" size=content align=center
-                column "Category" "Category" "text" size=content align=left
-                column "Message" "Message" "text" size=fill align=left
-              end columns
-            end table
-
-            end diagram diag_telemetry_logs
-            """;
-
-        File.WriteAllText(Path.Combine(selfMonitorDir, "telemetry-diagrams.ds"), diagramsDs);
-
-        var reportDs = """
-            module report self_monitoring
-            namespace DashSpec.Std.Monitoring
-
-            from DashSpec.Std import presentations = std_pres
-            from DashSpec.Std.Monitoring import types = t_types, flows = t_flows, diagrams = t_diags
-
-            runtime
-              manifest = "telemetry.runtime.toml"
-            end runtime
-
-            connect
-              connector = "witdb"
-              dialect = "generic"
-            end connect
-
-            report "DashSpec Self-Monitoring (WitDB)"
-              card recent_queries as "Executed Queries (WitDB: query_telemetry)"
-                view
-                  diagram ref diag_telemetry_queries table
-                    use presentation table_compact
-                    use flow src_queries
-                  end table
-                end view
-              end card
-
-              card recent_logs as "Host Event Log (WitDB: host_logs)"
-                view
-                  diagram ref diag_telemetry_logs table
-                    use presentation table_detail
-                    use flow src_logs
-                  end table
-                end view
-              end card
-            end report
-
-            end report self_monitoring
-            """;
-
-        var reportPath = Path.Combine(selfMonitorDir, "self-monitoring.ds");
-        File.WriteAllText(reportPath, reportDs);
-        SelfMonitoringSpecPath = reportPath;
-        SelfMonitoringSpecText = reportDs;
     }
 }
 

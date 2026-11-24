@@ -1,0 +1,21 @@
+module diagram diag_telemetry_queries
+namespace DashSpec.Std.Monitoring.Diagrams
+
+from DashSpec.Std import presentations
+
+presentation
+  use table_compact
+end presentation
+
+table
+  columns
+    | id           | format  | label         | sorting | size    | align  |
+    | TimestampUtc | -       | Time (UTC)    | DESC    | content | left   |
+    | ConnectorId  | -       | Connector     | -       | content | center |
+    | Kind         | -       | Kind          | -       | content | center |
+    | DurationMs   | integer | Duration (ms) | -       | content | right  |
+    | RowCount     | integer | Rows          | -       | content | right  |
+    | Status       | -       | Status        | -       | content | center |
+    | SqlPreview   | -       | SQL Preview   | -       | fill    | left   |
+  end columns
+end table

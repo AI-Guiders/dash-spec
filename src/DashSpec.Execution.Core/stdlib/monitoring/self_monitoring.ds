@@ -1,0 +1,28 @@
+module section self_monitoring
+namespace DashSpec.Std.Monitoring.Report
+
+import types from DashSpec.Std.Monitoring.Types
+import flows from DashSpec.Std.Monitoring.Flows
+import diagrams from DashSpec.Std.Monitoring.Diagrams
+
+runtime
+  manifest = "host-telemetry.runtime.toml"
+end runtime
+
+report "DashSpec Self-Monitoring (WitDB)"
+  card recent_queries as "Executed Queries (WitDB: query_telemetry)"
+    diagram ref main diag_telemetry_queries
+    data flow
+      src_queries [rows] -> [rows] main
+    end data flow
+  end card
+
+  card recent_logs as "Host Event Log (WitDB: host_logs)"
+    diagram ref main diag_telemetry_logs
+    data flow
+      src_logs [rows] -> [rows] main
+    end data flow
+  end card
+end report
+
+end section

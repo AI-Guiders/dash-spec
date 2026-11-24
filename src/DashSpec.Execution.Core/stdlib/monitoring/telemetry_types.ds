@@ -1,0 +1,19 @@
+module types host_telemetry_types
+namespace DashSpec.Std.Monitoring.Types
+
+type TelemetryQueryRow
+  optional string TimestampUtc
+  optional string ConnectorId
+  optional string Kind
+  optional int DurationMs
+  optional int RowCount
+  optional string Status
+  optional string SqlPreview
+end type
+
+type TelemetryLogRow
+  optional string TimestampUtc
+  optional string Level
+  optional string Category
+  optional string Message
+end type

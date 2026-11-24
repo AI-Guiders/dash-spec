@@ -147,6 +147,9 @@ public sealed class ReportSpecBootstrapTests
 
         public string? TryDiscoverHostSpecPath(string directory, bool skipLocalConfig = false) =>
             null;
+
+        public string ReadEmbeddedUnit(string logicalPath) =>
+            string.Empty;
     }
 
     [Fact]

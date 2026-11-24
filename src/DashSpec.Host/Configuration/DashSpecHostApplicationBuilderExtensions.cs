@@ -232,7 +232,7 @@ public static class DashSpecHostApplicationBuilderExtensions
         hostDatabase.EnsureDatabase(hostDbPath);
 
         var telemetryStore = new DashSpec.Host.Services.Telemetry.HostTelemetryStore();
-        telemetryStore.InitializeDatabase(hostDbPath);
+        telemetryStore.InitializeDatabase(hostDbPath, reportCompiler);
         builder.Services.AddSingleton(telemetryStore);
         builder.Services.AddHostedService(sp => sp.GetRequiredService<DashSpec.Host.Services.Telemetry.HostTelemetryStore>());
         builder.Logging.AddProvider(new DashSpec.Host.Services.Telemetry.HostTelemetryLoggerProvider(telemetryStore));

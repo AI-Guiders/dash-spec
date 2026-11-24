@@ -24,4 +24,6 @@ public interface IReportCompiler
     LayoutBoardDefinition ParseLayout(string text);
 
     string? TryDiscoverHostSpecPath(string directory, bool skipLocalConfig = false);
+
+    string ReadEmbeddedUnit(string logicalPath);
 }

@@ -1,0 +1,18 @@
+module diagram diag_telemetry_logs
+namespace DashSpec.Std.Monitoring.Diagrams
+
+from DashSpec.Std import presentations
+
+presentation
+  use table_detail
+end presentation
+
+table
+  columns
+    | id           | format | label      | sorting | size    | align  |
+    | TimestampUtc | -      | Time (UTC) | DESC    | content | left   |
+    | Level        | -      | Level      | -       | content | center |
+    | Category     | -      | Category   | -       | content | left   |
+    | Message      | -      | Message    | -       | fill    | left   |
+  end columns
+end table

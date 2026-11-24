@@ -98,4 +98,10 @@ public sealed class DashSpecLanguageBuiltinPlugin : IDashSpecPlugin, IReportComp
 
         return hostEntry is not null ? Path.GetFullPath(hostEntry.Path) : null;
     }
+
+    public string ReadEmbeddedUnit(string logicalPath)
+    {
+        DashSpecParser.EnsureModuleParsersRegistered();
+        return DashSpec.Modeling.Parse.Document.UnitSource.readUnit(logicalPath);
+    }
 }

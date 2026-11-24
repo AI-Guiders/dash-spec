@@ -1,6 +1,7 @@
 using DashSpec.Abstractions.Connectors;
 using DashSpec.Connector.Postgres;
 using DashSpec.Connector.SqlServer;
+using DashSpec.Connector.WitDb;
 using DashSpec.Host.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -24,10 +25,12 @@ internal static class ConnectorInstanceFactory
                 CommandTimeoutSeconds = section.CommandTimeoutSeconds,
                 MaxRows = section.MaxRows,
             })),
-            "witdb" => new WitDbConnector(
-                section.ConnectionString,
-                section.CommandTimeoutSeconds > 0 ? section.CommandTimeoutSeconds : 30,
-                section.MaxRows > 0 ? section.MaxRows : 100_000),
+            "witdb" => new WitDbConnector(Options.Create(new WitDbConnectorOptions
+            {
+                ConnectionString = section.ConnectionString,
+                CommandTimeoutSeconds = section.CommandTimeoutSeconds,
+                MaxRows = section.MaxRows,
+            })),
             _ => throw new InvalidOperationException(
                 $"Per-entry runtime binding supports provider ids: sqlserver, postgres, witdb (got '{providerId}')."),
         };
