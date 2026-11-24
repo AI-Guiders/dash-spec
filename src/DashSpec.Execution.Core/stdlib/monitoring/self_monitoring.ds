@@ -24,7 +24,7 @@ connect
 end connect
 
 report "DashSpec Self-Monitoring (WitDB)"
-  card kpi_working_set as "Working Set (MB)"
+  card kpi_working_set as "Working Set (MiB)"
     diagram number
       value = WorkingSetMb
     end number
@@ -33,7 +33,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
-  card kpi_managed_heap as "Managed Heap (MB)"
+  card kpi_managed_heap as "Managed Heap (MiB)"
     diagram number
       value = ManagedHeapMb
     end number
@@ -81,14 +81,14 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
-  card working_set_chart as "Working Set Memory (MB)"
+  card working_set_chart as "Working Set Memory (MiB)"
     diagram ref main diag_telemetry_memory_line
     data flow
       tr_metrics_timeline_rounded [rows] -> [rows] main
     end data flow
   end card
 
-  card managed_heap_chart as "Managed GC Heap (MB)"
+  card managed_heap_chart as "Managed GC Heap (MiB)"
     diagram ref main diag_telemetry_heap_area
     data flow
       tr_metrics_timeline_rounded [rows] -> [rows] main
