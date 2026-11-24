@@ -68,8 +68,9 @@ public static class DashSpecDocGenerator
 
         foreach (var asm in assemblies.Distinct())
         {
-            foreach (var resName in asm.GetManifestResourceNames().OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+            foreach (var rawResName in asm.GetManifestResourceNames().OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
             {
+                var resName = rawResName.Replace('\\', '/');
                 if (!resName.StartsWith("stdlib/", StringComparison.OrdinalIgnoreCase) ||
                     !resName.EndsWith(".ds", StringComparison.OrdinalIgnoreCase) ||
                     resName.StartsWith("stdlib/texts/", StringComparison.OrdinalIgnoreCase) ||
@@ -78,7 +79,7 @@ public static class DashSpecDocGenerator
                     continue;
                 }
 
-                using var stream = asm.GetManifestResourceStream(resName);
+                using var stream = asm.GetManifestResourceStream(rawResName);
                 if (stream is null)
                 {
                     continue;
@@ -313,7 +314,9 @@ public static class DashSpecDocGenerator
         if (string.IsNullOrWhiteSpace(docModuleText))
         {
             var asm = typeof(DashSpec.Execution.Parsing.DashSpecParser).Assembly;
-            using var stream = asm.GetManifestResourceStream("stdlib/documentation/dashspec_manual.ds");
+            var docResName = asm.GetManifestResourceNames()
+                .FirstOrDefault(n => n.Replace('\\', '/').Equals("stdlib/documentation/dashspec_manual.ds", StringComparison.OrdinalIgnoreCase));
+            using var stream = docResName is not null ? asm.GetManifestResourceStream(docResName) : null;
             if (stream is not null)
             {
                 using var reader = new StreamReader(stream);
@@ -455,7 +458,9 @@ public static class DashSpecDocGenerator
 
         foreach (var resName in new[] { "stdlib/texts/rules.en.ds", preferredRes }.Distinct())
         {
-            using var stream = asm.GetManifestResourceStream(resName);
+            var matchedRes = asm.GetManifestResourceNames()
+                .FirstOrDefault(n => n.Replace('\\', '/').Equals(resName, StringComparison.OrdinalIgnoreCase));
+            using var stream = matchedRes is not null ? asm.GetManifestResourceStream(matchedRes) : null;
             if (stream is null)
             {
                 continue;
