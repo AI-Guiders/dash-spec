@@ -37,7 +37,8 @@ public static class DashSpecParser
                 using var stream = assembly.GetManifestResourceStream(name)
                     ?? throw new InvalidOperationException($"Embedded stdlib unit '{name}' not found in manifest.");
                 using var reader = new System.IO.StreamReader(stream);
-                return System.Tuple.Create(name, reader.ReadToEnd());
+                var normalizedName = name.Replace('\\', '/');
+                return System.Tuple.Create(normalizedName, reader.ReadToEnd());
             });
         ParseDoc.UnitSource.registerEmbeddedUnits(units);
     }

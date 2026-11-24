@@ -42,17 +42,19 @@ module UnitSource =
     /// text — headers are blanked per-read (same as files).
     let private embeddedUnits = System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
+    let private normalizeKey (path: string) = path.Replace('\\', '/')
+
     let registerEmbeddedUnits (units: seq<string * string>) =
         for (path, text) in units do
-            embeddedUnits.[path] <- text
+            embeddedUnits.[normalizeKey path] <- text
 
     let embeddedUnitPaths () : string list = List.ofSeq embeddedUnits.Keys
 
-    let existsUnit (path: string) = embeddedUnits.ContainsKey path || File.Exists path
+    let existsUnit (path: string) = embeddedUnits.ContainsKey(normalizeKey path) || File.Exists path
 
     /// Raw unit text (header intact) — for index/metadata reads; parsers get readUnit.
     let tryReadRaw (path: string) =
-        match embeddedUnits.TryGetValue path with
+        match embeddedUnits.TryGetValue(normalizeKey path) with
         | true, text -> Some text
         | false, _ -> if File.Exists path then Some(File.ReadAllText path) else None
 
