@@ -38,6 +38,7 @@
     <Compile Include="Syntax\DashSpecSurfaceSyntax.fs" />
     <Compile Include="Syntax\SyntaxTreeParser.fs" />
     <Compile Include="Syntax\SyntaxTree.fs" />
+    <Compile Include="Syntax\DashSpecDocumentation.fs" />
     <Compile Include="Syntax\DashSpecSyntaxClassifier.fs" />
     <Compile Include="Construct.fs" />
     <Compile Include="PropertySchemas.fs" />

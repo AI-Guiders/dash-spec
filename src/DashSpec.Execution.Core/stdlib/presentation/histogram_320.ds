@@ -1,3 +1,4 @@
+/// Гистограмма распределения без легенды высотой `320px`.
 module presentation histogram_320
 namespace DashSpec.Std
 

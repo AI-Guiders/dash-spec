@@ -1,5 +1,6 @@
+/// Столбчатая или линейная диаграмма с легендой снизу и высотой `320px`.
 module presentation bar_bottom_320
 namespace DashSpec.Std
 
-  legend = bottom
-  height = 320
+legend = bottom
+height = 320

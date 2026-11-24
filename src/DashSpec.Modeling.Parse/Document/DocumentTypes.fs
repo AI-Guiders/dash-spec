@@ -12,6 +12,7 @@ open DashSpec.Modeling.Parse.Palette
 open DashSpec.Modeling.Parse.Tooltip
 open DashSpec.Modeling.Parse.Transform
 open DashSpec.Modeling.Parse.DataFlow
+open DashSpec.Modeling.Parse.Syntax
 open DashSpec.Modeling.Core
 
 type ReportBodyMode =
@@ -92,7 +93,9 @@ type DashboardDocument =
       /// ADR-0120: synthesized filter param nodes + data edges routed through
       /// them (scope by placement). Additive IR — legacy consumers unaffected.
       FilterFlowPlan: FilterNodeSynthesis.FilterFlowPlan option
-      WiringGraph: WiringGraph }
+      WiringGraph: WiringGraph
+      /// ADR-0138: compiled symbol documentation (`///` Markdown doc comments + localized `module texts`).
+      Documentation: IReadOnlyDictionary<string, DashSpecSymbolDoc> option }
 
 [<RequireQualifiedAccess>]
 module DashboardDocument =
@@ -110,6 +113,9 @@ module DashboardDocument =
 
     let emptyRowTypes =
         Dictionary<string, RowTypeDef>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
+
+    let emptyDocumentation =
+        Dictionary<string, DashSpecSymbolDoc>(StringComparer.OrdinalIgnoreCase) :> IReadOnlyDictionary<_, _>
 
 type DashboardDocument with
     member this.ResolvedCardsChrome =
@@ -154,6 +160,11 @@ type DashboardDocument with
         | None -> DashboardDocument.emptyRowTypes
         | Some types -> types
 
+    member this.ResolvedDocumentation =
+        match this.Documentation with
+        | None -> DashboardDocument.emptyDocumentation
+        | Some docs -> docs
+
     member this.ResolvedRowTypeSchemas =
         DashSpec.Modeling.Parse.Types.RowTypeSchemaBridge.toCatalog (this.ResolvedRowTypes.Values)
 
@@ -193,7 +204,8 @@ type TabModuleContent =
       TimePolicy: ReportTimePolicy option
       RowTypes: IReadOnlyDictionary<string, RowTypeDef> option
       DashflowPath: string option
-      Dashflow: DashflowModule option }
+      Dashflow: DashflowModule option
+      Documentation: IReadOnlyDictionary<string, DashSpecSymbolDoc> option }
 
 type ReportCompileContext(mode: ReportCompileMode) =
     member val Mode = mode with get, set

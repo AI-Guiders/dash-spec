@@ -268,6 +268,8 @@ module UnitImport =
                 try reg qid with _ -> ()
             | _ -> ()
 
+        state.RegisterUnitDocs(Some path, text)
+
         match env.Kind with
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Defaults ->
             let doc = DashSpec.Modeling.Parse.Defaults.DefaultsModuleParser.parseEnvelope env

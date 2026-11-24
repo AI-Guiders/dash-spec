@@ -1,38 +1,63 @@
+/// Стандартные типы времени, календарных дат и периодов ядра DashSpec (`DashSpec.Std`).
 module types time
 namespace DashSpec.Std
+
+/// Смещение часового пояса относительно UTC в минутах.
 type UtcOffset
+  /// Полное смещение от UTC в минутах (например, `180` для `UTC+3`).
   int TotalMinutes
 end type
 
+/// Время суток с привязкой к смещению от UTC.
 type Time
+  /// Час (`0..23`).
   int Hour
+  /// Минута (`0..59`).
   int Minute
+  /// Секунда (`0..59`).
   int Second
+  /// Смещение от UTC.
   UtcOffset Offset
 end type
 
+/// Календарная дата со смещением часового пояса.
 type Date
+  /// Календарный год.
   int Year
+  /// Месяц (`1..12`).
   int Month
+  /// День месяца (`1..31`).
   int Day
+  /// Смещение от UTC.
   UtcOffset Offset
 end type
 
+/// Полная метка даты и времени (`Date` + `Time`).
 type DateTime
+  /// Календарная дата.
   Date Day
+  /// Время суток.
   Time Clock
 end type
 
+/// Календарная неделя года (ISO-8601).
 type Week
+  /// Год недели.
   int Year
+  /// Номер недели в году (`1..53`).
   int WeekNumber
 end type
 
+/// Календарный месяц года.
 type Month
+  /// Год.
   int Year
+  /// Номер месяца (`1..12`).
   int MonthNumber
 end type
 
+/// Календарный год.
 type Year
+  /// Четырёхзначный номер года.
   int Year
 end type

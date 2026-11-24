@@ -1,21 +1,40 @@
+/// Реестр всех видов модулей (`module <kind> <id>`) языка DashSpec,
+/// их ключевых слов импорта (`import <import_as> from <namespace>`) и роли в конвейере компиляции.
 module registry units
 namespace DashSpec.Stdlib.Units
 
 | unit         | import_as     | role        |
+/// Табличный реестр метаданных и правил языка (`module registry <id>`).
 | registry     | registries    | declaration |
+/// Базовые настройки по умолчанию: диалект SQL, провайдер, форматы дат и дефолты фильтров.
 | defaults     | defaults      | declaration |
+/// Таблица локализованных строк, заголовков и документации (`language = "ru-RU"`).
 | texts        | texts         | declaration |
+/// Описание подключения к источникам данных и манифеста среды исполнения.
 | runtime      | runtimes      | declaration |
+/// Строго типизированные схемы строк данных (`type <Name> … end type`), компилируемые в CLR-классы.
 | types        | types         | declaration |
+/// Сетка и компоновка карточек или панели фильтров (`scope section | toolbar | page | card | host`).
 | layout       | layouts       | declaration |
+/// Пресет визуального оформления карточек, графиков и таблиц (`height`, `legend`, `fill`, `page_size`).
 | presentation | presentations | declaration |
+/// Шаблон всплывающей подсказки (тултипа) с привязкой к полям строки.
 | tooltip      | tooltips      | declaration |
+/// Цветовая палитра серий и категорий графиков.
 | palette      | palettes      | declaration |
+/// Декларация шага трансформации потока данных (`locality = database | runtime`) или пресета серий.
 | transform    | transforms    | declaration |
+/// Переиспользуемое описание визуализации (`line`, `area`, `bar`, `donut`, `heatmap`, `table`, `number`, `gantt`).
 | diagram      | diagrams      | consumer    |
+/// Направленный граф потоков данных (`source`, `transformer`, стрелки `->` и типизированные порты `ports`).
 | flow         | flows         | consumer    |
+/// Отдельная секция (вкладка) отчёта с карточками, фильтрами и сеткой размещения.
 | section      | sections      | consumer    |
+/// Корневой многосекционный дашборд, объединяющий вкладки (`section`), фильтры и потоки данных.
 | dashboard    | dashboards    | consumer    |
+/// Каталог отчётов и групп навигации хоста (`entry <id> as "<Title>"`).
 | catalog      | catalogs      | consumer    |
+/// Пользовательские алиасы команд для командной строки дашборда.
 | commands     | commands      | declaration |
+/// Конфигурация хоста DashSpec (точка входа каталога, язык, тема, поверхности оболочки).
 | host         | -             | root        |

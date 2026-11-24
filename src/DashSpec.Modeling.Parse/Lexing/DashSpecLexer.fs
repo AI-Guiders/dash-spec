@@ -71,9 +71,14 @@ module DashSpecLexer =
         if not atLineStart || i + 1 >= text.Length || text.[i + 1] <> '/' then None
         else
             let start = i
+            let isDoc =
+                i + 2 < text.Length
+                && text.[i + 2] = '/'
+                && (i + 3 >= text.Length || text.[i + 3] <> '/')
             i <- i + 2
             skipToEndOfLine text &i
-            Some { Kind = TokenKind.LineComment; Value = text.[start..i - 1]; Start = start; Length = i - start }
+            let kind = if isDoc then TokenKind.DocComment else TokenKind.LineComment
+            Some { Kind = kind; Value = text.[start..i - 1]; Start = start; Length = i - start }
 
     let private tryReadBlockComment (text: string) (i: byref<int>) (atLineStart: byref<bool>) =
         if i + 1 >= text.Length || text.[i + 1] <> '*' then None

@@ -29,6 +29,7 @@ type TokenKind =
     | HexColor
     | Raw
     | LineComment
+    | DocComment
     | BlockComment
     | Newline
     | Eof

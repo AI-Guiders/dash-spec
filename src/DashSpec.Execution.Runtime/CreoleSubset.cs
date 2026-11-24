@@ -86,6 +86,7 @@ public static partial class CreoleSubset
         encoded = Inline("**").Replace(encoded, "<strong>$1</strong>");
         encoded = Inline("//").Replace(encoded, "<em>$1</em>");
         encoded = Mono().Replace(encoded, "<code>$1</code>");
+        encoded = BacktickMono().Replace(encoded, "<code>$1</code>");
         encoded = Inline("__").Replace(encoded, "<u>$1</u>");
         encoded = Inline("--").Replace(encoded, "<s>$1</s>");
         return encoded;
@@ -117,6 +118,9 @@ public static partial class CreoleSubset
 
     [GeneratedRegex(@"""([^""]+?)""")]
     private static partial Regex Mono();
+
+    [GeneratedRegex(@"`([^`]+?)`")]
+    private static partial Regex BacktickMono();
 
     [GeneratedRegex(@"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")]
     private static partial Regex HexColor();

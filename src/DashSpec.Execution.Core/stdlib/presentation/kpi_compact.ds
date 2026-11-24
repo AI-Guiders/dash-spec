@@ -1,3 +1,4 @@
+/// Компактная плитка ключевого показателя (`number` KPI) высотой `120px`.
 module presentation kpi_compact
 namespace DashSpec.Std
 

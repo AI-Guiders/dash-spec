@@ -15,14 +15,25 @@ public sealed class HostSettingsService(
     HostPresentationSignals presentationSignals)
 {
     private static readonly Lock WriteGate = new();
-    public IReadOnlyDictionary<string, string> GetSection(string section) =>
-        db.HostSettings.AsNoTracking()
-            .Where(x => x.Section == section)
-            .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
 
-    public bool HasSecret(string section, string key) =>
-        db.HostSettings.AsNoTracking()
-            .Any(x => x.Section == section && x.Key == key && x.Value.Length > 0);
+    public IReadOnlyDictionary<string, string> GetSection(string section)
+    {
+        lock (WriteGate)
+        {
+            return db.HostSettings.AsNoTracking()
+                .Where(x => x.Section == section)
+                .ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    public bool HasSecret(string section, string key)
+    {
+        lock (WriteGate)
+        {
+            return db.HostSettings.AsNoTracking()
+                .Any(x => x.Section == section && x.Key == key && x.Value.Length > 0);
+        }
+    }
 
     public void Upsert(string section, string key, string value, string? updatedBy = "control-center")
     {

@@ -122,8 +122,61 @@ module DashSpecAst =
         | DashSpecAstNode.Line n ->
             not (Array.isEmpty n.Tokens)
             && n.Tokens
-               |> Array.forall (fun token -> token.LexKind = TokenKind.LineComment || token.LexKind = TokenKind.BlockComment)
+               |> Array.forall (fun token ->
+                   token.LexKind = TokenKind.LineComment
+                   || token.LexKind = TokenKind.DocComment
+                   || token.LexKind = TokenKind.BlockComment)
         | _ -> false
+
+    /// Strip leading `///` (and one optional following space) from a doc-comment token text.
+    let stripDocCommentPrefix (raw: string) : string =
+        let t = raw.TrimStart()
+        if t.StartsWith("///", StringComparison.Ordinal) then
+            let rest = t.Substring(3)
+            if rest.Length > 0 && rest.[0] = ' ' then rest.Substring(1) else rest
+        else
+            t
+
+    /// Try to extract a doc-comment line from a trivia `Line` node (`/// ...`).
+    let tryDocCommentLine (node: DashSpecAstNode) : string option =
+        match node with
+        | DashSpecAstNode.Line n when
+            n.Tokens.Length = 1 && n.Tokens.[0].LexKind = TokenKind.DocComment ->
+            Some(stripDocCommentPrefix n.Tokens.[0].Text)
+        | _ -> None
+
+    /// Walk all container bodies in `root` and build a map `NodeId -> Markdown doc comment`
+    /// from contiguous `///` doc-comment lines immediately preceding each declaration node (DASHSPEC-ADR-0138).
+    let collectLeadingDocs (root: DashSpecAstNode) : System.Collections.Generic.IReadOnlyDictionary<AIGuiders.Platform.Modeling.Core.Identity.NodeId, string> =
+        let result = System.Collections.Generic.Dictionary<AIGuiders.Platform.Modeling.Core.Identity.NodeId, string>()
+        let rec walkChildren (children: DashSpecAstNode[]) (inheritedPending: ResizeArray<string>) =
+            let pending = inheritedPending
+            for child in children do
+                match tryDocCommentLine child with
+                | Some docLine ->
+                    pending.Add docLine
+                | None ->
+                    match child with
+                    | DashSpecAstNode.BlankLine _ ->
+                        pending.Clear()
+                    | _ when isTrivia child ->
+                        // Regular `//` or `/* */` comment does not add to doc, nor does it attach
+                        ()
+                    | _ ->
+                        if pending.Count > 0 then
+                            let md = String.Join("\n", pending).Trim()
+                            if not (String.IsNullOrWhiteSpace md) then
+                                result.[id child] <- md
+                            pending.Clear()
+
+                        let childMembers = members child
+                        if childMembers.Length > 0 then
+                            walkChildren childMembers (ResizeArray<string>())
+
+        let rootMembers = members root
+        if rootMembers.Length > 0 then
+            walkChildren rootMembers (ResizeArray<string>())
+        result :> System.Collections.Generic.IReadOnlyDictionary<_, _>
 
     let isOutlineNode (node: DashSpecAstNode) =
         match node with

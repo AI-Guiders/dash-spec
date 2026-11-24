@@ -1,3 +1,4 @@
+/// Диаграмма размаха (`boxplot`) с легендой снизу и высотой `360px`.
 module presentation box_360
 namespace DashSpec.Std
 

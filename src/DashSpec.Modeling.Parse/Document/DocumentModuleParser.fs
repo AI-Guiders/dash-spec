@@ -186,7 +186,8 @@ module rec DocumentModuleParser =
               Dashflow = dashflow
               ReportScopeFlow = result.Context.ReportScopeFlow
               FilterFlowPlan = None
-              WiringGraph = WiringGraph.empty }
+              WiringGraph = WiringGraph.empty
+              Documentation = Some(result.Context.Includes.ExportDocumentation()) }
 
         DocumentCompilePipeline.attachFilterFlowWiringAndValidate documentWithoutGraph
 
@@ -244,7 +245,8 @@ module rec DocumentModuleParser =
               Dashflow = dashflow
               ReportScopeFlow = dashShell.ReportScopeFlow
               FilterFlowPlan = None
-              WiringGraph = WiringGraph.empty }
+              WiringGraph = WiringGraph.empty
+              Documentation = Some(dashShell.Includes.ExportDocumentation()) }
 
         DocumentCompilePipeline.attachFilterFlowWiringAndValidate documentWithoutGraph
 
@@ -261,12 +263,20 @@ module rec DocumentModuleParser =
         reader.SkipNewlines()
         reader.ExpectKeyword "module"
 
-        if reader.TryKeyword "section" then
-            composeTabStandalone reader specDirectory parseOptions diagnostics
-        elif reader.TryKeyword "dashboard" then
-            parseDashboard reader specDirectory parseOptions
-        else
-            raise (DashSpecParseException("Block module must start with @dashboard or @tab."))
+        let doc =
+            if reader.TryKeyword "section" then
+                composeTabStandalone reader specDirectory parseOptions diagnostics
+            elif reader.TryKeyword "dashboard" then
+                parseDashboard reader specDirectory parseOptions
+            else
+                raise (DashSpecParseException("Block module must start with @dashboard or @tab."))
+
+        let mergedDocs = Dictionary<string, DashSpec.Modeling.Parse.Syntax.DashSpecSymbolDoc>(doc.ResolvedDocumentation, StringComparer.OrdinalIgnoreCase)
+        for pair in DashSpec.Modeling.Parse.Syntax.DashSpecDocumentationExtractor.indexBySymbol (DashSpec.Modeling.Parse.Syntax.DashSpecDocumentationExtractor.extractFromText None (fun _ -> None) text) do
+            if not (mergedDocs.ContainsKey pair.Key) || not (String.IsNullOrWhiteSpace pair.Value.Markdown) then
+                mergedDocs.[pair.Key] <- pair.Value
+
+        { doc with Documentation = Some(mergedDocs :> IReadOnlyDictionary<_, _>) }
 
     let parseDocument (text: string) (specDirectory: string option) (parseOptions: DashSpecParseOptions) =
         parseDocumentWithDiagnostics text specDirectory parseOptions (ResizeArray())
@@ -311,6 +321,8 @@ module rec DocumentModuleParser =
 
         DocumentCompilePipeline.compileReportModule result.Context
 
+        result.Context.Includes.RegisterUnitDocs(None, text)
+
         // ADR-0011 embed: parent shell owns connect/flow and shared row types; tab module contributes report body only.
         // Module shell filters (report-scope declarations) are ignored when embedded — only explicitly local filter blocks travel.
         { TabId = tabId
@@ -326,7 +338,8 @@ module rec DocumentModuleParser =
           TimePolicy = result.Context.TimePolicy
           RowTypes = Some DashboardDocument.emptyRowTypes
           DashflowPath = None
-          Dashflow = None }
+          Dashflow = None
+          Documentation = Some(result.Context.Includes.ExportDocumentation()) }
 
     let readRuntimeManifest (text: string) =
         if not (isBlockModuleFormat text) then None

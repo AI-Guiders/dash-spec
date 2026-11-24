@@ -1,3 +1,4 @@
+/// Встроенный отчёт самодиагностики и мониторинга `DashSpec.Host` поверх реляционной БД `host-telemetry.witdb` (ADR-0137).
 module section self_monitoring
 namespace DashSpec.Std.Monitoring.Report
 
@@ -24,6 +25,7 @@ connect
 end connect
 
 report "DashSpec Self-Monitoring (WitDB)"
+  /// Текущий объём физической памяти процесса `DashSpec.Host` (`Working Set`, `MiB`).
   card kpi_working_set as "Working Set (MiB)"
     diagram number
       value = WorkingSetMb
@@ -33,6 +35,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Текущий размер управляемой кучи `.NET GC` (`Managed Heap`, `MiB`).
   card kpi_managed_heap as "Managed Heap (MiB)"
     diagram number
       value = ManagedHeapMb
@@ -42,6 +45,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Количество активных потоков в пуле `.NET ThreadPool`.
   card kpi_thread_pool as "ThreadPool Threads"
     diagram number
       value = ThreadPoolThreads
@@ -52,6 +56,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Общее количество выполненных SQL-запросов к источникам данных отчётов.
   card kpi_total_queries as "Total SQL Queries"
     diagram number
       value = TotalQueries
@@ -62,6 +67,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Средняя задержка выполнения SQL-запросов в миллисекундах.
   card kpi_avg_latency as "Avg Query Latency (ms)"
     diagram number
       value = AvgDurationMs
@@ -71,6 +77,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Количество SQL-запросов, завершившихся с ошибкой.
   card kpi_failed_queries as "Failed Queries"
     diagram number
       value = FailedQueries
@@ -81,6 +88,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Временной ряд потребления физической памяти (`Working Set`, `MiB`) процессом хоста.
   card working_set_chart as "Working Set Memory (MiB)"
     diagram ref main diag_telemetry_memory_line
     data flow
@@ -88,6 +96,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Временной ряд размера управляемой кучи сборщика мусора (`Managed GC Heap`, `MiB`).
   card managed_heap_chart as "Managed GC Heap (MiB)"
     diagram ref main diag_telemetry_heap_area
     data flow
@@ -95,6 +104,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Сравнение средней длительности запросов (`ms`) по видам операций (`card_query`, `field_options`).
   card query_latency_chart as "Average Query Latency by Kind (ms)"
     diagram ref main diag_telemetry_query_kind_bar
     data flow
@@ -102,6 +112,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Долевое распределение записей системного журнала по уровням важности.
   card log_levels_chart as "Host Events by Severity"
     diagram ref main diag_telemetry_log_level_donut
     data flow
@@ -109,6 +120,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Полный журнал выполненных SQL-запросов с фильтрацией и сортировкой по колонкам.
   card recent_queries as "Executed Queries (WitDB: query_telemetry)"
     diagram ref main diag_telemetry_queries
     data flow
@@ -116,6 +128,7 @@ report "DashSpec Self-Monitoring (WitDB)"
     end data flow
   end card
 
+  /// Системный журнал событий хоста `DashSpec.Host` (`host_logs`).
   card recent_logs as "Host Event Log (WitDB: host_logs)"
     diagram ref main diag_telemetry_logs
     data flow

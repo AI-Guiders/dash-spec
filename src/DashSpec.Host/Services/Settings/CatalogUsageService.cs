@@ -89,14 +89,17 @@ public sealed class CatalogUsageService(DashSpecHostDbContext db)
             return null;
         }
 
-        var best = db.CatalogUsage.AsNoTracking()
-            .Where(x => x.ClientId == clientId)
-            .OrderByDescending(x => x.HitCount)
-            .ThenByDescending(x => x.LastUsedAt)
-            .Select(x => x.EntryId)
-            .FirstOrDefault();
+        lock (WriteGate)
+        {
+            var best = db.CatalogUsage.AsNoTracking()
+                .Where(x => x.ClientId == clientId)
+                .OrderByDescending(x => x.HitCount)
+                .ThenByDescending(x => x.LastUsedAt)
+                .Select(x => x.EntryId)
+                .FirstOrDefault();
 
-        return string.IsNullOrWhiteSpace(best) ? null : best;
+            return string.IsNullOrWhiteSpace(best) ? null : best;
+        }
     }
 
     public void RecordSelection(string clientId, string entryId)

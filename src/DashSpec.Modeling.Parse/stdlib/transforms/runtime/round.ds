@@ -1,7 +1,10 @@
+/// Математическое округление числовых колонок (`decimal`) в рантайме до указанного числа знаков после запятой (`digits`).
 module transform round
 namespace DashSpec.Std.Transformations.Runtime
 
 type_effect = identity
 locality = runtime
+/// Количество знаков после запятой от `0` до `28` (по умолчанию `1`).
 param digits = ident
+/// Необязательное имя конкретной `decimal`-колонки (если не указано — округляются все `decimal`-колонки).
 param column = ident

@@ -1,7 +1,10 @@
+/// Сортировка выборки на стороне БД (`ORDER BY`) при компиляции SQL-запроса слота.
 module transform order
 namespace DashSpec.Std.Transformations.Database
 
 type_effect = identity
 locality = database
+/// Колонка сортировки.
 param by = ident
+/// Направление сортировки: `asc` (по возрастанию) или `desc` (по убыванию).
 param direction = ident

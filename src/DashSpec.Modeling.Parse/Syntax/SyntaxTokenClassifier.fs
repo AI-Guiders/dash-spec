@@ -10,6 +10,7 @@ module SyntaxTokenClassifier =
         kind = TokenKind.Newline
         || kind = TokenKind.Eof
         || kind = TokenKind.LineComment
+        || kind = TokenKind.DocComment
         || kind = TokenKind.BlockComment
 
     let private prevNonTrivia (tokens: Token[]) index =
@@ -51,7 +52,7 @@ module SyntaxTokenClassifier =
 
     let classifyToken (tokens: Token[]) index (token: Token) =
         match token.Kind with
-        | TokenKind.LineComment | TokenKind.BlockComment -> DashSpecSyntaxKind.Comment
+        | TokenKind.LineComment | TokenKind.DocComment | TokenKind.BlockComment -> DashSpecSyntaxKind.Comment
         | TokenKind.String | TokenKind.Raw | TokenKind.IanaZone -> DashSpecSyntaxKind.String
         | TokenKind.HexColor | TokenKind.RelativeDay | TokenKind.TimeShift -> DashSpecSyntaxKind.Number
         | TokenKind.At | TokenKind.Bang -> DashSpecSyntaxKind.Keyword

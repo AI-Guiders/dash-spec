@@ -114,6 +114,9 @@ module rec DashboardComposer =
         let rowTypes =
             Dictionary<string, DashSpec.Modeling.Core.RowTypeDef>(document.ResolvedRowTypes, StringComparer.OrdinalIgnoreCase)
 
+        let documentation =
+            Dictionary<string, DashSpec.Modeling.Parse.Syntax.DashSpecSymbolDoc>(document.ResolvedDocumentation, StringComparer.OrdinalIgnoreCase)
+
         let mutable formatDefaults = document.FormatDefaults
         let mutable timePolicy = document.TimePolicy
         let mutable dashflow = document.Dashflow
@@ -197,6 +200,10 @@ module rec DashboardComposer =
                         raise (DashSpecParseException($"Tab module '{tab.Id}' redeclares row type '{pair.Key}'."))
                     rowTypes.[pair.Key] <- pair.Value
 
+                for pair in Option.defaultValue DashboardDocument.emptyDocumentation tabModule.Documentation do
+                    if not (documentation.ContainsKey pair.Key) || not (String.IsNullOrWhiteSpace pair.Value.Markdown) then
+                        documentation.[pair.Key] <- pair.Value
+
                 match tabModule.Dashflow with
                 | None -> ()
                 | Some moduleFlow ->
@@ -247,6 +254,7 @@ module rec DashboardComposer =
                 TimePolicy = timePolicy
                 RowTypes = Some(rowTypes :> IReadOnlyDictionary<_, _>)
                 Dashflow = dashflow
-                DashflowPath = dashflowPath }
+                DashflowPath = dashflowPath
+                Documentation = Some(documentation :> IReadOnlyDictionary<_, _>) }
 
         merged

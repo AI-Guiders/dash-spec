@@ -1,9 +1,15 @@
+/// Реляционная агрегация на стороне БД (`GROUP BY`): группирует строки по полю `by`
+/// и вычисляет агрегат `agg` (`sum`, `count`, `avg`, `min`, `max`) по колонке `value`.
 module transform summarize
 namespace DashSpec.Std.Transformations.Database
 
 type_effect = projection
 locality = database
+/// Колонка группировки (`GROUP BY`).
 param by = ident
+/// Функция агрегации: `sum`, `count`, `avg`, `min` или `max`.
 param agg = ident
+/// Числовая колонка, по которой вычисляется агрегат.
 param value = ident
+/// Флаг подсчёта уникальных значений (`true` / `false`).
 param distinct = ident

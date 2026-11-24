@@ -398,7 +398,7 @@ module DashSpecSurfaceSyntax =
         (line: TokenReaderPhysicalLines.PhysicalLine)
         =
         let isComment (token: Token) =
-            token.Kind = TokenKind.LineComment || token.Kind = TokenKind.BlockComment
+            token.Kind = TokenKind.LineComment || token.Kind = TokenKind.DocComment || token.Kind = TokenKind.BlockComment
 
         if line.Tokens |> List.exists isComment then
             appendLine parent id text allTokens line
@@ -445,6 +445,7 @@ module DashSpecSurfaceSyntax =
             t.Kind <> TokenKind.Newline
             && t.Kind <> TokenKind.Eof
             && t.Kind <> TokenKind.LineComment
+            && t.Kind <> TokenKind.DocComment
             && t.Kind <> TokenKind.BlockComment)
 
     let private tryParseDotSyntax (tokens: Token list) : DotSyntax option =
@@ -527,6 +528,7 @@ module DashSpecSurfaceSyntax =
             syntaxTokens
             |> Array.filter (fun t ->
                 t.LexKind <> TokenKind.LineComment
+                && t.LexKind <> TokenKind.DocComment
                 && t.LexKind <> TokenKind.BlockComment)
             |> stripTrailingBraces
 

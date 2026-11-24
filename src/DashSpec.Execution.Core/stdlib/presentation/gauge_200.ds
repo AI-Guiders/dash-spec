@@ -1,3 +1,4 @@
+/// Радиальный индикатор (`gauge`) без легенды высотой `200px`.
 module presentation gauge_200
 namespace DashSpec.Std
 

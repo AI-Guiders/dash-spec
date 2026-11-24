@@ -24,7 +24,7 @@ type TokenReader(tokens: IReadOnlyList<Token>, ?sourceText: string) =
     member _.IsOnNewline() = tokens.[index].Kind = TokenKind.Newline
 
     member private _.IsTrivia kind =
-        kind = TokenKind.Newline || kind = TokenKind.LineComment || kind = TokenKind.BlockComment
+        kind = TokenKind.Newline || kind = TokenKind.LineComment || kind = TokenKind.DocComment || kind = TokenKind.BlockComment
 
     member this.SkipNewlines() =
         while this.IsTrivia tokens.[index].Kind do

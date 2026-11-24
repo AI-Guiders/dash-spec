@@ -19,6 +19,7 @@ module BlockSurfaceLineClassifier =
         kind <> TokenKind.Newline
         && kind <> TokenKind.Eof
         && kind <> TokenKind.LineComment
+        && kind <> TokenKind.DocComment
         && kind <> TokenKind.BlockComment
 
     let private significantTokens (tokens: Token list) =

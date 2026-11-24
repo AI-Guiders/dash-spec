@@ -211,9 +211,51 @@ public static class StudioGraphAndLspBuilder
             : relativePath;
         var defLine = nav is not null && nav.Declarations is { Length: > 0 } ? nav.Definition.Line : sym.Span.Line;
 
+        DashSpecSymbolDoc? symbolDoc = null;
+        var localDocs = DashSpecDocumentationExtractor.indexBySymbol(
+            DashSpecDocumentationExtractor.extractFromText(
+                Microsoft.FSharp.Core.FSharpOption<string>.Some(relativePath),
+                Microsoft.FSharp.Core.FuncConvert.FromFunc<string, Microsoft.FSharp.Core.FSharpOption<string>>(_ => Microsoft.FSharp.Core.FSharpOption<string>.None),
+                text));
+        if (!localDocs.TryGetValue(sym.Name, out symbolDoc))
+        {
+            var wsCat = DashSpecDocGenerator.BuildWorkspaceCatalog(root);
+            if (!wsCat.SymbolIndex.TryGetValue(sym.Name, out symbolDoc))
+            {
+                var stdlibCat = DashSpecDocGenerator.BuildStdlibCatalog();
+                stdlibCat.SymbolIndex.TryGetValue(sym.Name, out symbolDoc);
+            }
+        }
+
+        var title = symbolDoc is not null && !string.IsNullOrWhiteSpace(symbolDoc.Signature)
+            ? symbolDoc.Signature
+            : $"{sym.Kind} {sym.Name}";
+
+        var detailSb = new System.Text.StringBuilder();
+        if (symbolDoc is not null && !string.IsNullOrWhiteSpace(symbolDoc.Markdown))
+        {
+            detailSb.AppendLine(symbolDoc.Markdown);
+            detailSb.AppendLine();
+        }
+
+        if (symbolDoc is { Children.Length: > 0 })
+        {
+            foreach (var child in symbolDoc.Children.Take(10))
+            {
+                var childDoc = !string.IsNullOrWhiteSpace(child.Markdown) ? $" — {child.Markdown}" : "";
+                detailSb.AppendLine($"- `{child.Signature}`{childDoc}");
+            }
+            detailSb.AppendLine();
+        }
+
+        var sourceLabel = symbolDoc is not null && Microsoft.FSharp.Core.FSharpOption<string>.get_IsSome(symbolDoc.SourcePath)
+            ? $"{symbolDoc.SourcePath.Value}:{symbolDoc.Line}"
+            : $"{defRel}:{defLine}";
+        detailSb.Append($"Определён в `{sourceLabel}`");
+
         return new StudioHoverDto(
-            $"{sym.Kind} {sym.Name}",
-            $"Определён в `{defRel}:{defLine}`",
+            title,
+            detailSb.ToString().Trim(),
             defRel,
             defLine);
     }

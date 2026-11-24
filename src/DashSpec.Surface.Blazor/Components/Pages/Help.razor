@@ -1,21 +1,125 @@
 @page "/help"
 @layout DashSpec.Surface.Blazor.Components.Layout.MainLayout
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using DashSpec.Execution.Compilation
+@using DashSpec.Modeling.Parse.Syntax
+@using DashSpec.Presentation.Components
+@using DashSpec.Surface.Blazor.Services.Presentation
+@using Microsoft.FSharp.Core
+@inject CatalogSourceState CatalogState
+@inject DashSpec.Surface.Blazor.Commands.IDashboardCultureAmbient CultureAmbient
 
-<PageTitle>Справка — DashSpec</PageTitle>
+<PageTitle>Справка и документация — DashSpec</PageTitle>
 
 <section class="help-page">
     <header class="help-header">
-        <h1>Справка DashSpec</h1>
-        <p class="muted">Текстовые дашборды из спецификаций.</p>
+        <h1>Справка и самодокументируемый справочник DashSpec</h1>
+        <p class="muted">Живая документация языка (<code>stdlib</code>) и каталога отчётов, генерируемая компилятором напрямую из <code>///</code> Markdown-комментариев и <code>module texts</code> (ADR-0138).</p>
     </header>
 
     <nav class="help-tabs" aria-label="Разделы справки">
-        <button type="button" class="help-tab @(_tab == "user" ? "help-tab-active" : null)" @onclick='() => _tab = "user"'>Пользователь</button>
-        <button type="button" class="help-tab @(_tab == "admin" ? "help-tab-active" : null)" @onclick='() => _tab = "admin"'>Администратор</button>
+        <button type="button" class="help-tab @(_tab == "stdlib" ? "help-tab-active" : null)" @onclick='() => SelectTab("stdlib")'>Справочник языка (Stdlib)</button>
+        <button type="button" class="help-tab @(_tab == "catalog" ? "help-tab-active" : null)" @onclick='() => SelectTab("catalog")'>Документация каталога</button>
+        <button type="button" class="help-tab @(_tab == "user" ? "help-tab-active" : null)" @onclick='() => SelectTab("user")'>Руководство пользователя</button>
+        <button type="button" class="help-tab @(_tab == "admin" ? "help-tab-active" : null)" @onclick='() => SelectTab("admin")'>Администратор</button>
     </nav>
 
-    @if (_tab == "user")
+    @if (_tab == "stdlib" || _tab == "catalog")
+    {
+        var catalog = _tab == "stdlib" ? _stdlibCatalog : _workspaceCatalog;
+        if (catalog is not null)
+        {
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                <input type="search"
+                       placeholder="Поиск по модулям, типам, полям, карточкам, трансформациям…"
+                       @bind="_search"
+                       @bind:event="oninput"
+                       style="flex: 1 1 280px; max-width: 480px; padding: 0.45rem 0.75rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text);" />
+                <span class="muted" style="font-size: 0.82rem;">CLI: <code>dsc doc @(_tab == "stdlib" ? "--stdlib" : "<dir>") --out reference.md</code></span>
+            </div>
+
+            @foreach (var sec in catalog.Sections)
+            {
+                var filteredUnits = FilterUnits(sec.Units);
+                if (filteredUnits.Count == 0)
+                {
+                    continue;
+                }
+
+                <section style="margin-top: 1rem;">
+                    <h2 style="margin: 0 0 0.65rem; font-size: 1.15rem; border-bottom: 1px solid var(--border); padding-bottom: 0.35rem;">@sec.CategoryTitle</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 0.85rem;">
+                        @foreach (var unit in filteredUnits)
+                        {
+                            var unitTitle = FSharpOption<string>.get_IsSome(unit.Title) && !string.IsNullOrWhiteSpace(unit.Title.Value)
+                                ? unit.Title.Value
+                                : null;
+                            var sourcePath = FSharpOption<string>.get_IsSome(unit.SourcePath)
+                                ? $"{unit.SourcePath.Value}:{unit.Line}"
+                                : null;
+                            <article class="card" style="padding: 0.85rem 1rem; min-height: auto; gap: 0.45rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;">
+                                    <code style="font-weight: 600; font-size: 0.92rem; color: var(--accent, #60a5fa);">@unit.Signature</code>
+                                    @if (!string.IsNullOrWhiteSpace(sourcePath))
+                                    {
+                                        <span class="badge">@sourcePath</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(unitTitle))
+                                {
+                                    <div style="font-weight: 600; font-size: 0.95rem;">@unitTitle</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(unit.Markdown))
+                                {
+                                    <p style="margin: 0.15rem 0; font-size: 0.88rem; line-height: 1.45;">
+                                        <RichTextView Text="@unit.Markdown" />
+                                    </p>
+                                }
+                                @if (unit.Children.Length > 0)
+                                {
+                                    <ul style="margin: 0.25rem 0 0; padding-left: 1.15rem; font-size: 0.83rem; line-height: 1.4;">
+                                        @foreach (var child in unit.Children)
+                                        {
+                                            var childTitle = FSharpOption<string>.get_IsSome(child.Title) && !string.IsNullOrWhiteSpace(child.Title.Value)
+                                                ? child.Title.Value
+                                                : null;
+                                            <li style="margin-bottom: 0.2rem;">
+                                                <code>@child.Signature</code>
+                                                @if (!string.IsNullOrWhiteSpace(childTitle))
+                                                {
+                                                    <span class="muted"> (@childTitle)</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(child.Markdown))
+                                                {
+                                                    <span> — <RichTextView Text="@child.Markdown" /></span>
+                                                }
+                                                @if (child.Children.Length > 0)
+                                                {
+                                                    <ul style="margin: 0.15rem 0 0.25rem; padding-left: 1rem;">
+                                                        @foreach (var grand in child.Children)
+                                                        {
+                                                            <li>
+                                                                <code>@grand.Signature</code>
+                                                                @if (!string.IsNullOrWhiteSpace(grand.Markdown))
+                                                                {
+                                                                    <span> — <RichTextView Text="@grand.Markdown" /></span>
+                                                                }
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </article>
+                        }
+                    </div>
+                </section>
+            }
+        }
+    }
+    else if (_tab == "user")
     {
         <article class="help-body">
             <h2>Как открыть</h2>
@@ -27,8 +131,8 @@
 
             <h2>Экран</h2>
             <ul>
-                <li><strong>Отчёт</strong> — выпадающий список вверху (отчёты из каталога).</li>
-                <li><strong>Вкладки и страницы</strong> — переключение без потери фильтров там, где это задумано.</li>
+                <li><strong>Отчёт</strong> — выбор отчёта в левом меню или выпадающем списке.</li>
+                <li><strong>Вкладки и страницы</strong> — переключение с сохранением истории браузера (работают кнопки «Назад» и «Вперёд»).</li>
                 <li><strong>Фильтры</strong> — дата, продукты, пользователь, масштаб (день/месяц/год), период, топ N.</li>
             </ul>
 
@@ -38,49 +142,61 @@
                 <li>Сузить период и измерения фильтрами.</li>
                 <li>Открыть карточку и выгрузить CSV или XLSX.</li>
             </ul>
-
-            <h2>Виды диаграмм (remark 4)</h2>
-            <p>Тип задаётся в <code>.dashdiagram</code> (блок <code>bar</code>, <code>line</code>, <code>heatmap</code> и т.д.).</p>
-            <ul>
-                <li><strong>line / area / sparkline</strong> — тренд по времени или категориям.</li>
-                <li><strong>bar</strong> — столбцы (вертикальные или горизонтальные); «Развернуть» показывает все категории.</li>
-                <li><strong>pie / donut</strong> — доли; клик по сегменту может сузить фильтр.</li>
-                <li><strong>heatmap / matrix-canvas</strong> — матрица интенсивности; клик по ячейке — список пользователей (ПК) снизу.</li>
-                <li><strong>gantt / gantt-html</strong> — компактные полоски активности: <code>from</code>/<code>to</code>, <code>axis_from</code>/<code>axis_to</code>, <code>step</code> (например <code>5m</code>).</li>
-                <li><strong>gantt-timeline</strong> — split grid + ruler (chrome <code>gantt_timeline</code>): колонки начало/конец/длительность, шкала времени, <code>visible_rows</code> для скролла.</li>
-                <li>Блок <code>defaults</code> (как в GDL): <code>time_format</code>, <code>date_format</code>, <code>datetime_format</code>, <code>filter.&lt;id&gt;.&lt;property&gt;</code> (например <code>filter.usage_date.range</code>, <code>filter.period_grain.scale</code>, <code>filter.events_top.limit</code>) — report / standalone / page / tab.</li>
-                <li><strong>table</strong> — таблица; фильтр по каждой колонке в заголовке; TOP=0 — все строки.</li>
-                <li><strong>number</strong> — KPI (одно число).</li>
-                <li><strong>scatter / histogram / box / treemap / gauge / windrose</strong> — спец. графики по данным.</li>
-            </ul>
-            <p>Экспорт карточки: кнопки <strong>CSV</strong> и <strong>XLSX</strong> в шапке карточки.</p>
-
-            <h2>Важно</h2>
-            <p>Цифры на карточках берутся из источника, указанного в спецификации.</p>
-            <p class="muted">Примеры спецификаций — в <code>samples/demo</code>.</p>
         </article>
     }
     else
     {
         <article class="help-body">
-            <h2>Настройки хоста</h2>
+            <h2>Настройки хоста и самодиагностика</h2>
             <p><a href="/admin/access">Settings</a> — API key, git-каталог, часовой пояс, язык, длинные списки фильтра ПО (&gt;80).</p>
+            <p><a href="/admin/monitoring">Monitoring &amp; Logs</a> — встроенный самодокументируемый отчёт <code>stdlib/monitoring/self_monitoring.ds</code> поверх <code>host-telemetry.witdb</code>.</p>
 
-            <h2>Каталог отчётов</h2>
+            <h2>Документирующие комментарии и CLI</h2>
             <ul>
-                <li>Спеки <code>.dashspec</code> и <code>.dashcatalog</code> лежат в каталоге Host. Пример — <code>samples/demo</code>.</li>
-                <li>После обновления спек — redeploy DashSpec Host или git sync каталога.</li>
-            </ul>
-
-            <h2>Установка</h2>
-            <ul>
-                <li><code>docs/HOWTO_RU.md</code> — как поднять Host.</li>
-                <li><code>docs/AUTHORING_GUIDE_RU.md</code> — авторинг спек.</li>
+                <li>Над любым модулем, типом, полем, портом, карточкой, фильтром или трансформацией в <code>.ds</code> можно писать <code>/// Markdown-комментарий</code>.</li>
+                <li>Локализация документации поддерживается через <code>module texts</code> (ключи <code>&lt;kind&gt;.&lt;id&gt;.doc</code> или ссылки <code>@@text(key)</code>).</li>
+                <li>Генерация полного Markdown-справочника из командной строки: <code>dsc doc &lt;dir&gt; --stdlib --out docs/reference.md</code>.</li>
             </ul>
         </article>
     }
 </section>
 
 @code {
-    private string _tab = "user";
+    private string _tab = "stdlib";
+    private string _search = "";
+    private DashSpecDocCatalog? _stdlibCatalog;
+    private DashSpecDocCatalog? _workspaceCatalog;
+
+    protected override void OnInitialized()
+    {
+        var lang = CultureAmbient.Culture.Name;
+        _stdlibCatalog = DashSpecDocGenerator.BuildStdlibCatalog(lang);
+        var catalogDir = Path.GetDirectoryName(CatalogState.Current.FullPath);
+        _workspaceCatalog = DashSpecDocGenerator.BuildWorkspaceCatalog(catalogDir ?? "", lang);
+    }
+
+    private void SelectTab(string tab)
+    {
+        _tab = tab;
+    }
+
+    private IReadOnlyList<DashSpecSymbolDoc> FilterUnits(IReadOnlyList<DashSpecSymbolDoc> units)
+    {
+        if (string.IsNullOrWhiteSpace(_search))
+        {
+            return units;
+        }
+
+        var q = _search.Trim();
+        return units
+            .Where(u => Matches(u, q))
+            .ToList();
+    }
+
+    private static bool Matches(DashSpecSymbolDoc doc, string q) =>
+        doc.Id.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+        doc.Signature.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+        doc.Markdown.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+        (FSharpOption<string>.get_IsSome(doc.Title) && doc.Title.Value.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
+        doc.Children.Any(c => Matches(c, q));
 }

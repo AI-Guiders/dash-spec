@@ -663,6 +663,7 @@ module DashSpecGrammarGraph =
             DashSpecAst.tokens node
             |> Array.filter (fun t ->
                 t.LexKind <> TokenKind.LineComment
+                && t.LexKind <> TokenKind.DocComment
                 && t.LexKind <> TokenKind.BlockComment
                 && t.LexKind <> TokenKind.Newline
                 && t.LexKind <> TokenKind.Eof)
@@ -764,6 +765,7 @@ module DashSpecGrammarGraph =
                 t.Span.Start >= lineStart
                 && t.Span.Start < clamped
                 && t.LexKind <> TokenKind.LineComment
+                && t.LexKind <> TokenKind.DocComment
                 && t.LexKind <> TokenKind.BlockComment)
             |> Array.toList
 

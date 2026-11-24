@@ -1,3 +1,4 @@
+/// Круговая диаграмма (`pie`) с легендой справа и высотой `360px`.
 module presentation pie_right_360
 namespace DashSpec.Std
 

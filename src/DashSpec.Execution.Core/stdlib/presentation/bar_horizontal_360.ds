@@ -1,3 +1,4 @@
+/// Горизонтальная столбчатая диаграмма с легендой снизу и высотой `360px`.
 module presentation bar_horizontal_360
 namespace DashSpec.Std
 

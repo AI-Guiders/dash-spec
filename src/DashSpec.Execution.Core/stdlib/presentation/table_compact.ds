@@ -1,3 +1,4 @@
+/// Компактное табличное представление для встроенных и вспомогательных списков (`8` видимых строк, плотность `compact`).
 module presentation table_compact
 namespace DashSpec.Std
 

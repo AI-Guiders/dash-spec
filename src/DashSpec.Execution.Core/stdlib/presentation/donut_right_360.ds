@@ -1,3 +1,4 @@
+/// Кольцевая диаграмма (`donut`) с легендой справа и высотой `360px`.
 module presentation donut_right_360
 namespace DashSpec.Std
 

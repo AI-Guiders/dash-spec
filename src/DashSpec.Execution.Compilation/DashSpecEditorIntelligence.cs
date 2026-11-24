@@ -83,11 +83,18 @@ public static class DashSpecEditorIntelligence
                 break;
 
             case { IsUnitKindKeyword: true }:
+            {
+                var stdlib = DashSpecDocGenerator.BuildStdlibCatalog();
                 foreach (var entry in ImportKindRegistry.unitManifest)
                 {
-                    results.Add(Token(entry.UnitKeyword, "keyword", $"module {entry.UnitKeyword} <id>"));
+                    var docText = stdlib.SymbolIndex.TryGetValue($"row.{entry.UnitKeyword}", out var rowDoc) &&
+                                  !string.IsNullOrWhiteSpace(rowDoc.Markdown)
+                        ? rowDoc.Markdown
+                        : $"module {entry.UnitKeyword} <id>";
+                    results.Add(Token(entry.UnitKeyword, "keyword", docText));
                 }
                 break;
+            }
 
             case { IsImportKindKeyword: true }:
                 foreach (var def in ImportKindRegistry.allDefinitions)
@@ -97,14 +104,19 @@ public static class DashSpecEditorIntelligence
                 break;
 
             case { IsTransformPluginId: true }:
+            {
+                var stdlib = DashSpecDocGenerator.BuildStdlibCatalog();
                 foreach (var tr in TransformDeclarations.registered())
                 {
-                    results.Add(Token(
-                        tr.Id,
-                        "transform",
-                        $"{tr.Locality} transform ({TransformDeclarations.TransformTypeEffectModule.toString(tr.TypeEffect)})"));
+                    var fallback = $"{tr.Locality} transform ({TransformDeclarations.TransformTypeEffectModule.toString(tr.TypeEffect)})";
+                    var docText = stdlib.SymbolIndex.TryGetValue(tr.Id, out var trDoc) &&
+                                  !string.IsNullOrWhiteSpace(trDoc.Markdown)
+                        ? $"{fallback} — {trDoc.Markdown}"
+                        : fallback;
+                    results.Add(Token(tr.Id, "transform", docText));
                 }
                 break;
+            }
 
             case { IsDiagramKindId: true }:
                 foreach (var kindId in DiagramKindRegistry.knownKinds())

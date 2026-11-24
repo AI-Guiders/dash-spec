@@ -227,6 +227,17 @@ public sealed class DashSpecAssembledDiagnosticsTests
                 batch);
             Assert.Equal(231.9m, rounded[0].Get("WorkingSetMb").AsDecimal());
             Assert.Equal(31.7m, rounded[0].Get("ManagedHeapMb").AsDecimal());
+
+            Assert.True(compiled.Document.ResolvedDocumentation.TryGetValue("kpi_working_set", out var kpiDoc));
+            Assert.Contains("Working Set", kpiDoc.Markdown);
+            Assert.True(compiled.Document.ResolvedDocumentation.TryGetValue("TelemetryQueryRow", out var rowDoc));
+            Assert.Contains("query_telemetry", rowDoc.Markdown);
+
+            var stdlibCat = DashSpecDocGenerator.BuildStdlibCatalog("ru-RU");
+            Assert.True(stdlibCat.SymbolIndex.TryGetValue("round", out var roundDoc));
+            Assert.Contains("decimal", roundDoc.Markdown);
+            var md = DashSpecDocGenerator.RenderMarkdown(stdlibCat);
+            Assert.Contains("module transform round", md);
         }
         finally
         {

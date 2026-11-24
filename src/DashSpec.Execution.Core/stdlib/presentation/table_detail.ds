@@ -1,3 +1,4 @@
+/// Полноразмерное табличное представление для детальных выборок (`15` строк на странице, фильтры по колонкам, плотность `comfortable`).
 module presentation table_detail
 namespace DashSpec.Std
 

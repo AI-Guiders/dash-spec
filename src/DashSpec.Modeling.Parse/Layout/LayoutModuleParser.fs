@@ -725,6 +725,7 @@ module LayoutModuleParser =
 
             while reader.RawKind = DashSpec.Modeling.Parse.Lexing.TokenKind.Newline
                   || reader.RawKind = DashSpec.Modeling.Parse.Lexing.TokenKind.LineComment
+                  || reader.RawKind = DashSpec.Modeling.Parse.Lexing.TokenKind.DocComment
                   || reader.RawKind = DashSpec.Modeling.Parse.Lexing.TokenKind.BlockComment do
                 tokens.Add reader.Current
                 reader.Advance()
@@ -740,6 +741,7 @@ module LayoutModuleParser =
                 sb.Append('\n') |> ignore
                 prevKind <- Some t.Kind
             | DashSpec.Modeling.Parse.Lexing.TokenKind.LineComment
+            | DashSpec.Modeling.Parse.Lexing.TokenKind.DocComment
             | DashSpec.Modeling.Parse.Lexing.TokenKind.BlockComment -> ()
             | DashSpec.Modeling.Parse.Lexing.TokenKind.String ->
                 if prevKind.IsSome && prevKind <> Some DashSpec.Modeling.Parse.Lexing.TokenKind.Newline then

@@ -1,3 +1,4 @@
+/// График с заливкой области (`fill = area`), легендой снизу и высотой `320px`.
 module presentation area_bottom_320
 namespace DashSpec.Std
 

@@ -1,50 +1,85 @@
+/// Строго типизированные схемы строк для встроенной телеметрии и логов `DashSpec.Host` (`host-telemetry.witdb`).
 module types host_telemetry_types
 namespace DashSpec.Std.Monitoring.Types
 
+/// Срез последних метрик памяти и потоков процесса `DashSpec.Host` для KPI-плиток.
 type TelemetryMetricKpiRow
+  /// Физическая память процесса (`Working Set`) в мебибайтах (`MiB`).
   optional decimal WorkingSetMb
+  /// Управляемая куча `.NET GC` (`Managed Heap`) в мебибайтах (`MiB`).
   optional decimal ManagedHeapMb
+  /// Количество сборок мусора поколения `Gen2`.
   optional int GcGen2
+  /// Число активных потоков в пуле `ThreadPool`.
   optional int ThreadPoolThreads
 end type
 
+/// Сводная статистика выполненных SQL-запросов по всем коннекторам хоста.
 type TelemetryQueryKpiRow
+  /// Общее число выполненных SQL-запросов.
   optional int TotalQueries
+  /// Среднее время выполнения запроса в миллисекундах (`ms`).
   optional decimal AvgDurationMs
+  /// Число запросов, завершившихся с ошибкой (`Status = 'ERROR'`).
   optional int FailedQueries
 end type
 
+/// Точка временного ряда метрик памяти и потоков из таблицы `host_metrics`.
 type TelemetryMetricPointRow
+  /// Метка времени замера в UTC.
   optional datetime TimestampUtc
+  /// Физическая память (`Working Set`) в `MiB`.
   optional decimal WorkingSetMb
+  /// Управляемая куча (`Managed Heap`) в `MiB`.
   optional decimal ManagedHeapMb
+  /// Число потоков в `ThreadPool`.
   optional int ThreadPoolThreads
 end type
 
+/// Статистика задержки запросов в разрезе вида операции (`card_query`, `field_options`).
 type TelemetryQueryKindRow
+  /// Вид операции запроса.
   optional string Kind
+  /// Средняя длительность выполнения в миллисекундах (`ms`).
   optional decimal AvgDurationMs
+  /// Количество запросов данного вида.
   optional int QueryCount
 end type
 
+/// Распределение записей журнала событий по уровню важности (`Information`, `Warning`, `Error`).
 type TelemetryLogLevelRow
+  /// Уровень логирования.
   optional string Level
+  /// Число записей в журнале `host_logs`.
   optional int LogCount
 end type
 
+/// Запись журнала выполненных SQL-запросов из таблицы `query_telemetry`.
 type TelemetryQueryRow
+  /// Время выполнения запроса (UTC).
   optional string TimestampUtc
+  /// Идентификатор коннектора (`sqlserver`, `postgres`, `witdb`).
   optional string ConnectorId
+  /// Вид запроса (`card_query`, `field_options`).
   optional string Kind
+  /// Длительность выполнения в миллисекундах.
   optional int DurationMs
+  /// Количество возвращённых строк.
   optional int RowCount
+  /// Статус выполнения (`OK` или `ERROR`).
   optional string Status
+  /// Первые символы выполненного SQL-запроса.
   optional string SqlPreview
 end type
 
+/// Запись системного журнала событий хоста из таблицы `host_logs`.
 type TelemetryLogRow
+  /// Метка времени события (UTC).
   optional string TimestampUtc
+  /// Уровень важности (`Information`, `Warning`, `Error`).
   optional string Level
+  /// Категория логгера `.NET`.
   optional string Category
+  /// Текст сообщения события.
   optional string Message
 end type

@@ -33,8 +33,93 @@ public static class Program
             "validate" => Validate(args.Skip(1).ToArray()),
             "build" => Build(args.Skip(1).ToArray()),
             "generate" => Generate(args.Skip(1).ToArray()),
+            "doc" => Doc(args.Skip(1).ToArray()),
             var unknown => Unknown(unknown),
         };
+    }
+
+    private static int Doc(string[] rest)
+    {
+        if (rest.Any(a => a is "--help" or "-h"))
+        {
+            Console.WriteLine("usage: dsc doc [<corpus-dir>] [--stdlib] [--out <file.md>] [--lang <ru-RU|en-US>]");
+            return 0;
+        }
+
+        string? dir = null;
+        string? outFile = null;
+        string lang = "ru-RU";
+        bool includeStdlib = false;
+
+        for (var i = 0; i < rest.Length; i++)
+        {
+            if (rest[i] is "--out" && i + 1 < rest.Length)
+            {
+                outFile = rest[++i];
+            }
+            else if (rest[i] is "--lang" && i + 1 < rest.Length)
+            {
+                lang = rest[++i];
+            }
+            else if (rest[i] is "--stdlib")
+            {
+                includeStdlib = true;
+            }
+            else
+            {
+                dir ??= rest[i];
+            }
+        }
+
+        if (dir is null)
+        {
+            includeStdlib = true;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        if (includeStdlib)
+        {
+            var stdlibCat = DashSpecDocGenerator.BuildStdlibCatalog(lang);
+            sb.AppendLine(DashSpecDocGenerator.RenderMarkdown(stdlibCat));
+        }
+
+        if (dir is not null)
+        {
+            var fullDir = Path.GetFullPath(dir);
+            if (!Directory.Exists(fullDir))
+            {
+                Console.Error.WriteLine($"Directory not found: {fullDir}");
+                return 2;
+            }
+
+            var wsCat = DashSpecDocGenerator.BuildWorkspaceCatalog(fullDir, lang);
+            if (sb.Length > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("---");
+                sb.AppendLine();
+            }
+            sb.AppendLine(DashSpecDocGenerator.RenderMarkdown(wsCat));
+        }
+
+        var markdown = sb.ToString();
+        if (!string.IsNullOrWhiteSpace(outFile))
+        {
+            var fullOut = Path.GetFullPath(outFile);
+            var outDir = Path.GetDirectoryName(fullOut);
+            if (!string.IsNullOrWhiteSpace(outDir))
+            {
+                Directory.CreateDirectory(outDir);
+            }
+            File.WriteAllText(fullOut, markdown, System.Text.Encoding.UTF8);
+            Console.WriteLine($"OK: documentation written to {fullOut}");
+        }
+        else
+        {
+            Console.Write(markdown);
+        }
+
+        return 0;
     }
 
     /// <summary>dsc generate types &lt;dir&gt; — emit the flow-inferred row
@@ -456,6 +541,8 @@ public static class Program
                   Compile row types from .ds units into TypedRows.dll.
               dsc build views <dir> [--dialect tsql|postgres] [--layout file-per-view|single-file] [--project-uid <id>] [--connection <connStr>] [--prune]
                   Emit or apply managed views from 'module flow <id> view' units.
+              dsc doc [<dir>] [--stdlib] [--out <file.md>] [--lang <ru-RU|en-US>]
+                  Generate Markdown reference from /// doc comments in stdlib and/or a workspace corpus.
             """);
     }
 

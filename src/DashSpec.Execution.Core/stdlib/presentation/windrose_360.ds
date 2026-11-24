@@ -1,3 +1,4 @@
+/// Роза ветров (`windrose`) с легендой справа и высотой `360px`.
 module presentation windrose_360
 namespace DashSpec.Std
 

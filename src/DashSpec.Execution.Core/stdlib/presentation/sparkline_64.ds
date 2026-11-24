@@ -1,3 +1,4 @@
+/// Миниатюрный спарклайн без легенды высотой `64px`.
 module presentation sparkline_64
 namespace DashSpec.Std
 

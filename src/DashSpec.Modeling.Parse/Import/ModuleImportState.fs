@@ -36,6 +36,14 @@ type ModuleImportState() =
     let defaultsDocs = Dictionary<string, DefaultsDocument>(StringComparer.OrdinalIgnoreCase)
     let textBindings = ResizeArray<TextBinding>()
     let commandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let symbolDocs = ResizeArray<DashSpecSymbolDoc>()
+
+    member this.RegisterUnitDocs(sourcePath: string option, text: string) =
+        for d in DashSpecDocumentationExtractor.extractFromText sourcePath this.TryResolveRawText text do
+            symbolDocs.Add d
+
+    member _.ExportDocumentation() : IReadOnlyDictionary<string, DashSpecSymbolDoc> =
+        DashSpecDocumentationExtractor.indexBySymbol symbolDocs
 
     member _.RegisterCommandAliases(entries: IReadOnlyDictionary<string, string>) =
         for kv in entries do
@@ -53,6 +61,23 @@ type ModuleImportState() =
             textBindings.Add b
 
     member _.TextBindings = textBindings :> IReadOnlyList<TextBinding>
+
+    member _.TryResolveRawText(rawKey: string) : string option =
+        if String.IsNullOrWhiteSpace rawKey then
+            None
+        else
+            let parsed = LanguageObjectRef.parse rawKey
+            textBindings
+            |> Seq.tryPick (fun b ->
+                let bFull =
+                    match b.Target.Kind with
+                    | Some k -> $"{k.ToString().ToLowerInvariant()}.{b.Target.Path.Text}"
+                    | None -> b.Target.Path.Text
+                if String.Equals(bFull, rawKey, StringComparison.OrdinalIgnoreCase)
+                   || (b.Target.Kind = parsed.Kind && String.Equals(b.Target.Path.Text, parsed.Path.Text, StringComparison.OrdinalIgnoreCase)) then
+                    Some b.Label
+                else
+                    None)
 
     member _.TryResolveText(kind: LanguageObjectKind, path: DotSyntax) : string option =
         let fullText = path.Text

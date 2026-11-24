@@ -1,7 +1,12 @@
+/// Разрешение канонического идентификатора зоны IANA по фиксированному смещению от UTC (`TimeShift`).
 module transform timeshift_to_iana
 namespace DashSpec.Std.Transformations.Runtime
 
 type_effect = identity
 locality = runtime
+requires_block = true
+/// Смещение от UTC в формате `UTC±Ч` (например, `UTC+3`).
 param zone = timeshift
-hint = "timeshift_to_iana requires a TimeShift literal (UTC+…)."
+/// Смещение от UTC в минутах (целое число).
+param offset_minutes = ident
+hint = "timeshift_to_iana requires a TimeShift literal (UTC±…) or offset_minutes."

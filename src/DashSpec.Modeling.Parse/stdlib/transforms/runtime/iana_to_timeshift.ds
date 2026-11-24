@@ -1,9 +1,12 @@
+/// Конвертация идентификатора часового пояса IANA (например, `Europe/Moscow`) в фиксированное смещение `TimeShift`.
 module transform iana_to_timeshift
 namespace DashSpec.Std.Transformations.Runtime
 
 type_effect = identity
 locality = runtime
 requires_block = true
+/// Идентификатор часового пояса IANA (`Europe/Moscow`, `America/New_York` и т.д.).
 param iana = iana
+/// Альтернативное имя параметра для идентификатора зоны IANA.
 param zone = iana
 hint = "iana_to_timeshift requires an IANA zone literal (e.g. Europe/Moscow)."

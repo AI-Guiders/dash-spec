@@ -1,7 +1,10 @@
+/// Стабильная сортировка уже загруженного набора строк в памяти (`runtime`) по указанной колонке.
 module transform sort
 namespace DashSpec.Std.Transformations.Runtime
 
 type_effect = identity
 locality = runtime
+/// Колонка для сортировки в памяти.
 param by = ident
+/// Направление сортировки: `asc` или `desc`.
 param direction = ident

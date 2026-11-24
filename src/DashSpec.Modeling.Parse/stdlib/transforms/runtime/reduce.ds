@@ -1,7 +1,10 @@
+/// Сворачивание хвоста малозначимых серий/категорий: оставляет топ `top` групп по весу, а остальные объединяет в категорию `tail` (по умолчанию `"Другие"`).
 module transform reduce
 namespace DashSpec.Std.Transformations.Runtime
 
 type_effect = identity
 locality = runtime
+/// Колонка серии или категории, по которой ранжируются группы.
 param by = ident
+/// Направление ранжирования (`desc` / `asc`).
 param direction = ident

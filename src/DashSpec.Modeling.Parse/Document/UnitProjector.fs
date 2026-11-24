@@ -988,7 +988,7 @@ module HostModuleParser =
             | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "show", StringComparison.OrdinalIgnoreCase) ->
                 parseSurfaceItems p surfaces
             | _ ->
-                let tokens = DashSpecAst.tokens node |> Array.filter (fun t -> t.LexKind <> TokenKind.LineComment && t.LexKind <> TokenKind.BlockComment)
+                let tokens = DashSpecAst.tokens node |> Array.filter (fun t -> t.LexKind <> TokenKind.LineComment && t.LexKind <> TokenKind.DocComment && t.LexKind <> TokenKind.BlockComment)
                 match Array.toList tokens with
                 | { LexKind = TokenKind.Ident; Text = kw } :: rest when String.Equals(kw, "show", StringComparison.OrdinalIgnoreCase) ->
                     for tok in rest do

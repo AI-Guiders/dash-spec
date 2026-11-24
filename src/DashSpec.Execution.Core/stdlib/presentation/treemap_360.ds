@@ -1,3 +1,4 @@
+/// Иерархическая древовидная карта (`treemap`) без легенды высотой `360px`.
 module presentation treemap_360
 namespace DashSpec.Std
 

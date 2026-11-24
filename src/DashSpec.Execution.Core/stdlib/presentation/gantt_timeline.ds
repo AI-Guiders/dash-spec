@@ -1,4 +1,5 @@
+/// Диаграмма Ганта со шкалой времени высотой `420px`.
 module presentation gantt_timeline
 namespace DashSpec.Std
 
-  height = 420
+height = 420

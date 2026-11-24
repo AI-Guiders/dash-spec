@@ -1,6 +1,8 @@
+/// Визуальная группировка строк таблицы в рантайме (сворачиваемые группы по колонке `by` без схлопывания строк).
 module transform group
 namespace DashSpec.Std.Transformations.Runtime
 
 type_effect = identity
 locality = runtime
+/// Колонка, по значениям которой строки объединяются в группы.
 param by = ident

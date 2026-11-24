@@ -219,7 +219,7 @@ module CatalogParser =
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Tab, _)
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Page, _) ->
                     for tok in b.Tokens do
-                        if tok.LexKind <> TokenKind.LineComment && tok.LexKind <> TokenKind.BlockComment then
+                        if tok.LexKind <> TokenKind.LineComment && tok.LexKind <> TokenKind.DocComment && tok.LexKind <> TokenKind.BlockComment then
                             pendingTokens.Add tok
                     for child in (UnitGrammar.view b.Members).Body do
                         collectNode child
@@ -229,7 +229,7 @@ module CatalogParser =
                     raise (DashSpecParseException($"Unexpected block '{headerText}' in catalog."))
             | other ->
                 for tok in DashSpecAst.tokens other do
-                    if tok.LexKind <> TokenKind.LineComment && tok.LexKind <> TokenKind.BlockComment then
+                    if tok.LexKind <> TokenKind.LineComment && tok.LexKind <> TokenKind.DocComment && tok.LexKind <> TokenKind.BlockComment then
                         pendingTokens.Add tok
 
         for node in (UnitGrammar.view members).Body do

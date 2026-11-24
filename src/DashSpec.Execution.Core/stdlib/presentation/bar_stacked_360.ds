@@ -1,3 +1,4 @@
+/// Накопительная (`stacked = true`) столбчатая диаграмма с легендой снизу и высотой `360px`.
 module presentation bar_stacked_360
 namespace DashSpec.Std
 

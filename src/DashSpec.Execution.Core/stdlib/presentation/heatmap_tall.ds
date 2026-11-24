@@ -1,5 +1,6 @@
+/// Высокая тепловая матрица (`heatmap`) высотой `420px` с выравниванием по левому краю.
 module presentation heatmap_tall
 namespace DashSpec.Std
 
-  height = 420
-  align = left
+height = 420
+align = left
