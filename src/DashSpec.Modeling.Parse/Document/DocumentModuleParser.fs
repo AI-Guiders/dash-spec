@@ -23,6 +23,27 @@ module rec DocumentModuleParser =
         let dashflow, path = DashflowDocumentResolver.resolve shell
         path, dashflow
 
+    let private resolvePrimaryConnectorId (shell: ReportCompileContext) (dashflow: DashflowModule option) =
+        match shell.ConnectorId with
+        | Some id when not (String.IsNullOrWhiteSpace id) -> Some id
+        | _ ->
+            let fromFlow =
+                dashflow
+                |> Option.bind (fun flow ->
+                    flow.Sources
+                    |> Array.tryPick (fun src ->
+                        match src.Provider with
+                        | DashflowProviderBinding.Named id when not (String.IsNullOrWhiteSpace id) -> Some id
+                        | _ -> None))
+            match fromFlow with
+            | Some id -> Some id
+            | None ->
+                shell.Includes.Defaults.Values
+                |> Seq.tryPick (fun d ->
+                    match d.Provider with
+                    | Some(DashSpec.Modeling.Parse.Syntax.ProviderBindingSyntax.Named id) when not (String.IsNullOrWhiteSpace id) -> Some(id.Trim())
+                    | _ -> None)
+
     let private applyModuleHeader
         (shell: ReportCompileContext)
         (header: ModuleHeader)
@@ -139,7 +160,7 @@ module rec DocumentModuleParser =
         let documentWithoutGraph =
             { Id = tabId
               Title = title
-              ConnectorId = None
+              ConnectorId = resolvePrimaryConnectorId result.Context dashflow
               SqlDialect = result.SqlDialect
               DiagramLibraryPath = result.DiagramLibraryPath
               Palette = result.Palette
@@ -197,7 +218,7 @@ module rec DocumentModuleParser =
         let documentWithoutGraph =
             { Id = dashboardId
               Title = reportTitle.Value
-              ConnectorId = None
+              ConnectorId = resolvePrimaryConnectorId dashShell dashflow
               SqlDialect = sqlDialect
               DiagramLibraryPath = diagramLibraryPath
               Palette = palette

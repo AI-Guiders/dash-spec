@@ -157,6 +157,18 @@ type DashboardDocument with
     member this.ResolvedRowTypeSchemas =
         DashSpec.Modeling.Parse.Types.RowTypeSchemaBridge.toCatalog (this.ResolvedRowTypes.Values)
 
+    /// <summary>Typed map of <c>DashflowSourceDef -&gt; DashflowProviderBinding</c> across all declared dashflow sources.</summary>
+    member this.SourceProviders : IReadOnlyList<DashflowSourceDef * DashflowProviderBinding> =
+        match this.Dashflow with
+        | Some flow ->
+            [| for src in flow.Sources -> src, src.Provider |] :> IReadOnlyList<_>
+        | None ->
+            Array.empty :> IReadOnlyList<_>
+
+    /// <summary>Resolve the typed <see cref="DashflowProviderBinding"/> for a specific <c>source</c> node.</summary>
+    member this.TryResolveSourceProvider(source: DashflowSourceDef) : DashflowProviderBinding =
+        source.Provider
+
     member this.WithCards(cards: IReadOnlyList<CardDefinition>) =
         { this with Cards = cards }
 
