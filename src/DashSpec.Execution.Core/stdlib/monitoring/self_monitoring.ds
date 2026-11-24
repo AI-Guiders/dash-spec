@@ -15,14 +15,72 @@ connect
     [] [] [] [] [] [] [] [] [] [] [] []
   end grid
   layout board
-    | working_set_chart   | managed_heap_chart |
-    | query_latency_chart | log_levels_chart   |
-    | recent_queries                           |
-    | recent_logs                              |
+    [ kpi_working_set kpi_managed_heap kpi_thread_pool kpi_total_queries kpi_avg_latency kpi_failed_queries ]
+    [ working_set_chart managed_heap_chart ]
+    [ query_latency_chart log_levels_chart ]
+    [ recent_queries ]
+    [ recent_logs ]
   end layout
 end connect
 
 report "DashSpec Self-Monitoring (WitDB)"
+  card kpi_working_set as "Working Set (MB)"
+    diagram number
+      value = WorkingSetMb
+    end number
+    data flow
+      src_latest_metrics [rows] -> [rows] __diagram__
+    end data flow
+  end card
+
+  card kpi_managed_heap as "Managed Heap (MB)"
+    diagram number
+      value = ManagedHeapMb
+    end number
+    data flow
+      src_latest_metrics [rows] -> [rows] __diagram__
+    end data flow
+  end card
+
+  card kpi_thread_pool as "ThreadPool Threads"
+    diagram number
+      value = ThreadPoolThreads
+      scale_value = integer
+    end number
+    data flow
+      src_latest_metrics [rows] -> [rows] __diagram__
+    end data flow
+  end card
+
+  card kpi_total_queries as "Total SQL Queries"
+    diagram number
+      value = TotalQueries
+      scale_value = integer
+    end number
+    data flow
+      src_query_kpis [rows] -> [rows] __diagram__
+    end data flow
+  end card
+
+  card kpi_avg_latency as "Avg Query Latency (ms)"
+    diagram number
+      value = AvgDurationMs
+    end number
+    data flow
+      src_query_kpis [rows] -> [rows] __diagram__
+    end data flow
+  end card
+
+  card kpi_failed_queries as "Failed Queries"
+    diagram number
+      value = FailedQueries
+      scale_value = integer
+    end number
+    data flow
+      src_query_kpis [rows] -> [rows] __diagram__
+    end data flow
+  end card
+
   card working_set_chart as "Working Set Memory (MB)"
     diagram ref main diag_telemetry_memory_line
     data flow

@@ -1,6 +1,19 @@
 module types host_telemetry_types
 namespace DashSpec.Std.Monitoring.Types
 
+type TelemetryMetricKpiRow
+  optional decimal WorkingSetMb
+  optional decimal ManagedHeapMb
+  optional int GcGen2
+  optional int ThreadPoolThreads
+end type
+
+type TelemetryQueryKpiRow
+  optional int TotalQueries
+  optional decimal AvgDurationMs
+  optional int FailedQueries
+end type
+
 type TelemetryMetricPointRow
   optional datetime TimestampUtc
   optional decimal WorkingSetMb

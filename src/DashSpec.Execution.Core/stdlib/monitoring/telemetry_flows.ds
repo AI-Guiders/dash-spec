@@ -3,6 +3,24 @@ namespace DashSpec.Std.Monitoring.Flows
 
 import types from DashSpec.Std.Monitoring.Types
 
+source src_latest_metrics {
+  use provider witdb
+  from sql query "SELECT WorkingSetMb, ManagedHeapMb, GcGen2, ThreadPoolThreads FROM host_metrics ORDER BY TimestampUtc DESC LIMIT 1"
+  ports
+    default output rows
+    output stream rows: TelemetryMetricKpiRow
+  end ports
+}
+
+source src_query_kpis {
+  use provider witdb
+  from sql query "SELECT COUNT(*) AS TotalQueries, COALESCE(AVG(DurationMs), 0) AS AvgDurationMs, COALESCE(SUM(CASE WHEN Status <> 'ok' THEN 1 ELSE 0 END), 0) AS FailedQueries FROM query_telemetry"
+  ports
+    default output rows
+    output stream rows: TelemetryQueryKpiRow
+  end ports
+}
+
 source src_metrics_timeline {
   use provider witdb
   from sql query "SELECT TimestampUtc, WorkingSetMb, ManagedHeapMb, ThreadPoolThreads FROM host_metrics ORDER BY TimestampUtc ASC"
