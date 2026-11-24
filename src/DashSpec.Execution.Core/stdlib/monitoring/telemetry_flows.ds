@@ -12,14 +12,42 @@ source src_latest_metrics {
   end ports
 }
 
+transformer tr_latest_metrics_rounded {
+  ports
+    default input raw
+    default output rows
+    input stream raw: TelemetryMetricKpiRow
+    output stream rows: TelemetryMetricKpiRow
+  end ports
+  transform use round {
+    digits = 1
+  }
+}
+
+src_latest_metrics [rows] -> [raw] tr_latest_metrics_rounded
+
 source src_query_kpis {
   use provider witdb
-  from sql query "SELECT COUNT(*) AS TotalQueries, COALESCE(AVG(DurationMs), 0) AS AvgDurationMs, COALESCE(SUM(CASE WHEN Status <> 'ok' THEN 1 ELSE 0 END), 0) AS FailedQueries FROM query_telemetry"
+  from sql query "SELECT COUNT(*) AS TotalQueries, COALESCE(AVG(DurationMs), 0) AS AvgDurationMs, COALESCE(SUM(CASE WHEN Status = 'ERROR' THEN 1 ELSE 0 END), 0) AS FailedQueries FROM query_telemetry"
   ports
     default output rows
     output stream rows: TelemetryQueryKpiRow
   end ports
 }
+
+transformer tr_query_kpis_rounded {
+  ports
+    default input raw
+    default output rows
+    input stream raw: TelemetryQueryKpiRow
+    output stream rows: TelemetryQueryKpiRow
+  end ports
+  transform use round {
+    digits = 1
+  }
+}
+
+src_query_kpis [rows] -> [raw] tr_query_kpis_rounded
 
 source src_metrics_timeline {
   use provider witdb
@@ -30,6 +58,20 @@ source src_metrics_timeline {
   end ports
 }
 
+transformer tr_metrics_timeline_rounded {
+  ports
+    default input raw
+    default output rows
+    input stream raw: TelemetryMetricPointRow
+    output stream rows: TelemetryMetricPointRow
+  end ports
+  transform use round {
+    digits = 1
+  }
+}
+
+src_metrics_timeline [rows] -> [raw] tr_metrics_timeline_rounded
+
 source src_query_kind_stats {
   use provider witdb
   from sql query "SELECT Kind, AVG(DurationMs) AS AvgDurationMs, COUNT(*) AS QueryCount FROM query_telemetry GROUP BY Kind ORDER BY AvgDurationMs DESC"
@@ -38,6 +80,20 @@ source src_query_kind_stats {
     output stream rows: TelemetryQueryKindRow
   end ports
 }
+
+transformer tr_query_kind_stats_rounded {
+  ports
+    default input raw
+    default output rows
+    input stream raw: TelemetryQueryKindRow
+    output stream rows: TelemetryQueryKindRow
+  end ports
+  transform use round {
+    digits = 1
+  }
+}
+
+src_query_kind_stats [rows] -> [raw] tr_query_kind_stats_rounded
 
 source src_log_level_stats {
   use provider witdb

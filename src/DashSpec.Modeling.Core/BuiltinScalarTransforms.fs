@@ -90,6 +90,19 @@ module BuiltinScalarTransforms =
             | Result.Error message ->
                 raise (DashSpecParseException($"transformer '{transformerId}': {message}"))
 
+    let validateRound (transformerId: string) (parameters: (string * string)[]) =
+        match findParam parameters "digits" with
+        | Some raw ->
+            match Int32.TryParse raw with
+            | true, d when d >= 0 && d <= 28 -> ()
+            | _ ->
+                raise (
+                    DashSpecParseException(
+                        $"transformer '{transformerId}': round 'digits' requires an integer between 0 and 28, got '{raw}'."))
+        | None -> ()
+
+        parameters
+
     let normalizeStep (transformerId: string) (pluginId: string) (parameters: (string * string)[]) =
         if String.Equals(pluginId, "to_zone", StringComparison.OrdinalIgnoreCase) then
             validateToZone transformerId parameters
@@ -97,5 +110,7 @@ module BuiltinScalarTransforms =
             validateIanaToTimeShift transformerId parameters
         elif String.Equals(pluginId, "timeshift_to_iana", StringComparison.OrdinalIgnoreCase) then
             validateTimeShiftToIana transformerId parameters
+        elif String.Equals(pluginId, "round", StringComparison.OrdinalIgnoreCase) then
+            validateRound transformerId parameters
         else
             parameters

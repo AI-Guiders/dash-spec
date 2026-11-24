@@ -213,6 +213,20 @@ public sealed class DashSpecAssembledDiagnosticsTests
             Assert.Equal(12, boardSlots.Count);
             Assert.True(DashSpec.Execution.Runtime.CompiledRowTypes.Contains("TelemetryQueryRow"));
             Assert.True(DashSpec.Execution.Runtime.CompiledRowTypes.Contains("TelemetryLogRow"));
+
+            var schema = new DashSpec.Abstractions.Data.RowTypeSchema("TelemetryMetricKpiRow", [
+                new DashSpec.Abstractions.Data.RowFieldSchema("WorkingSetMb", DashSpec.Abstractions.Data.DashPrimitiveKind.Decimal, true),
+                new DashSpec.Abstractions.Data.RowFieldSchema("ManagedHeapMb", DashSpec.Abstractions.Data.DashPrimitiveKind.Decimal, true),
+            ]);
+            var batch = DashSpec.Abstractions.Data.TypedRowBatch.Create(
+                schema,
+                [[DashSpec.Abstractions.Data.DashValue.FromDecimal(231.89999389648438m), DashSpec.Abstractions.Data.DashValue.FromDecimal(31.700000762939453m)]]);
+            var rounded = DashSpec.Execution.Runtime.DashflowCardDataPipeline.ApplyTransforms(
+                compiled.Document,
+                compiled.Document.Cards.First(c => c.Id == "kpi_working_set"),
+                batch);
+            Assert.Equal(231.9m, rounded[0].Get("WorkingSetMb").AsDecimal());
+            Assert.Equal(31.7m, rounded[0].Get("ManagedHeapMb").AsDecimal());
         }
         finally
         {

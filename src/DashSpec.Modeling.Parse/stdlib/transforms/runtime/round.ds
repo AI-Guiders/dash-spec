@@ -1,0 +1,7 @@
+module transform round
+namespace DashSpec.Std.Transformations.Runtime
+
+type_effect = identity
+locality = runtime
+param digits = ident
+param column = ident

@@ -9,4 +9,5 @@ public static class BuiltinScalarTransformIds
     public const string Summarize = "summarize";
     public const string Group = "group";
     public const string Sort = "sort";
+    public const string Round = "round";
 }

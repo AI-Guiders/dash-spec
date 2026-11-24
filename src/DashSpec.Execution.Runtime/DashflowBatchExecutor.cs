@@ -70,6 +70,11 @@ public static class DashflowBatchExecutor
             return GroupByBatchTransform.Apply(batch, step.Parameters);
         }
 
+        if (step.PluginId.Equals(BuiltinScalarTransformIds.Round, StringComparison.OrdinalIgnoreCase))
+        {
+            return RoundBatchTransform.Apply(batch, step.Parameters);
+        }
+
         throw new NotSupportedException(
             $"Dashflow transform '{step.PluginId}' on transformer '{transformerId}' is not supported at runtime yet.");
     }
