@@ -1,0 +1,12 @@
+module diagram diag_telemetry_query_kind_bar
+namespace DashSpec.Std.Monitoring.Diagrams
+
+presentation
+  height = 240
+  legend = bottom
+end presentation
+
+bar
+  x = Kind
+  y = AvgDurationMs
+end bar

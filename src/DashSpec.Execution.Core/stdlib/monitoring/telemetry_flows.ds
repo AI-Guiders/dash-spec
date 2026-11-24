@@ -3,6 +3,33 @@ namespace DashSpec.Std.Monitoring.Flows
 
 import types from DashSpec.Std.Monitoring.Types
 
+source src_metrics_timeline {
+  use provider witdb
+  from sql query "SELECT TimestampUtc, WorkingSetMb, ManagedHeapMb, ThreadPoolThreads FROM host_metrics ORDER BY TimestampUtc ASC"
+  ports
+    default output rows
+    output stream rows: TelemetryMetricPointRow
+  end ports
+}
+
+source src_query_kind_stats {
+  use provider witdb
+  from sql query "SELECT Kind, AVG(DurationMs) AS AvgDurationMs, COUNT(*) AS QueryCount FROM query_telemetry GROUP BY Kind ORDER BY AvgDurationMs DESC"
+  ports
+    default output rows
+    output stream rows: TelemetryQueryKindRow
+  end ports
+}
+
+source src_log_level_stats {
+  use provider witdb
+  from sql query "SELECT Level, COUNT(*) AS LogCount FROM host_logs GROUP BY Level ORDER BY LogCount DESC"
+  ports
+    default output rows
+    output stream rows: TelemetryLogLevelRow
+  end ports
+}
+
 source src_queries {
   use provider witdb
   from sql query "SELECT CAST(TimestampUtc AS TEXT) AS TimestampUtc, ConnectorId, Kind, DurationMs, RowCount, Status, SqlPreview FROM query_telemetry ORDER BY TimestampUtc DESC"

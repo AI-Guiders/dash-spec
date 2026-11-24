@@ -207,7 +207,7 @@ public sealed class DashSpecAssembledDiagnosticsTests
 
             Assert.True(ok);
             Assert.Equal("host-telemetry.runtime.toml", compiled.EntryRuntimePath);
-            Assert.Equal(2, compiled.Document.Cards.Count);
+            Assert.Equal(6, compiled.Document.Cards.Count);
             Assert.NotNull(compiled.SlotPlane);
             Assert.True(DashSpec.Execution.Runtime.CompiledRowTypes.Contains("TelemetryQueryRow"));
             Assert.True(DashSpec.Execution.Runtime.CompiledRowTypes.Contains("TelemetryLogRow"));

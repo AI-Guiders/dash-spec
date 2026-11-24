@@ -1,0 +1,15 @@
+module diagram diag_telemetry_heap_area
+namespace DashSpec.Std.Monitoring.Diagrams
+
+presentation
+  height = 240
+  legend = bottom
+  grid_lines = both
+  fill = area
+end presentation
+
+area
+  x = TimestampUtc
+  x_format = time.short
+  y = ManagedHeapMb
+end area

@@ -1,0 +1,12 @@
+module diagram diag_telemetry_log_level_donut
+namespace DashSpec.Std.Monitoring.Diagrams
+
+presentation
+  height = 240
+  legend = right
+end presentation
+
+donut
+  x = Level
+  y = LogCount
+end donut

@@ -1,6 +1,24 @@
 module types host_telemetry_types
 namespace DashSpec.Std.Monitoring.Types
 
+type TelemetryMetricPointRow
+  optional datetime TimestampUtc
+  optional decimal WorkingSetMb
+  optional decimal ManagedHeapMb
+  optional int ThreadPoolThreads
+end type
+
+type TelemetryQueryKindRow
+  optional string Kind
+  optional decimal AvgDurationMs
+  optional int QueryCount
+end type
+
+type TelemetryLogLevelRow
+  optional string Level
+  optional int LogCount
+end type
+
 type TelemetryQueryRow
   optional string TimestampUtc
   optional string ConnectorId

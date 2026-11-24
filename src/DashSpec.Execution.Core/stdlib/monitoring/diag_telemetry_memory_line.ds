@@ -1,0 +1,15 @@
+module diagram diag_telemetry_memory_line
+namespace DashSpec.Std.Monitoring.Diagrams
+
+presentation
+  height = 240
+  legend = bottom
+  grid_lines = both
+  markers = true
+end presentation
+
+line
+  x = TimestampUtc
+  x_format = time.short
+  y = WorkingSetMb
+end line
