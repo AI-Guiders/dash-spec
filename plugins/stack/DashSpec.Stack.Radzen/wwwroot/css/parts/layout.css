@@ -143,17 +143,38 @@
   margin-top: 0.25rem;
 }
 
-/* Doxygen-Awesome style documentation portal (ADR-0138) */
+/* Doxygen-Awesome style documentation portal (ADR-0138)
+   Full-bleed 3-pane workbench locked to the viewport: no outer page scroll,
+   no max-width squeezing, and fixed column geometry so panes never shift. */
+.shell-content:has(.help-page) {
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 54px);
+  width: 100%;
+  overflow: hidden;
+}
+
 .dox-shell {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 230px;
-  gap: 1.5rem;
-  align-items: start;
+  grid-template-columns: 330px minmax(0, 1fr) 270px;
+  gap: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  align-items: stretch;
 }
 
 @media (max-width: 1180px) {
   .dox-shell {
-    grid-template-columns: 250px minmax(0, 1fr);
+    grid-template-columns: 290px minmax(0, 1fr);
   }
   .dox-toc {
     display: none;
@@ -167,14 +188,13 @@
 }
 
 .dox-sidebar {
-  position: sticky;
-  top: 0.75rem;
-  max-height: calc(100vh - 5rem);
+  height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.85rem;
+  border-right: 1px solid var(--border);
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -274,10 +294,12 @@
 
 .dox-main {
   min-width: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem 1.85rem;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  background: var(--bg, var(--surface));
+  padding: 1.5rem 2.25rem 3rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -352,6 +374,7 @@
 
 .dox-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.86rem;
 }
@@ -362,6 +385,7 @@
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
+  overflow-wrap: anywhere;
 }
 
 .dox-table th {
@@ -393,12 +417,13 @@
 }
 
 .dox-toc {
-  position: sticky;
-  top: 0.75rem;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.85rem 1rem;
+  border-left: 1px solid var(--border);
+  padding: 1rem 1.15rem;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;

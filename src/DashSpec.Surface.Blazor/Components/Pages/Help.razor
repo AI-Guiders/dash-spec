@@ -39,12 +39,15 @@
                         }
 
                         var isChapterActive = _activePage?.Id == pageItem.Id && _activeSymbol is null;
-                        var isExpanded = _expandedPages.Contains(pageItem.Id) || !string.IsNullOrWhiteSpace(_search) || _activePage?.Id == pageItem.Id;
+                        var isExpanded = _expandedPages.Contains(pageItem.Id) || !string.IsNullOrWhiteSpace(_search);
 
                         <button type="button"
                                 class="dox-nav-chapter @(isChapterActive ? "is-active" : null)"
-                                @onclick="() => SelectChapter(pageItem)">
-                            <span>@pageItem.Title</span>
+                                @onclick="() => ToggleOrSelectChapter(pageItem)">
+                            <span style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                                <span class="muted" style="font-size: 0.72rem; width: 0.85rem; display: inline-block;">@(pageItem.SymbolSections.Count > 0 ? (isExpanded ? "▾" : "▸") : "•")</span>
+                                <span>@pageItem.Title</span>
+                            </span>
                             @if (units.Count > 0)
                             {
                                 <span class="badge">@units.Count</span>
@@ -412,10 +415,13 @@
         var lang = CultureAmbient.Culture.Name;
         var catalogDir = Path.GetDirectoryName(CatalogState.Current.FullPath);
         _book = DashSpecDocGenerator.BuildDocumentationBook(catalogDir, lang);
+        foreach (var p in _book.Pages)
+        {
+            _expandedPages.Add(p.Id);
+        }
         if (_book.Pages.Count > 0)
         {
             _activePage = _book.Pages[0];
-            _expandedPages.Add(_activePage.Id);
         }
     }
 
@@ -480,11 +486,27 @@
         </table>
     };
 
+    private void ToggleOrSelectChapter(DashSpecCompiledBookPage page)
+    {
+        if (_activePage?.Id == page.Id && _activeSymbol is null)
+        {
+            if (!_expandedPages.Remove(page.Id))
+            {
+                _expandedPages.Add(page.Id);
+            }
+        }
+        else
+        {
+            _activePage = page;
+            _activeSymbol = null;
+            _expandedPages.Add(page.Id);
+        }
+    }
+
     private void SelectChapter(DashSpecCompiledBookPage page)
     {
         _activePage = page;
         _activeSymbol = null;
-        _expandedPages.Add(page.Id);
     }
 
     private void SelectSymbol(DashSpecCompiledBookPage? parentPage, DashSpecSymbolDoc symbol)
