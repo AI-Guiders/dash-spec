@@ -44,14 +44,54 @@ public static class DashSpecParser
             return false;
         }
 
+        var trimmed = wire.Trim();
+
+        // Normalize bracketed non-letter keys (e.g. <C-.>, <C-LMB>, <C-RMB>, <C-MMB>) into KeyGestureConfig
+        // when VimDocument/NeovimKbd restricts bracket tokens to ASCII letters or named keys.
+        static string NormalizeBracketChordToKeyGesture(string token)
+        {
+            if (token.Length < 3 || token[0] != '<' || token[^1] != '>')
+            {
+                return token;
+            }
+
+            var inner = token[1..^1];
+            var mods = new System.Collections.Generic.List<string>(4);
+            var changed = false;
+            while (inner.Length > 2 && inner[1] == '-')
+            {
+                var prefix = char.ToUpperInvariant(inner[0]);
+                var mapped = prefix switch
+                {
+                    'C' => "Ctrl",
+                    'M' or 'A' => "Alt",
+                    'S' => "Shift",
+                    'D' or 'H' => "Meta",
+                    _ => null,
+                };
+                if (mapped is null)
+                {
+                    break;
+                }
+                mods.Add(mapped);
+                inner = inner[2..];
+                changed = true;
+            }
+
+            return changed && !string.IsNullOrWhiteSpace(inner)
+                ? string.Join('+', [.. mods, inner])
+                : inner;
+        }
+
         // Delegate to AIGuiders.Platform.Notations.Keyboard.All (KeyboardNotationParser)
         if (notation.IsKeyGesture)
         {
-            if (wire.StartsWith('<') || wire.EndsWith('>'))
+            if (trimmed.StartsWith('<') || trimmed.EndsWith('>'))
             {
+                error = $"Notation 'key-gesture' uses 'Ctrl+K' syntax, not '<...>' ('{trimmed}').";
                 return false;
             }
-            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.KeyGestureConfig, out var parsed, out var err) &&
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.KeyGestureConfig, out var parsed, out var err) &&
                 parsed is not null)
             {
                 sequence = parsed;
@@ -62,35 +102,39 @@ public static class DashSpecParser
             return false;
         }
 
-        if (notation.IsVim)
+        if (notation.IsVim || notation.IsNeovimKbd)
         {
-            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.VimDocument, out var parsed, out var err) &&
+            if (trimmed.Contains('+'))
+            {
+                error = $"Notation '{HotkeyNotationKindModule.toKeyword(notation)}' uses '<C-k>' bracket syntax, not '+' ('{trimmed}').";
+                return false;
+            }
+            var primary = notation.IsVim ? KeyboardNotationSurface.VimDocument : KeyboardNotationSurface.NeovimKbd;
+            var secondary = notation.IsVim ? KeyboardNotationSurface.NeovimKbd : KeyboardNotationSurface.VimDocument;
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, primary, out var parsed, out var err) &&
                 parsed is not null)
             {
                 sequence = parsed;
                 error = "";
                 return true;
             }
-            // Fall through to NeovimKbd for special keys (<Space>, <CR>, <Esc>) or F# fallback for punctuation (<C-.>)
-            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.NeovimKbd, out parsed, out err) &&
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, secondary, out parsed, out err) &&
                 parsed is not null)
             {
                 sequence = parsed;
                 error = "";
                 return true;
             }
-            error = err;
-            return false;
-        }
-
-        if (notation.IsNeovimKbd)
-        {
-            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.NeovimKbd, out var parsed, out var err) &&
-                parsed is not null)
+            if (trimmed.StartsWith('<') && trimmed.EndsWith('>'))
             {
-                sequence = parsed;
-                error = "";
-                return true;
+                var rewritten = NormalizeBracketChordToKeyGesture(trimmed);
+                if (KeyboardNotationParser.TryParseToSequence(rewritten, KeyboardNotationSurface.KeyGestureConfig, out parsed, out err) &&
+                    parsed is not null)
+                {
+                    sequence = parsed;
+                    error = "";
+                    return true;
+                }
             }
             error = err;
             return false;
@@ -98,11 +142,12 @@ public static class DashSpecParser
 
         if (notation.IsEmacsKbd)
         {
-            if (wire.Contains('+'))
+            if (trimmed.Contains('+'))
             {
+                error = $"Notation 'emacs-kbd' uses 'C-k' hyphen syntax, not '+' ('{trimmed}').";
                 return false;
             }
-            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.EmacsKbd, out var parsed, out var err) &&
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.EmacsKbd, out var parsed, out var err) &&
                 parsed is not null)
             {
                 sequence = parsed;
@@ -113,36 +158,45 @@ public static class DashSpecParser
             return false;
         }
 
-        // Auto mode: detect surface from wire token shape
-        var trimmed = wire.Trim();
+        // Auto mode: detect surface from wire token shape via KeyboardNotationParser
         if (trimmed.StartsWith('<') && trimmed.EndsWith('>'))
         {
-            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.NeovimKbd, out var parsed, out _) &&
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.NeovimKbd, out var parsed, out var err) &&
                 parsed is not null)
             {
                 sequence = parsed;
                 error = "";
                 return true;
             }
-            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.VimDocument, out parsed, out _) &&
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.VimDocument, out parsed, out err) &&
                 parsed is not null)
             {
                 sequence = parsed;
                 error = "";
                 return true;
             }
+            var rewritten = NormalizeBracketChordToKeyGesture(trimmed);
+            if (KeyboardNotationParser.TryParseToSequence(rewritten, KeyboardNotationSurface.KeyGestureConfig, out parsed, out err) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            error = err;
             return false;
         }
 
         if (trimmed.Contains('+') || trimmed.StartsWith('\u2318'))
         {
-            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.KeyGestureConfig, out var parsed, out _) &&
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.KeyGestureConfig, out var parsed, out var err) &&
                 parsed is not null)
             {
                 sequence = parsed;
                 error = "";
                 return true;
             }
+            error = err;
             return false;
         }
 
@@ -153,17 +207,18 @@ public static class DashSpecParser
             trimmed.StartsWith("H-", StringComparison.Ordinal) ||
             trimmed.StartsWith("s-", StringComparison.Ordinal))
         {
-            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.EmacsKbd, out var parsed, out _) &&
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.EmacsKbd, out var parsed, out var err) &&
                 parsed is not null)
             {
                 sequence = parsed;
                 error = "";
                 return true;
             }
+            error = err;
             return false;
         }
 
-        if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.KeyGestureConfig, out var plainParsed, out _) &&
+        if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.KeyGestureConfig, out var plainParsed, out var plainErr) &&
             plainParsed is not null)
         {
             sequence = plainParsed;
@@ -171,6 +226,7 @@ public static class DashSpecParser
             return true;
         }
 
+        error = plainErr;
         return false;
     }
 

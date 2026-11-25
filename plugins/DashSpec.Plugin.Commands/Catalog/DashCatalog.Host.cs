@@ -261,11 +261,9 @@ public static class DashCatalog
 
     private static List<Dictionary<string, string>> ReadTableRows(DashSpecAstNode[] members)
     {
-        var rawRows = members
-            .OfType<DashSpecAstNode.TableRowDeclaration>()
-            .Select(r => r.Item.Cells)
-            .ToArray();
-        if (rawRows.Length <= 1)
+        var tableOpt = Construct.tryFromAstTable(members);
+        if (!FSharpOption<Construct.ConstructForm>.get_IsSome(tableOpt) ||
+            tableOpt.Value is not Construct.ConstructForm.TableForm { rows: { Length: > 1 } rawRows })
         {
             return [];
         }

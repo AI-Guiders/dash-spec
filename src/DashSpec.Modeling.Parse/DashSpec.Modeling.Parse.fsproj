@@ -55,7 +55,6 @@
     <Compile Include="Layout\LayoutModuleParser.fs" />
     <Compile Include="Layout\SlotPlane.fs" />
     <Compile Include="Template\TemplateModuleParser.fs" />
-    <Compile Include="Toolbar\HotkeysModuleParser.fs" />
     <Compile Include="Document\UnitSource.fs" />
     <Compile Include="Project\DashSpecProjectConfig.fs" />
     <Compile Include="Document\UnitIndex.fs" />

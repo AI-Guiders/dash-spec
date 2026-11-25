@@ -106,31 +106,22 @@ module CommandAliasesParser =
     let parse (reader: TokenReader) : IReadOnlyDictionary<string, string> =
         BlockSyntax.beginBlock reader
         reader.SkipNewlines()
-        let lines = ResizeArray<string>()
+        let startOffset = reader.Tokens.[reader.TokenIndex].Start
 
         while not reader.IsEof && not (BlockSyntax.isBlockEnd reader "commands" None) do
             reader.SkipNewlines()
-            if BlockSyntax.isBlockEnd reader "commands" None then ()
-            elif reader.CurrentKind = TokenKind.TableRow then
-                lines.Add(reader.CurrentTableRow())
+            if not (BlockSyntax.isBlockEnd reader "commands" None) then
                 reader.Advance()
-            else
-                let sb = System.Text.StringBuilder()
-                while not (reader.IsOnNewline()) && reader.RawKind <> TokenKind.Eof && not (BlockSyntax.isBlockEnd reader "commands" None) do
-                    let cur = reader.Current
-                    if sb.Length > 0 && cur.Kind <> TokenKind.Dot && cur.Kind <> TokenKind.Colon then
-                        sb.Append(' ') |> ignore
-                    if cur.Kind = TokenKind.String then
-                        sb.Append('"').Append(cur.Value).Append('"') |> ignore
-                    else
-                        sb.Append(cur.Value) |> ignore
-                    reader.Advance()
-                if sb.Length > 0 then
-                    lines.Add(sb.ToString())
-            reader.SkipNewlines()
 
+        let endOffset = reader.Tokens.[reader.TokenIndex].Start
         BlockSyntax.expectBlockEnd reader "commands" None
-        let body = String.Join("\n", lines)
+
+        let body =
+            match reader.SourceText with
+            | Some src when endOffset >= startOffset && endOffset <= src.Length ->
+                src.Substring(startOffset, endOffset - startOffset)
+            | _ -> ""
+
         let tree = DashSpecSurfaceSyntax.parse $"commands\n{body}\nend commands"
         let members =
             match tree.Root with
