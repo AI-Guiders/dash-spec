@@ -51,7 +51,7 @@ else
                     var rowValue = DisplayCell(row, 0);
                     var activeRow = RowClickEnabled && string.Equals(rowValue, _activeRowValue, StringComparison.Ordinal);
                     <tr class="@(activeRow ? "table-row--active" : null)"
-                        @onclick="() => HandleRowClickAsync(rowValue)">
+                        @onclick="e => HandleRowClickAsync(rowValue, e.CtrlKey || e.MetaKey)">
                         @for (var i = 0; i < row.Length; i++)
                         {
                             <td style="@CellAlignStyle(i)">@DisplayCell(row, i)</td>
@@ -211,7 +211,7 @@ else
     /// Value-based (not index-based): a re-render may change the visible rows between the
     /// click and the handler — a captured index would go stale, a captured value cannot.
     /// </summary>
-    private async Task HandleRowClickAsync(string value)
+    private async Task HandleRowClickAsync(string value, bool accumulate = false)
     {
         if (!RowClickEnabled || !Context.OnHeatmapCategoryItemSelected.HasDelegate)
         {
@@ -232,7 +232,8 @@ else
             null,
             null,
             null,
-            ClickSource: TableClickSources.Row);
+            ClickSource: TableClickSources.Row,
+            AccumulateFilters: accumulate);
 
         await Context.OnHeatmapCategoryItemSelected.InvokeAsync(context);
     }

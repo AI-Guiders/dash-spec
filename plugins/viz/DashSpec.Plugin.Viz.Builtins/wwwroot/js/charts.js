@@ -303,7 +303,9 @@ window.dashSpecCharts = {
           if (!elements || !elements.length) {
             return;
           }
-          window.dashSpecCharts._emitCategoryClick(options, categoryLabels, elements[0].index);
+          const nativeEvt = event && event.native;
+          const accumulate = !!(nativeEvt && (nativeEvt.ctrlKey || nativeEvt.metaKey));
+          window.dashSpecCharts._emitCategoryClick(options, categoryLabels, elements[0].index, accumulate);
         },
         onHover(event, elements, chart) {
           const canvasEl = chart && chart.canvas;
@@ -368,7 +370,7 @@ window.dashSpecCharts = {
     });
   },
 
-  _emitCategoryClick(options, categoryLabels, idx) {
+  _emitCategoryClick(options, categoryLabels, idx, accumulate) {
     const clickEnabled = options && options.categoryClickEnabled;
     const dotNetRef = options && options.dotNetRef;
     if (!clickEnabled || !dotNetRef || idx == null || idx < 0) {
@@ -378,7 +380,7 @@ window.dashSpecCharts = {
     if (label == null || label === "") {
       return false;
     }
-    dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label));
+    dotNetRef.invokeMethodAsync("OnCategoryClick", idx, String(label), !!accumulate);
     return true;
   },
 
@@ -742,7 +744,9 @@ window.dashSpecCharts = {
                 const idx = legendItem && typeof legendItem.index === "number"
                   ? legendItem.index
                   : -1;
-                self._emitCategoryClick(options, categoryLabels, idx);
+                const nativeEvt = event && event.native;
+                const accumulate = !!(nativeEvt && (nativeEvt.ctrlKey || nativeEvt.metaKey));
+                self._emitCategoryClick(options, categoryLabels, idx, accumulate);
                 return;
               }
               if (typeof defaultLegendClick === "function") {
@@ -765,7 +769,9 @@ window.dashSpecCharts = {
           if (!elements || !elements.length) {
             return;
           }
-          self._emitCategoryClick(options, categoryLabels, elements[0].index);
+          const nativeEvt = event && event.native;
+          const accumulate = !!(nativeEvt && (nativeEvt.ctrlKey || nativeEvt.metaKey));
+          self._emitCategoryClick(options, categoryLabels, elements[0].index, accumulate);
         },
         onHover(event, elements, chart) {
           const canvasEl = chart && chart.canvas;

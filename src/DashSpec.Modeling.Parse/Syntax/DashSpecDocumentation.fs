@@ -337,6 +337,7 @@ module DashSpecDocumentationExtractor =
                     || parentKind = "defaults"
                     || parentKind = "palette"
                     || parentKind = "transform"
+                    || parentKind = "hotkeys"
                 if isParam || isTopConfig || not (String.IsNullOrWhiteSpace rawMd) then
                     let propId = if isParam then p.KeyTokens.[1].Text else p.Key
                     let propKind = if isParam then "param" else "property"
@@ -400,7 +401,7 @@ module DashSpecDocumentationExtractor =
                 match row.Kind with
                 | TableRowKind.Header _
                 | TableRowKind.Separator -> ()
-                | _ when row.Cells.Length > 0 && (not (String.IsNullOrWhiteSpace rawMd) || parentKind = "registry") ->
+                | _ when row.Cells.Length > 0 && (not (String.IsNullOrWhiteSpace rawMd) || parentKind = "registry" || parentKind = "hotkeys") ->
                     let rowId = row.Cells.[0].Trim()
                     let rowLine = lineOfOffset text row.Span.Start
                     if parentKind = "registry" && String.Equals(parentId, "units", StringComparison.OrdinalIgnoreCase) && row.Cells.Length >= 3 then
@@ -440,6 +441,26 @@ module DashSpecDocumentationExtractor =
                               SourcePath = sourcePath
                               Line = rowLine
                               Tags = [| { TagKey = "severity"; TagValue = severity } |]
+                              ReferencedSymbols = [||]
+                              Children = [||] }
+                    elif parentKind = "hotkeys" && row.Cells.Length >= 4 then
+                        let gesture = row.Cells.[1].Trim()
+                        let scope = row.Cells.[2].Trim().ToLowerInvariant()
+                        let action = row.Cells.[3].Trim()
+                        let md = resolveLocalizedMarkdown tryResolveText "hotkey" rowId (Some parentId) rawMd
+                        children.Add
+                            { Kind = "hotkey"
+                              Id = rowId
+                              Title = Some $"{gesture} → {action}"
+                              Namespace = ns
+                              Signature = $"hotkey {rowId}: {gesture} (scope = {scope}, action = {action})"
+                              Markdown = md
+                              SourcePath = sourcePath
+                              Line = rowLine
+                              Tags =
+                                  [| { TagKey = "gesture"; TagValue = gesture }
+                                     { TagKey = "scope"; TagValue = scope }
+                                     { TagKey = "action"; TagValue = action } |]
                               ReferencedSymbols = [||]
                               Children = [||] }
                     else
@@ -625,6 +646,7 @@ type DocumentationSymbolsCategory =
     | Presentations
     | Templates
     | Types
+    | Hotkeys
     | Monitoring
     | Rules
     | Workspace
@@ -639,6 +661,7 @@ module DocumentationSymbolsCategory =
         | "presentations" -> Some DocumentationSymbolsCategory.Presentations
         | "templates" -> Some DocumentationSymbolsCategory.Templates
         | "types" -> Some DocumentationSymbolsCategory.Types
+        | "hotkeys" -> Some DocumentationSymbolsCategory.Hotkeys
         | "monitoring" -> Some DocumentationSymbolsCategory.Monitoring
         | "rules" -> Some DocumentationSymbolsCategory.Rules
         | "workspace" -> Some DocumentationSymbolsCategory.Workspace
@@ -652,6 +675,7 @@ module DocumentationSymbolsCategory =
         | DocumentationSymbolsCategory.Presentations -> "presentations"
         | DocumentationSymbolsCategory.Templates -> "templates"
         | DocumentationSymbolsCategory.Types -> "types"
+        | DocumentationSymbolsCategory.Hotkeys -> "hotkeys"
         | DocumentationSymbolsCategory.Monitoring -> "monitoring"
         | DocumentationSymbolsCategory.Rules -> "rules"
         | DocumentationSymbolsCategory.Workspace -> "workspace"

@@ -319,6 +319,7 @@ type DashSpecModuleKind =
     | Transform
     | Template
     | Documentation
+    | Hotkeys
     | Custom of keyword: string
 
 module DashSpecModuleKind =
@@ -344,6 +345,7 @@ module DashSpecModuleKind =
         | "transform" -> DashSpecModuleKind.Transform
         | "template" -> DashSpecModuleKind.Template
         | "documentation" -> DashSpecModuleKind.Documentation
+        | "hotkeys" -> DashSpecModuleKind.Hotkeys
         | other -> DashSpecModuleKind.Custom other
 
     let toKeyword (kind: DashSpecModuleKind) =
@@ -367,6 +369,7 @@ module DashSpecModuleKind =
         | DashSpecModuleKind.Transform -> "transform"
         | DashSpecModuleKind.Template -> "template"
         | DashSpecModuleKind.Documentation -> "documentation"
+        | DashSpecModuleKind.Hotkeys -> "hotkeys"
         | DashSpecModuleKind.Custom kw -> kw
 
 [<RequireQualifiedAccess>]

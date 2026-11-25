@@ -54,7 +54,7 @@ else
         (Interactions.HasNavigationEffects(Context.EffectiveCard.ClickBehaviour) ||
          Interactions.ResolveShowEffect(Context.EffectiveCard.ClickBehaviour) is not null);
 
-    private Task HandleCategorySelectedAsync((int Index, string Label) args)
+    private Task HandleCategorySelectedAsync((int Index, string Label, bool Accumulate) args)
     {
         if (!CategoryClickEnabled || !Context.OnHeatmapCellSelected.HasDelegate)
         {
@@ -68,7 +68,8 @@ else
             args.Label,
             args.Label,
             null,
-            null);
+            null,
+            AccumulateFilters: args.Accumulate);
 
         return Context.OnHeatmapCellSelected.InvokeAsync(context);
     }

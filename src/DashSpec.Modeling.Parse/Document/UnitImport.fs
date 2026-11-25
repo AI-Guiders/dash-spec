@@ -193,6 +193,10 @@ module UnitImport =
                     ImportKind = Some ImportKind.Commands
                     Role = UnitCompileRole.Declaration
                     Project = fun ctx -> box (DashSpec.Modeling.Parse.Toolbar.CommandAliasesParser.parseEnvelope ctx.Envelope) }
+                  { KindKeyword = "hotkeys"
+                    ImportKind = Some ImportKind.Hotkeys
+                    Role = UnitCompileRole.Declaration
+                    Project = fun ctx -> box (DashSpec.Modeling.Parse.Hotkeys.HotkeysModuleParser.parseEnvelope ctx.Envelope) }
                   { KindKeyword = "template"
                     ImportKind = Some ImportKind.Templates
                     Role = UnitCompileRole.Declaration
@@ -247,6 +251,7 @@ module UnitImport =
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Section -> Some ImportKind.Tabs
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Registry -> Some ImportKind.Registries
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Template -> Some ImportKind.Templates
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Hotkeys -> Some ImportKind.Hotkeys
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Documentation -> Some ImportKind.Documentations
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw ->
             UnitProjector.tryResolve kw |> Option.bind (fun d -> d.ImportKind)
@@ -331,6 +336,9 @@ module UnitImport =
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Template ->
             let tpl = DashSpec.Modeling.Parse.Template.TemplateModuleParser.parseEnvelope env
             withQualifier tpl.Id (fun k -> state.RegisterTemplate(k, tpl))
+        | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Hotkeys ->
+            let hk = DashSpec.Modeling.Parse.Hotkeys.HotkeysModuleParser.parseEnvelope env
+            withQualifier hk.Id (fun k -> state.RegisterHotkeys(k, hk))
         | DashSpec.Modeling.Parse.Syntax.DashSpecModuleKind.Custom kw when String.Equals(kw, "commands", StringComparison.OrdinalIgnoreCase) ->
             let map = DashSpec.Modeling.Parse.Toolbar.CommandAliasesParser.parseEnvelope env
             state.RegisterCommandAliases map

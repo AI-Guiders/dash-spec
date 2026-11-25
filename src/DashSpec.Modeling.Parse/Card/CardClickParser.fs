@@ -272,7 +272,7 @@ module CardClickParser =
             elif reader.TryKeyword "show" then
                 effects.Add(parseShowEffect reader cardId)
                 reader.SkipNewlines()
-            elif reader.TryKeyword "set" then
+            elif reader.TryKeyword "set" || reader.TryKeyword "add" then
                 effects.Add(parseSetEffect reader cardId)
                 reader.SkipNewlines()
             elif reader.TryKeyword "drill" then

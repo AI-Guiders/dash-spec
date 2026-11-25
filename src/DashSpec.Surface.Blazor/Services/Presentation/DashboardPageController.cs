@@ -484,12 +484,14 @@ public sealed class DashboardPageController : IDisposable
         }
 
         // Stacked field filters from sequential chart clicks often yield empty detail cards
-        // (e.g. location=/PROJECTHUB AND program=DESIGN). Keep date; replace sibling fields.
+        // (e.g. location=/PROJECTHUB AND program=DESIGN). Plain click keeps date and replaces
+        // sibling fields; <C-LMB> (AccumulateFilters = true) stacks sequential filters across
+        // diagrams (e.g. Location -> User -> Program) and toggles values on multi-select filters.
         var fieldFiltersThisClick = effects
             .Where(effect => effect.TryGetFilterBind?.Value is not null)
             .Select(effect => effect.TryGetFilterBind!.Value.Item1)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (fieldFiltersThisClick.Count > 0)
+        if (fieldFiltersThisClick.Count > 0 && !context.AccumulateFilters)
         {
             foreach (var name in SelectedFields.Keys.ToList())
             {
@@ -507,7 +509,13 @@ public sealed class DashboardPageController : IDisposable
         {
             if (effect.TryGetGotoCatalogEntry?.Value is { })
             {
-                catalogGoto = effect;
+                // When holding Ctrl/Cmd (<C-LMB>), accumulate filters on the current board
+                // without jumping away to a detail catalog entry.
+                if (!context.AccumulateFilters)
+                {
+                    catalogGoto = effect;
+                }
+
                 continue;
             }
 
@@ -648,7 +656,26 @@ public sealed class DashboardPageController : IDisposable
                 DateFrom[name] = from;
                 DateTo[name] = to;
             },
-            (name, raw) => SelectedFields[name] = new HashSet<string>([raw], StringComparer.OrdinalIgnoreCase));
+            (name, raw) =>
+            {
+                if (context.AccumulateFilters &&
+                    _session.FilterIndex.TryGetValue(name, out var filterDef) &&
+                    !filterDef.IsSingleSelectField &&
+                    SelectedFields.TryGetValue(name, out var existing) &&
+                    existing.Count > 0)
+                {
+                    var next = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
+                    if (!next.Remove(raw))
+                    {
+                        next.Add(raw);
+                    }
+
+                    SelectedFields[name] = next;
+                    return;
+                }
+
+                SelectedFields[name] = new HashSet<string>([raw], StringComparer.OrdinalIgnoreCase);
+            });
 
     private FilterUiSnapshot? BuildCarriedFiltersForCatalogEntry(
         GotoCatalogEntryEffect gotoEntry,

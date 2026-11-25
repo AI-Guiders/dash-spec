@@ -135,4 +135,31 @@ window.dashSpecDocPortal = (function () {
   };
 })();
 
+// Global <C-LMB> (Ctrl/Cmd + Left Mouse Button) modifier tracker for diagram clicks.
+// RadzenChart's SeriesClickEventArgs does not expose MouseEventArgs, so we record
+// the modifier state on capture-phase pointerdown/mousedown/click and read it in OnSeriesClick.
+window.dashSpecClickModifiers = (function () {
+  var lastCtrlOrMeta = false;
+  var lastTimestamp = 0;
+
+  function record(e) {
+    if (!e) return;
+    lastCtrlOrMeta = !!(e.ctrlKey || e.metaKey);
+    lastTimestamp = Date.now();
+  }
+
+  document.addEventListener("pointerdown", record, true);
+  document.addEventListener("mousedown", record, true);
+  document.addEventListener("click", record, true);
+
+  return {
+    consumeCtrlOrMeta: function () {
+      var active = lastCtrlOrMeta && (Date.now() - lastTimestamp < 1500);
+      lastCtrlOrMeta = false;
+      return active;
+    }
+  };
+})();
+
+
 

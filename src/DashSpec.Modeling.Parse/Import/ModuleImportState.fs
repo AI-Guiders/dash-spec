@@ -14,6 +14,7 @@ open DashSpec.Modeling.Parse.Defaults
 open DashSpec.Modeling.Parse.Texts
 open DashSpec.Modeling.Parse.Runtime
 open DashSpec.Modeling.Parse.Template
+open DashSpec.Modeling.Parse.Hotkeys
 open DashSpec.Modeling.Parse.Syntax
 
 type ModuleImportState() =
@@ -38,7 +39,13 @@ type ModuleImportState() =
     let textBindings = ResizeArray<TextBinding>()
     let commandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     let templates = Dictionary<string, TemplateDocument>(StringComparer.OrdinalIgnoreCase)
+    let hotkeysDocs = Dictionary<string, HotkeysDocument>(StringComparer.OrdinalIgnoreCase)
     let symbolDocs = ResizeArray<DashSpecSymbolDoc>()
+
+    member _.RegisterHotkeys(id: string, doc: HotkeysDocument) =
+        hotkeysDocs.[id] <- doc
+
+    member _.Hotkeys = hotkeysDocs :> IReadOnlyDictionary<string, HotkeysDocument>
 
     member _.RegisterTemplate(id: string, doc: TemplateDocument) =
         templates.[id] <- doc

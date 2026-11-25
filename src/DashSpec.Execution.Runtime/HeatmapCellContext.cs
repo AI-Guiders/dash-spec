@@ -18,4 +18,7 @@ public sealed record HeatmapCellContext(
     string? ClickSource = null,
     // Граф (G), которым были получены данные этой ячейки: клик-значения — в его
     // display-кадре, поэтому для фильтров по storage-колонкам применяется G⁻¹.
-    DashflowExecutionPath? FlowPath = null);
+    DashflowExecutionPath? FlowPath = null,
+    // <C-LMB> (Ctrl / Cmd + Left Mouse Button): accumulate/toggle filter values across
+    // sequential clicks instead of clearing sibling field filters.
+    bool AccumulateFilters = false);

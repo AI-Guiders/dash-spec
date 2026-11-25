@@ -123,6 +123,13 @@ page standard_types as "Стандартные типы (Types)"
   symbols = "types"
 end page
 
+/// Декларативная таблица клавиатурных и мышиных привязок (`module hotkeys <id>`, `stdlib/hotkeys/hotkeys.ds`),
+/// поддерживающая запись жестов в нотациях `key-gesture` (`Ctrl+K`, `Ctrl+LMB`), `vim` (`<C-k>`, `<C-LMB>`),
+/// `neovim-kbd` (`<CR>`, `<Esc>`, `<Tab>`) и `emacs-kbd` (`C-k`, `M-x`).
+page standard_hotkeys as "Хоткеи и нотации (Hotkeys)"
+  symbols = "hotkeys"
+end page
+
 /// Встроенные модули, типы, потоки данных и диаграммы самодиагностики хоста (`DashSpec.Std.Monitoring.*`),
 /// работающие поверх реляционной БД `host-telemetry.witdb`.
 page self_monitoring_docs as "Самодиагностика (Self-Monitoring)"

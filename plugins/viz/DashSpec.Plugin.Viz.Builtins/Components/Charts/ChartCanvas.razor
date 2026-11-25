@@ -50,7 +50,7 @@
     public bool DetailView { get; set; }
 
     [Parameter]
-    public EventCallback<(int Index, string Label)> OnCategorySelected { get; set; }
+    public EventCallback<(int Index, string Label, bool Accumulate)> OnCategorySelected { get; set; }
 
     private DotNetObjectReference<ChartCanvas>? _dotNetRef;
     private ChartPayload? _previousPayload;
@@ -150,8 +150,8 @@
     }
 
     [JSInvokable]
-    public Task OnCategoryClick(int index, string label) =>
-        OnCategorySelected.InvokeAsync((index, label));
+    public Task OnCategoryClick(int index, string label, bool accumulate = false) =>
+        OnCategorySelected.InvokeAsync((index, label, accumulate));
 
     public async ValueTask DisposeAsync()
     {

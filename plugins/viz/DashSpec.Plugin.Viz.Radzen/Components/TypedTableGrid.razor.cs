@@ -35,7 +35,7 @@ public sealed class TypedTableGridContext
 
     /// <summary>The first column's formatted value rides the same contract as the
     /// builtin table (value-based, a re-render can't make it stale).</summary>
-    public EventCallback<string> OnRowClick { get; init; }
+    public EventCallback<(string Value, bool Accumulate)> OnRowClick { get; init; }
 
     public TableWidthMode WidthMode { get; init; } = TableWidthMode.Content;
 
@@ -77,7 +77,7 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
 
     private bool RowClickEnabled => Context.RowClickEnabled;
 
-    private EventCallback<string> OnRowClick => Context.OnRowClick;
+    private EventCallback<(string Value, bool Accumulate)> OnRowClick => Context.OnRowClick;
 
     private RadzenDataGrid<TItem>? _grid;
 
@@ -215,7 +215,8 @@ public sealed partial class TypedTableGrid<TItem> where TItem : notnull
 
         var rowKey = FormatCell(PropertyOf(row, 0), 0);
         _selectedRowKey = rowKey;
-        await OnRowClick.InvokeAsync(rowKey);
+        var accumulate = args.CtrlKey || args.MetaKey;
+        await OnRowClick.InvokeAsync((rowKey, accumulate));
     }
 
     private async Task OpenColumnMenu(Microsoft.AspNetCore.Components.Web.MouseEventArgs args, int columnIndex)

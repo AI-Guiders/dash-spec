@@ -1,7 +1,10 @@
 using System.Linq;
+using AIGuiders.Platform.Modeling.Notations.Keyboard;
 using AIGuiders.Platform.Modeling.Paths;
+using AIGuiders.Platform.Notations.Keyboard;
 using DashSpec.Compiler.Contract;
 using DashSpec.Execution.Runtime;
+using DashSpec.Modeling.Parse.Hotkeys;
 using Microsoft.FSharp.Core;
 using CorePhraseSlot = DashSpec.Abstractions.Plugins.PhraseSlotDescriptor;
 using CorePhraseTemplate = DashSpec.Abstractions.Plugins.PhraseTemplateDescriptor;
@@ -17,9 +20,158 @@ public static class DashSpecParser
 {
     static DashSpecParser()
     {
+        RegisterKeyboardNotationBridge();
         ParseDoc.UnitImport.ensureBuiltinUnitsRegistered();
         ParseDoc.DashboardValidationBridge.registerAction(DashboardValidator.Validate);
         RegisterEmbeddedStdlib();
+    }
+
+    private static void RegisterKeyboardNotationBridge()
+    {
+        HotkeyGestureNormalizer.registerExternalParser(
+            new HotkeyGestureNormalizer.ExternalParserDelegate(TryParseViaPlatformNotations));
+    }
+
+    private static bool TryParseViaPlatformNotations(
+        string wire,
+        HotkeyNotationKind notation,
+        ref NormalizedKeySequence sequence,
+        ref string error)
+    {
+        if (string.IsNullOrWhiteSpace(wire))
+        {
+            error = "Gesture cannot be empty.";
+            return false;
+        }
+
+        // Delegate to AIGuiders.Platform.Notations.Keyboard.All (KeyboardNotationParser)
+        if (notation.IsKeyGesture)
+        {
+            if (wire.StartsWith('<') || wire.EndsWith('>'))
+            {
+                return false;
+            }
+            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.KeyGestureConfig, out var parsed, out var err) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            error = err;
+            return false;
+        }
+
+        if (notation.IsVim)
+        {
+            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.VimDocument, out var parsed, out var err) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            // Fall through to NeovimKbd for special keys (<Space>, <CR>, <Esc>) or F# fallback for punctuation (<C-.>)
+            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.NeovimKbd, out parsed, out err) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            error = err;
+            return false;
+        }
+
+        if (notation.IsNeovimKbd)
+        {
+            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.NeovimKbd, out var parsed, out var err) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            error = err;
+            return false;
+        }
+
+        if (notation.IsEmacsKbd)
+        {
+            if (wire.Contains('+'))
+            {
+                return false;
+            }
+            if (KeyboardNotationParser.TryParseToSequence(wire, KeyboardNotationSurface.EmacsKbd, out var parsed, out var err) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            error = err;
+            return false;
+        }
+
+        // Auto mode: detect surface from wire token shape
+        var trimmed = wire.Trim();
+        if (trimmed.StartsWith('<') && trimmed.EndsWith('>'))
+        {
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.NeovimKbd, out var parsed, out _) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.VimDocument, out parsed, out _) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            return false;
+        }
+
+        if (trimmed.Contains('+') || trimmed.StartsWith('\u2318'))
+        {
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.KeyGestureConfig, out var parsed, out _) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            return false;
+        }
+
+        if (trimmed.StartsWith("C-", StringComparison.Ordinal) ||
+            trimmed.StartsWith("M-", StringComparison.Ordinal) ||
+            trimmed.StartsWith("S-", StringComparison.Ordinal) ||
+            trimmed.StartsWith("A-", StringComparison.Ordinal) ||
+            trimmed.StartsWith("H-", StringComparison.Ordinal) ||
+            trimmed.StartsWith("s-", StringComparison.Ordinal))
+        {
+            if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.EmacsKbd, out var parsed, out _) &&
+                parsed is not null)
+            {
+                sequence = parsed;
+                error = "";
+                return true;
+            }
+            return false;
+        }
+
+        if (KeyboardNotationParser.TryParseToSequence(trimmed, KeyboardNotationSurface.KeyGestureConfig, out var plainParsed, out _) &&
+            plainParsed is not null)
+        {
+            sequence = plainParsed;
+            error = "";
+            return true;
+        }
+
+        return false;
     }
 
     public static void EnsureModuleParsersRegistered() => _ = typeof(DashSpecParser);

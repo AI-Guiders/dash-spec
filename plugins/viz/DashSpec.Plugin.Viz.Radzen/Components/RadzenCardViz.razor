@@ -352,6 +352,16 @@ else
             }
         }
 
+        var accumulate = false;
+        try
+        {
+            accumulate = await Js.InvokeAsync<bool>("dashSpecClickModifiers.consumeCtrlOrMeta");
+        }
+        catch
+        {
+            // Best-effort JS modifier check.
+        }
+
         // Category label satisfies both `from x` and `from y` (horizontal bar vs vertical/donut).
         var context = new HeatmapCellContext(
             index,
@@ -359,7 +369,8 @@ else
             point.Label,
             point.Label,
             null,
-            null);
+            null,
+            AccumulateFilters: accumulate);
 
         await Context.OnHeatmapCellSelected.InvokeAsync(context);
     }
@@ -406,7 +417,7 @@ else
             AllowGrouping = AllowGrouping,
             FormatDefaults = Context.EffectiveCard.FormatDefaults,
             RowClickEnabled = RowClickEnabled,
-            OnRowClick = EventCallback.Factory.Create<string>(this, OnTableRowClicked),
+            OnRowClick = EventCallback.Factory.Create<(string Value, bool Accumulate)>(this, OnTableRowClicked),
             WidthMode = Context.EffectiveCard.TablePresentation?.Width ?? TableWidthMode.Content,
             Density = Context.EffectiveCard.TablePresentation?.Density ?? TableDensity.Compact,
             MaxHeightPx = Context.EffectiveCard.TablePresentation?.MaxHeightPx ?? 420,
@@ -424,7 +435,7 @@ else
         Context.EffectiveCard.ClickHandlers is { Count: > 0 } handlers &&
         handlers.Any(h => string.Equals(h.Source, TableClickSources.Row, StringComparison.OrdinalIgnoreCase));
 
-    private async Task OnTableRowClicked(string value)
+    private async Task OnTableRowClicked((string Value, bool Accumulate) args)
     {
         if (!Context.OnHeatmapCategoryItemSelected.HasDelegate)
         {
@@ -435,11 +446,12 @@ else
             -1,
             -1,
             string.Empty,
-            value,
+            args.Value,
             null,
             null,
             null,
-            ClickSource: TableClickSources.Row);
+            ClickSource: TableClickSources.Row,
+            AccumulateFilters: args.Accumulate);
 
         await Context.OnHeatmapCategoryItemSelected.InvokeAsync(context);
     }

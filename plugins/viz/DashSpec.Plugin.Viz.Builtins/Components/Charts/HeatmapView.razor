@@ -73,7 +73,7 @@ else
                          style="@CellStyle(cellY, cellX, filled, value, cellMin, cellMax)"
                          @onmouseenter="() => ShowPopover(cellY, cellX)"
                          @onmouseleave="HidePopover"
-                         @onclick="() => SelectCell(cellY, cellX)"
+                         @onclick="e => SelectCell(cellY, cellX, e.CtrlKey || e.MetaKey)"
                          @onclick:stopPropagation="true"
                          @onfocus="() => ShowPopover(cellY, cellX)"
                          @onblur="HidePopover"
@@ -271,7 +271,7 @@ else
         _activeCell = null;
     }
 
-    private async Task SelectCell(int yi, int xi)
+    private async Task SelectCell(int yi, int xi, bool accumulate = false)
     {
         if (!OnCellSelected.HasDelegate || Payload.Cells[yi][xi] is null)
         {
@@ -287,7 +287,8 @@ else
             value,
             Payload.Tooltips?[yi][xi],
             ClickSource: DashSpec.Abstractions.Viz.MatrixClickSources.Cell,
-            FlowPath: FlowPath);
+            FlowPath: FlowPath,
+            AccumulateFilters: accumulate);
 
         await OnCellSelected.InvokeAsync(context);
     }

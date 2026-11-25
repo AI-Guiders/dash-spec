@@ -63,7 +63,7 @@ else
                             var idx = yi;
                             <div class="matrix-canvas-y-label @YLabelCssClass(yLabel)"
                                  title="@yLabel"
-                                 @onclick="() => HandleCategoryItemClickAsync(idx, yLabel)">@yLabel</div>
+                                 @onclick="e => HandleCategoryItemClickAsync(idx, yLabel, e.CtrlKey || e.MetaKey)">@yLabel</div>
                         }
                     </div>
                 }
@@ -364,13 +364,14 @@ else
             // ADR-0107: the cell body is the "cell" click source, so the sourced `on click`
             // table rows (| cell | … |) resolve; legacy cards fall back to the generic block.
             DashSpec.Abstractions.Viz.MatrixClickSources.Cell,
-            FlowPath);
+            FlowPath,
+            AccumulateFilters: args.CtrlKey || args.MetaKey);
 
         await OnCellSelected.InvokeAsync(context);
     }
 
     /// <summary>Y-axis category item click (ADR-0107): the row label of the category axis.</summary>
-    private async Task HandleCategoryItemClickAsync(int yi, string yLabel)
+    private async Task HandleCategoryItemClickAsync(int yi, string yLabel, bool accumulate = false)
     {
         if (!CategoryItemClickEnabled || !OnCategoryItemSelected.HasDelegate)
         {
@@ -391,7 +392,8 @@ else
             null,
             null,
             ClickSource: DashSpec.Abstractions.Viz.MatrixClickSources.CategoryItem,
-            FlowPath: FlowPath);
+            FlowPath: FlowPath,
+            AccumulateFilters: accumulate);
 
         await OnCategoryItemSelected.InvokeAsync(context);
     }

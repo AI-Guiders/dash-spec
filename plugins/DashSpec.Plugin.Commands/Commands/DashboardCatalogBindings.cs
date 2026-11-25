@@ -1,10 +1,15 @@
 #nullable enable
 
+using AIGuiders.Platform.Modeling.Notations.Keyboard;
+using DashSpec.Modeling.Parse.Hotkeys;
 using Microsoft.AspNetCore.Components.Web;
 
 namespace DashSpec.Surface.Blazor.Commands;
 
-/// <summary>Keyboard bindings from <c>dash.catalog</c> bindings table (GUIDERS-ADR-0047).</summary>
+/// <summary>
+/// Keyboard bindings from <c>stdlib/hotkeys/hotkeys.ds</c> and <c>dash.catalog</c> bindings table,
+/// normalized via <c>AIGuiders.Platform.Notations.Keyboard.*</c> (<see cref="NormalizedKeySequence"/>).
+/// </summary>
 internal static class DashboardCatalogBindings
 {
     public const string ChordRootRole = "chord-root";
@@ -22,16 +27,24 @@ internal static class DashboardCatalogBindings
     {
         var bindings = new List<CatalogHostBinding>
         {
-            new(ChordRootGesture, "OnChordRoot"),
+            new(NormalizeToCanonicalWire(ChordRootGesture), "OnChordRoot"),
         };
 
         var dismiss = SuggestDismissGesture;
         if (!string.IsNullOrWhiteSpace(dismiss))
         {
-            bindings.Add(new(dismiss, "OnSuggestDismiss"));
+            bindings.Add(new(NormalizeToCanonicalWire(dismiss), "OnSuggestDismiss"));
         }
 
         return bindings;
+    }
+
+    public static string NormalizeToCanonicalWire(string gestureWire)
+    {
+        var parsed = HotkeyGestureNormalizer.tryParseGesture(HotkeyNotationKind.Auto, gestureWire);
+        return parsed.IsOk
+            ? HotkeyGestureNormalizer.toCanonicalKeyGesture(parsed.ResultValue)
+            : gestureWire;
     }
 
     public static bool MatchesGesture(KeyboardEventArgs e, string? gestureWire)
@@ -41,34 +54,48 @@ internal static class DashboardCatalogBindings
             return false;
         }
 
-        var parts = gestureWire.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
+        var parsed = HotkeyGestureNormalizer.tryParseGesture(HotkeyNotationKind.Auto, gestureWire);
+        if (!parsed.IsOk || parsed.ResultValue.Steps.Count == 0)
         {
             return false;
         }
 
-        var keyToken = parts[^1];
-        var needCtrl = parts.Any(static part =>
-            part.Equals("ctrl", StringComparison.OrdinalIgnoreCase)
-            || part.Equals("control", StringComparison.OrdinalIgnoreCase));
-        var needAlt = parts.Any(static part => part.Equals("alt", StringComparison.OrdinalIgnoreCase));
-        var needMeta = parts.Any(static part =>
-            part.Equals("meta", StringComparison.OrdinalIgnoreCase)
-            || part.Equals("cmd", StringComparison.OrdinalIgnoreCase)
-            || part.Equals("command", StringComparison.OrdinalIgnoreCase));
-        var needShift = parts.Any(static part => part.Equals("shift", StringComparison.OrdinalIgnoreCase));
+        return MatchesNormalizedStep(e, parsed.ResultValue.Steps[0]);
+    }
+
+    public static bool MatchesNormalizedStep(KeyboardEventArgs e, NormalizedSequenceStep step)
+    {
+        ChordModifierKeys mods;
+        string keySymbol;
+
+        switch (step)
+        {
+            case NormalizedChordStep chord:
+                mods = chord.Modifiers;
+                keySymbol = chord.KeySymbol;
+                break;
+            case NormalizedPlainKeyStep plain:
+                mods = ChordModifierKeys.None;
+                keySymbol = plain.KeySymbol;
+                break;
+            default:
+                return false;
+        }
+
+        var needCtrl = mods.HasFlag(ChordModifierKeys.Control);
+        var needAlt = mods.HasFlag(ChordModifierKeys.Alt);
+        var needShift = mods.HasFlag(ChordModifierKeys.Shift);
+        var needMeta = mods.HasFlag(ChordModifierKeys.Meta);
 
         if (e.CtrlKey != needCtrl
             || e.AltKey != needAlt
-            || e.MetaKey != needMeta
-            || e.ShiftKey != needShift)
+            || e.ShiftKey != needShift
+            || e.MetaKey != needMeta)
         {
             return false;
         }
 
-        return keyToken.Length == 1
-            ? string.Equals(e.Key, keyToken, StringComparison.OrdinalIgnoreCase)
-            : string.Equals(e.Key, keyToken, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(e.Key, keySymbol, StringComparison.OrdinalIgnoreCase);
     }
 
     static string? ResolveRoleGesture(string role) =>

@@ -27,12 +27,14 @@
 
   function wireClicks(chart, ctx, dotnet) {
     chart.on('click', function (p) {
+      const nativeEvt = p && p.event && p.event.event;
+      const accumulate = !!(nativeEvt && (nativeEvt.ctrlKey || nativeEvt.metaKey));
       if (p.componentType === 'series' && Array.isArray(p.value)) {
-        dotnet.invokeMethodAsync('OnJsEvent', 'cell', p.value[0] | 0, p.value[1] | 0);
+        dotnet.invokeMethodAsync('OnJsEvent', 'cell', p.value[0] | 0, p.value[1] | 0, accumulate);
       } else if (p.componentType === 'xAxis') {
-        dotnet.invokeMethodAsync('OnJsEvent', 'xLabel', ctx.xLabels.indexOf(p.value), -1);
+        dotnet.invokeMethodAsync('OnJsEvent', 'xLabel', ctx.xLabels.indexOf(p.value), -1, accumulate);
       } else if (p.componentType === 'yAxis') {
-        dotnet.invokeMethodAsync('OnJsEvent', 'yLabel', -1, ctx.yLabels.indexOf(p.value));
+        dotnet.invokeMethodAsync('OnJsEvent', 'yLabel', -1, ctx.yLabels.indexOf(p.value), accumulate);
       }
     });
   }

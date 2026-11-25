@@ -23,6 +23,7 @@ type ImportKind =
     | Dashboards
     | Catalogs
     | Commands
+    | Hotkeys
     | Templates
     | Documentations
 
@@ -66,6 +67,7 @@ module ImportKindRegistry =
         | "dashboard" -> Some ImportKind.Dashboards
         | "catalog" -> Some ImportKind.Catalogs
         | "commands" -> Some ImportKind.Commands
+        | "hotkeys" -> Some ImportKind.Hotkeys
         | "template" -> Some ImportKind.Templates
         | "documentation" -> Some ImportKind.Documentations
         | _ -> None

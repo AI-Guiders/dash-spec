@@ -72,7 +72,7 @@
                                  title="@FormatXLabel(XLabel(xIndex))"
                                  data-xi="@xIndex"
                                  data-testid="viz-xlabel-@Context.Card.Id-@FormatXLabel(XLabel(xIndex))"
-                                 @onclick="() => SelectXLabel(xIndex)"
+                                 @onclick="e => SelectXLabel(xIndex, e.CtrlKey || e.MetaKey)"
                                  @onclick:stopPropagation="true">
                                 @(showXLabel ? FormatXLabel(XLabel(xIndex)) : "")
                             </div>
@@ -92,7 +92,7 @@
                                     title="@FormatYLabel(YLabel(rowIndex))"
                                     data-yi="@rowIndex"
                                     data-testid="viz-ylabel-@Context.Card.Id-@FormatYLabel(YLabel(rowIndex))"
-                                    @onclick="() => SelectCategory(rowIndex)"
+                                    @onclick="e => SelectCategory(rowIndex, e.CtrlKey || e.MetaKey)"
                                     @onclick:stopPropagation="true">@FormatYLabel(YLabel(rowIndex))</button>
                         }
                     }
@@ -464,15 +464,15 @@
 
     /// <summary>JS → .NET click bridge (the body chart maps a series click to indices).</summary>
     [JSInvokable]
-    public async Task OnJsEvent(string kind, int xi, int yi)
+    public async Task OnJsEvent(string kind, int xi, int yi, bool accumulate = false)
     {
         if (kind == "cell" && xi >= 0 && yi >= 0)
         {
-            await SelectCell(yi, xi);
+            await SelectCell(yi, xi, accumulate);
         }
     }
 
-    private async Task SelectCell(int yi, int xi)
+    private async Task SelectCell(int yi, int xi, bool accumulate = false)
     {
         var value = Matrix.Cells[yi][xi];
         if (value is null)
@@ -483,10 +483,10 @@
         _selectedRow = null;
         _selectedYi = yi;
         _selectedXi = xi;
-        await OnCellSelected.InvokeAsync(CellContext(yi, xi, value, MatrixClickSources.Cell));
+        await OnCellSelected.InvokeAsync(CellContext(yi, xi, value, MatrixClickSources.Cell, accumulate));
     }
 
-    private async Task SelectCategory(int yi)
+    private async Task SelectCategory(int yi, bool accumulate = false)
     {
         if (!OnCategoryItemSelected.HasDelegate)
         {
@@ -509,10 +509,11 @@
             null,
             null,
             ClickSource: MatrixClickSources.CategoryItem,
-            FlowPath: FlowPath));
+            FlowPath: FlowPath,
+            AccumulateFilters: accumulate));
     }
 
-    private HeatmapCellContext CellContext(int yi, int xi, double? value, string clickSource)
+    private HeatmapCellContext CellContext(int yi, int xi, double? value, string clickSource, bool accumulate = false)
     {
         var (bucketStart, bucketEnd) = BucketInterval(xi);
 
@@ -526,7 +527,8 @@
             bucketStart,
             bucketEnd,
             ClickSource: clickSource,
-            FlowPath: FlowPath);
+            FlowPath: FlowPath,
+            AccumulateFilters: accumulate);
     }
 
     /// <summary>Полуинтервал бакета колонки [start, end): конец следующего бакета, для
@@ -551,7 +553,7 @@
     /// Fires through the "cell" source: the <c>on click</c> | cell | row binds the bucket
     /// interval via <c>activity_slot=x</c>; the <c>y</c> bind stays empty and the resolver
     /// skips it — so the drill shows the hour across every product.</summary>
-    private async Task SelectXLabel(int xi)
+    private async Task SelectXLabel(int xi, bool accumulate = false)
     {
         var (bucketStart, bucketEnd) = BucketInterval(xi);
 
@@ -568,7 +570,8 @@
             bucketStart,
             bucketEnd,
             ClickSource: MatrixClickSources.Cell,
-            FlowPath: FlowPath));
+            FlowPath: FlowPath,
+            AccumulateFilters: accumulate));
     }
 
     private string YLabel(int index) => Matrix.YLabels[index];

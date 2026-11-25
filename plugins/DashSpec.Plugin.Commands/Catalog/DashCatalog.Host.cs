@@ -2,9 +2,13 @@
 
 using System.Reflection;
 using AIGuiders.Platform.Authoring.Command.Catalog;
+using DashSpec.Execution.Parsing;
 using DashSpec.Modeling.Parse;
+using DashSpec.Modeling.Parse.Document;
+using DashSpec.Modeling.Parse.Hotkeys;
 using DashSpec.Modeling.Parse.Syntax;
 using DashSpec.Surface.Blazor.Commands;
+using Microsoft.FSharp.Core;
 
 namespace DashSpec.Generated;
 
@@ -78,6 +82,8 @@ public static class DashCatalog
 
     public static CatalogDocument Document { get; } = LoadFromEmbeddedDs();
 
+    public static HotkeysDocument Hotkeys { get; } = LoadStdlibHotkeys();
+
     public static IReadOnlyList<CatalogPhrase> Phrases => Document.Phrases;
 
     public static IReadOnlyList<CatalogBindingRow> Bindings => Document.Bindings;
@@ -116,8 +122,31 @@ public static class DashCatalog
         return reader.ReadToEnd();
     }
 
+    private static HotkeysDocument LoadStdlibHotkeys()
+    {
+        DashSpecParser.EnsureModuleParsersRegistered();
+        var rawOpt = UnitSource.tryReadRaw("stdlib/hotkeys/hotkeys.ds");
+        if (FSharpOption<string>.get_IsSome(rawOpt) && !string.IsNullOrWhiteSpace(rawOpt.Value))
+        {
+            return HotkeysModuleParser.parse(rawOpt.Value);
+        }
+
+        return HotkeysModuleParser.parse(
+            """
+            module hotkeys default_hotkeys
+            namespace DashSpec.Std
+            notation = auto
+            | id              | gesture | scope   | action                  |
+            | chord_root      | <C-k>   | host    | command.chord_root      |
+            | suggest_dismiss | <C-.>   | command | command.suggest_dismiss |
+            end hotkeys
+            """);
+    }
+
     private static CatalogDocument LoadFromEmbeddedDs()
     {
+        DashSpecParser.EnsureModuleParsersRegistered();
+        var hotkeys = LoadStdlibHotkeys();
         var text = ReadEmbeddedCommandsText();
         var tree = DashSpecSurfaceSyntax.parse(text);
         var env = UnitGrammar.tryUnwrapAny(tree.Root)?.Value
@@ -125,6 +154,17 @@ public static class DashCatalog
 
         var phrases = new List<CatalogPhrase>();
         var bindings = new List<CatalogBindingRow>();
+
+        foreach (var hk in hotkeys.Bindings)
+        {
+            var role = hk.Action switch
+            {
+                "command.chord_root" or "chord-root" => "chord-root",
+                "command.suggest_dismiss" or "suggest-dismiss" => "suggest-dismiss",
+                _ => hk.Id,
+            };
+            bindings.Add(new CatalogBindingRow(hk.CanonicalGesture, hk.Action, role));
+        }
 
         foreach (var block in env.View.Blocks)
         {
@@ -145,12 +185,29 @@ public static class DashCatalog
                 {
                     if (row.TryGetValue("gesture", out var gesture) && row.TryGetValue("role", out var role))
                     {
+                        var normRes = HotkeyGestureNormalizer.tryParseGesture(HotkeyNotationKind.Auto, gesture);
+                        var canonical = normRes.IsOk
+                            ? HotkeyGestureNormalizer.toCanonicalKeyGesture(normRes.ResultValue)
+                            : gesture;
                         var cmd = row.GetValueOrDefault("command", "—");
-                        bindings.Add(new CatalogBindingRow(gesture, cmd == "-" ? "—" : cmd, role));
+                        var existingIdx = bindings.FindIndex(b => string.Equals(b.Role, role, StringComparison.OrdinalIgnoreCase));
+                        var rowEntry = new CatalogBindingRow(canonical, cmd == "-" ? "—" : cmd, role);
+                        if (existingIdx >= 0)
+                        {
+                            bindings[existingIdx] = rowEntry;
+                        }
+                        else
+                        {
+                            bindings.Add(rowEntry);
+                        }
                     }
                 }
             }
         }
+
+        var resolvedChordRoot = FSharpOption<string>.get_IsSome(hotkeys.ChordRoot)
+            ? hotkeys.ChordRoot.Value
+            : "Ctrl+K";
 
         return new CatalogDocument
         {
@@ -162,7 +219,7 @@ public static class DashCatalog
                 CommandSurfaces = FederationSurfaces,
                 GrammarKeyboardBinding = "keyboard-key-gesture",
                 GrammarKeyboardMelody = "keyboard-key-gesture",
-                BindingChordRoot = "Ctrl+K",
+                BindingChordRoot = resolvedChordRoot,
                 CommandFlavor = "console",
             },
             Channels =

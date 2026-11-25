@@ -132,6 +132,31 @@
     })();
   }
 
+  if (!window.dashSpecClickModifiers) {
+    window.dashSpecClickModifiers = (function () {
+      var lastCtrlOrMeta = false;
+      var lastTimestamp = 0;
+
+      function record(e) {
+        if (!e) return;
+        lastCtrlOrMeta = !!(e.ctrlKey || e.metaKey);
+        lastTimestamp = Date.now();
+      }
+
+      document.addEventListener('pointerdown', record, true);
+      document.addEventListener('mousedown', record, true);
+      document.addEventListener('click', record, true);
+
+      return {
+        consumeCtrlOrMeta: function () {
+          var active = lastCtrlOrMeta && (Date.now() - lastTimestamp < 1500);
+          lastCtrlOrMeta = false;
+          return active;
+        },
+      };
+    })();
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', window.dashspecTheme.init);
   } else {

@@ -40,6 +40,7 @@ public static class DashSpecDocGenerator
         var presentationDocs = new List<DashSpecSymbolDoc>();
         var templateDocs = new List<DashSpecSymbolDoc>();
         var typeDocs = new List<DashSpecSymbolDoc>();
+        var hotkeyDocs = new List<DashSpecSymbolDoc>();
         var ruleDocs = new List<DashSpecSymbolDoc>();
         var monitoringDocs = new List<DashSpecSymbolDoc>();
 
@@ -94,6 +95,10 @@ public static class DashSpecDocGenerator
                 {
                     templateDocs.Add(doc);
                 }
+                else if (resName.StartsWith("stdlib/hotkeys/", StringComparison.OrdinalIgnoreCase))
+                {
+                    hotkeyDocs.Add(doc);
+                }
                 else if (resName.StartsWith("stdlib/types/", StringComparison.OrdinalIgnoreCase))
                 {
                     // Promote individual `type <Name>` blocks to first-class navigable symbols
@@ -139,6 +144,7 @@ public static class DashSpecDocGenerator
             new("presentations", isRu ? "Стандартные пресеты оформления (stdlib/presentation)" : "Presentation Presets (stdlib/presentation)", presentationDocs),
             new("templates", isRu ? "Шаблоны рабочей оболочки (stdlib/templates)" : "Workbench Templates (stdlib/templates)", templateDocs),
             new("types", isRu ? "Стандартные типы данных (stdlib/types)" : "Standard Types (stdlib/types)", typeDocs),
+            new("hotkeys", isRu ? "Хоткеи и нотации жестов (stdlib/hotkeys)" : "Hotkeys & Gesture Notations (stdlib/hotkeys)", hotkeyDocs),
             new("monitoring", isRu ? "Самодиагностика и мониторинг (stdlib/monitoring)" : "Self-Monitoring (stdlib/monitoring)", monitoringDocs),
             new("rules", isRu ? "Правила и диагностики компилятора (stdlib/rules)" : "Compiler Rules & Diagnostics (stdlib/rules)", ruleDocs),
         };

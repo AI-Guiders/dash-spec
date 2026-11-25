@@ -132,7 +132,7 @@ module DashSpecBlockKeyword =
         | "when" -> Some DashSpecBlockKeyword.When
         | "table" -> Some DashSpecBlockKeyword.Table
         | "columns" -> Some DashSpecBlockKeyword.Columns
-        | "bindings" | "phrases" | "command" -> Some(DashSpecBlockKeyword.Other name)
+        | "bindings" | "phrases" | "command" | "hotkey" | "hotkeys" -> Some(DashSpecBlockKeyword.Other name)
         | _ when DashSpecKeywords.isDiagramKind keyword ->
             Some(DashSpecBlockKeyword.Other name)
         | _ -> None
@@ -141,7 +141,7 @@ module DashSpecBlockKeyword =
     let isNamedBlockKeyword (name: string) =
         match name.ToLowerInvariant() with
         | "card" | "section" | "page" | "phase" | "group" | "type" | "nest"
-        | "source" | "transformer" | "flow" | "link" | "provider" | "command" -> true
+        | "source" | "transformer" | "flow" | "link" | "provider" | "command" | "hotkey" -> true
         | _ -> false
 
     let isDiagramContainer (keyword: DashSpecBlockKeyword) =

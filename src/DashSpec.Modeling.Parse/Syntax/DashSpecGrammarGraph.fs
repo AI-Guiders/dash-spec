@@ -167,6 +167,10 @@ module DashSpecGrammarGraph =
                   kw "template" "template = <template_id>"
                   kw "page" "Documentation chapter/page block"
                   kw "section" "Documentation section block" ]
+            | DashSpecModuleKind.Hotkeys ->
+                [ kw "notation" "Default gesture notation (auto | key-gesture | vim | neovim-kbd | emacs-kbd)"
+                  kw "chord_root" "Keyboard chord root"
+                  kw "hotkey" "hotkey <id> … end hotkey" ]
             | DashSpecModuleKind.Custom "commands" ->
                 [ kw "planet" "Command planet id"
                   kw "flavor" "Command grammar flavor"
@@ -222,7 +226,7 @@ module DashSpecGrammarGraph =
                 match parent with
                 | GrammarScope.Module DashSpecModuleKind.Documentation ->
                     [ kw "title" "Chapter title"
-                      kw "symbols" "symbols = units | transforms | presentations | types | monitoring | rules | workspace | all"
+                      kw "symbols" "symbols = units | transforms | presentations | templates | types | hotkeys | monitoring | rules | workspace | all"
                       kw "role" "Filter units by role: declaration | consumer | root"
                       kw "locality" "Filter transforms by locality: database | runtime"
                       kw "severity" "Filter rules by severity: error | warning | info"
@@ -411,6 +415,7 @@ module DashSpecGrammarGraph =
             | DashSpecBlockKeyword.OnClick
             | DashSpecBlockKeyword.Click ->
                 [ kw "set" "set <filter> from <field>"
+                  kw "add" "add <filter> from <field> (<C-LMB> / sequential filter stacking)"
                   kw "focus" "focus <phase>"
                   kw "goto" "goto <page>"
                   kw "drill" "drill <slot>" ]
@@ -448,7 +453,7 @@ module DashSpecGrammarGraph =
                 | GrammarScope.Module DashSpecModuleKind.Documentation
                 | GrammarScope.Block(_, _, GrammarScope.Module DashSpecModuleKind.Documentation) ->
                     [ kw "title" "Section title"
-                      kw "symbols" "symbols = units | transforms | presentations | types | monitoring | rules | workspace | all"
+                      kw "symbols" "symbols = units | transforms | presentations | templates | types | hotkeys | monitoring | rules | workspace | all"
                       kw "role" "Filter units by role: declaration | consumer | root"
                       kw "locality" "Filter transforms by locality: database | runtime"
                       kw "severity" "Filter rules by severity: error | warning | info"
@@ -514,7 +519,9 @@ module DashSpecGrammarGraph =
         | "locality" ->
             [ GrammarExpectation.ValueDomain("locality", [ "database"; "runtime" ]) ]
         | "symbols" | "category" ->
-            [ GrammarExpectation.ValueDomain("symbols", [ "units"; "transforms"; "presentations"; "templates"; "types"; "monitoring"; "rules"; "workspace"; "all" ]) ]
+            [ GrammarExpectation.ValueDomain("symbols", [ "units"; "transforms"; "presentations"; "templates"; "types"; "hotkeys"; "monitoring"; "rules"; "workspace"; "all" ]) ]
+        | "notation" ->
+            [ GrammarExpectation.ValueDomain("notation", [ "auto"; "key-gesture"; "vim"; "neovim-kbd"; "emacs-kbd" ]) ]
         | "kind" ->
             [ GrammarExpectation.ValueDomain("kind", [ "report"; "doc" ]) ]
         | "scroll" | "scroll_mode" ->

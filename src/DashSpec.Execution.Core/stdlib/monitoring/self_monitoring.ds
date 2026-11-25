@@ -166,6 +166,9 @@ report "DashSpec Self-Monitoring (WitDB)"
     chrome
       bound_filters = hidden
     end chrome
+    on click
+      set query_kind from x
+    end click
     diagram ref main diag_telemetry_query_kind_bar
     data flow
       tr_query_kind_stats_rounded [rows] -> [rows] main
@@ -180,6 +183,9 @@ report "DashSpec Self-Monitoring (WitDB)"
     chrome
       bound_filters = hidden
     end chrome
+    on click
+      set log_level from x
+    end click
     diagram ref main diag_telemetry_log_level_donut
     data flow
       tr_log_level_stats [rows] -> [rows] main
