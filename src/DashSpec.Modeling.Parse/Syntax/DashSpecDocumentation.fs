@@ -836,3 +836,38 @@ module DocumentationModuleParser =
           TemplateId = templateId
           Markdown = moduleMd
           Pages = pages.ToArray() }
+
+[<CLIMutable>]
+type DashSpecDocSection =
+    { CategoryId: string
+      CategoryTitle: string
+      Units: IReadOnlyList<DashSpecSymbolDoc> }
+
+[<CLIMutable>]
+type DashSpecDocCatalog =
+    { Title: string
+      Language: string
+      Sections: IReadOnlyList<DashSpecDocSection>
+      SymbolIndex: IReadOnlyDictionary<string, DashSpecSymbolDoc> }
+
+[<CLIMutable>]
+type DashSpecCompiledBookPage =
+    { Id: string
+      Title: string
+      Markdown: string
+      SymbolsCategory: string
+      EmbeddedReportUnit: string
+      SubSections: IReadOnlyList<DashSpecCompiledBookPage>
+      SymbolSections: IReadOnlyList<DashSpecDocSection> }
+
+[<CLIMutable>]
+type DashSpecCompiledBook =
+    { Id: string
+      Title: string
+      Markdown: string
+      Language: string
+      Template: DashSpec.Modeling.Parse.Template.TemplateDocument
+      ShellSlots: string[]
+      ShellGridColumnsCss: string
+      Pages: IReadOnlyList<DashSpecCompiledBookPage>
+      GlobalSymbolIndex: IReadOnlyDictionary<string, DashSpecSymbolDoc> }

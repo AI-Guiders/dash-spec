@@ -4,15 +4,45 @@
 @using DashSpec.Modeling.Parse.Syntax
 @using DashSpec.Presentation.Components
 @using DashSpec.Surface.Blazor.Services.Presentation
+@using DashSpec.Viz
 @using Microsoft.FSharp.Core
 @inject CatalogSourceState CatalogState
 @inject DashSpec.Surface.Blazor.Commands.IDashboardCultureAmbient CultureAmbient
 @inject DashSpec.Surface.Blazor.Services.Localization.DashboardLocalizer Loc
+@inject ICardChromeControlsOverride ChromeControls
 
 <PageTitle>@(_book?.Title ?? "Documentation") — DashSpec</PageTitle>
 
 @if (_book is not null)
 {
+    @if (ChromeControls.ResolveDocPortal() is { } stackDocPortal)
+    {
+        <DynamicComponent Type="stackDocPortal"
+                          Parameters="@(new Dictionary<string, object?>
+                          {
+                              ["Context"] = new StackDocPortalContext
+                              {
+                                  Book = _book,
+                                  ActivePage = _activePage,
+                                  ActiveSymbol = _activeSymbol,
+                                  Search = _search,
+                                  TreeCollapsed = _treeCollapsed,
+                                  TocCollapsed = _tocCollapsed,
+                                  ExpandedPages = _expandedPages,
+                                  OnSearchChanged = EventCallback.Factory.Create<string>(this, val => _search = val),
+                                  OnToggleTree = EventCallback.Factory.Create(this, ToggleTreePane),
+                                  OnToggleToc = EventCallback.Factory.Create(this, ToggleTocPane),
+                                  OnSelectChapter = EventCallback.Factory.Create<DashSpecCompiledBookPage>(this, SelectChapter),
+                                  OnToggleChapter = EventCallback.Factory.Create<DashSpecCompiledBookPage>(this, ToggleOrSelectChapter),
+                                  OnSelectSymbol = EventCallback.Factory.Create<(DashSpecCompiledBookPage? Page, DashSpecSymbolDoc Symbol)>(this, pair => SelectSymbol(pair.Page, pair.Symbol)),
+                                  OnNavigateToSymbolId = EventCallback.Factory.Create<string>(this, NavigateToSymbolById),
+                                  RenderRichText = RenderRichTextFragment,
+                                  RenderEmbeddedReport = RenderEmbeddedReportFragment,
+                              },
+                          })" />
+    }
+    else
+    {
     var chrome = _book.Template.Chrome;
     var hasTreeSlot = _book.ShellSlots.Contains("tree", StringComparer.OrdinalIgnoreCase);
     var hasTocSlot = chrome.ShowToc && _book.ShellSlots.Contains("toc", StringComparer.OrdinalIgnoreCase);
@@ -448,6 +478,7 @@
             }
         </div>
     </section>
+    }
 }
 else
 {
@@ -468,6 +499,16 @@ else
 
     private void ToggleTreePane() => _treeCollapsed = !_treeCollapsed;
     private void ToggleTocPane() => _tocCollapsed = !_tocCollapsed;
+
+    private RenderFragment RenderRichTextFragment(string text) => __builder =>
+    {
+        <RichTextView Text="@text" />
+    };
+
+    private RenderFragment RenderEmbeddedReportFragment(string entryId, string sourceLabel) => __builder =>
+    {
+        <DashSpecEmbeddedReport CatalogEntryId="@entryId" SourceLabel="@sourceLabel" />
+    };
 
     private static string ComputeShellGridColumns(
         DashSpec.Modeling.Parse.Template.TemplateChromeOptions chrome,

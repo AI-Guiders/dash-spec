@@ -83,6 +83,42 @@ public sealed class StackTabBarContext
     public EventCallback<string> OnSelect { get; init; }
 }
 
+/// <summary>Typed parameter contract for stack-bound documentation portal (ADR-0138 / ADR-0112 §5).</summary>
+public sealed class StackDocPortalContext
+{
+    public required DashSpec.Modeling.Parse.Syntax.DashSpecCompiledBook Book { get; init; }
+
+    public required DashSpec.Modeling.Parse.Syntax.DashSpecCompiledBookPage? ActivePage { get; init; }
+
+    public required DashSpec.Modeling.Parse.Syntax.DashSpecSymbolDoc? ActiveSymbol { get; init; }
+
+    public required string Search { get; init; }
+
+    public required bool TreeCollapsed { get; init; }
+
+    public required bool TocCollapsed { get; init; }
+
+    public required ISet<string> ExpandedPages { get; init; }
+
+    public required EventCallback<string> OnSearchChanged { get; init; }
+
+    public required EventCallback OnToggleTree { get; init; }
+
+    public required EventCallback OnToggleToc { get; init; }
+
+    public required EventCallback<DashSpec.Modeling.Parse.Syntax.DashSpecCompiledBookPage> OnSelectChapter { get; init; }
+
+    public required EventCallback<DashSpec.Modeling.Parse.Syntax.DashSpecCompiledBookPage> OnToggleChapter { get; init; }
+
+    public required EventCallback<(DashSpec.Modeling.Parse.Syntax.DashSpecCompiledBookPage? Page, DashSpec.Modeling.Parse.Syntax.DashSpecSymbolDoc Symbol)> OnSelectSymbol { get; init; }
+
+    public required EventCallback<string> OnNavigateToSymbolId { get; init; }
+
+    public required Func<string, RenderFragment> RenderRichText { get; init; }
+
+    public required Func<string, string, RenderFragment> RenderEmbeddedReport { get; init; }
+}
+
 /// <summary>
 /// ADR-0112: the card and shell chrome controls (the view-switcher selector, the extension
 /// buttons, the navigation sidebar/tabbar) are stack-replaceable visuals. The surface owns
@@ -106,6 +142,10 @@ public interface ICardChromeControlsOverride
     /// <summary>Component for the horizontal tab bar (<see cref="StackTabBarContext"/>).
     /// Null — keep the native button tab bar markup.</summary>
     Type? ResolveTabBar() => null;
+
+    /// <summary>Component for the documentation portal (<see cref="StackDocPortalContext"/>).
+    /// Null — keep the native documentation portal markup.</summary>
+    Type? ResolveDocPortal() => null;
 }
 
 /// <summary>Default: no overrides (the surface's native chrome markup renders).</summary>

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using AIGuiders.Platform.Modeling.Paths;
 using DashSpec.Modeling.Core;
@@ -9,37 +10,6 @@ using Microsoft.FSharp.Core;
 
 namespace DashSpec.Execution.Compilation;
 
-public sealed record DashSpecDocSection(
-    string CategoryId,
-    string CategoryTitle,
-    IReadOnlyList<DashSpecSymbolDoc> Units);
-
-public sealed record DashSpecDocCatalog(
-    string Title,
-    string Language,
-    IReadOnlyList<DashSpecDocSection> Sections,
-    IReadOnlyDictionary<string, DashSpecSymbolDoc> SymbolIndex);
-
-public sealed record DashSpecCompiledBookPage(
-    string Id,
-    string Title,
-    string Markdown,
-    string? SymbolsCategory,
-    string? EmbeddedReportUnit,
-    IReadOnlyList<DashSpecCompiledBookPage> SubSections,
-    IReadOnlyList<DashSpecDocSection> SymbolSections);
-
-public sealed record DashSpecCompiledBook(
-    string Id,
-    string Title,
-    string Markdown,
-    string Language,
-    TemplateDocument Template,
-    string[] ShellSlots,
-    string ShellGridColumnsCss,
-    IReadOnlyList<DashSpecCompiledBookPage> Pages,
-    IReadOnlyDictionary<string, DashSpecSymbolDoc> GlobalSymbolIndex);
-
 /// <summary>
 /// Self-documenting language &amp; workspace documentation generator (DASHSPEC-ADR-0138).
 /// Builds structured documentation catalogs and Markdown reference books directly from
@@ -48,11 +18,19 @@ public sealed record DashSpecCompiledBook(
 /// </summary>
 public static class DashSpecDocGenerator
 {
+    private static readonly ConcurrentDictionary<string, DashSpecDocCatalog> StdlibCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, DashSpecCompiledBook> BookCache = new(StringComparer.OrdinalIgnoreCase);
+
     public static DashSpecDocCatalog BuildStdlibCatalog(string? language = null)
     {
+        var lang = NormalizeLanguage(language);
+        if (StdlibCache.TryGetValue(lang, out var cached))
+        {
+            return cached;
+        }
+
         DashSpec.Execution.Parsing.DashSpecParser.EnsureStdlibRegistered();
         UnitImport.ensureBuiltinUnitsRegistered();
-        var lang = NormalizeLanguage(language);
         var state = CreateStdlibTextState(lang);
         FSharpFunc<string, FSharpOption<string>> resolver = FuncConvert.FromFunc<string, FSharpOption<string>>(
             state.TryResolveRawText);
@@ -168,11 +146,13 @@ public static class DashSpecDocGenerator
         var allDocs = sections.SelectMany(s => s.Units).ToArray();
         var index = DashSpecDocumentationExtractor.indexBySymbol(allDocs);
 
-        return new DashSpecDocCatalog(
+        var catalog = new DashSpecDocCatalog(
             isRu ? "Справочник стандартной библиотеки DashSpec (stdlib)" : "DashSpec Standard Library Reference (stdlib)",
             lang,
             sections,
             index);
+        StdlibCache[lang] = catalog;
+        return catalog;
     }
 
     public static DashSpecDocCatalog BuildWorkspaceCatalog(string workspaceDir, string? language = null)
@@ -281,8 +261,15 @@ public static class DashSpecDocGenerator
     public static DashSpecCompiledBook BuildDocumentationBook(string? workspaceDir = null, string? language = null)
     {
         var lang = NormalizeLanguage(language);
+        var normDir = string.IsNullOrWhiteSpace(workspaceDir) ? "" : Path.GetFullPath(workspaceDir);
+        var cacheKey = $"{lang}::{normDir}";
+        if (BookCache.TryGetValue(cacheKey, out var cachedBook))
+        {
+            return cachedBook;
+        }
+
         var stdlib = BuildStdlibCatalog(lang);
-        var workspace = BuildWorkspaceCatalog(workspaceDir ?? "", lang);
+        var workspace = BuildWorkspaceCatalog(normDir, lang);
 
         var globalIndex = new Dictionary<string, DashSpecSymbolDoc>(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in stdlib.SymbolIndex)
@@ -349,7 +336,7 @@ public static class DashSpecDocGenerator
             .Select(p => CompileBookPage(p, stdlib, workspace, isRu))
             .ToList();
 
-        return new DashSpecCompiledBook(
+        var compiledBook = new DashSpecCompiledBook(
             parsed.Id,
             parsed.Title,
             parsed.Markdown,
@@ -359,6 +346,8 @@ public static class DashSpecDocGenerator
             shellCss,
             compiledPages,
             globalIndex);
+        BookCache[cacheKey] = compiledBook;
+        return compiledBook;
     }
 
     private static TemplateDocument ResolveDocTemplate(string templateId, string? workspaceDir)
@@ -443,8 +432,8 @@ public static class DashSpecDocGenerator
             page.Id,
             page.Title,
             page.Markdown,
-            catId,
-            reportUnit,
+            catId ?? "",
+            reportUnit ?? "",
             subSections,
             filteredSections);
     }

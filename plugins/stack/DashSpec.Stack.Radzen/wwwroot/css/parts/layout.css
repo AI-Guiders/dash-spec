@@ -347,10 +347,10 @@
   overflow-x: hidden;
   scrollbar-gutter: stable;
   background: var(--bg, var(--surface));
-  padding: 1.5rem 2.25rem 3rem;
+  padding: 1rem 1.15rem 2.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .dox-breadcrumbs {

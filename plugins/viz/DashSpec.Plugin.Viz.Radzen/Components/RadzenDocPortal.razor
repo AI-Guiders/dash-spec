@@ -1,0 +1,682 @@
+@namespace DashSpec.Plugin.Viz.RadzenUI.Components
+@using DashSpec.Modeling.Parse.Syntax
+@using DashSpec.Modeling.Parse.Template
+@using DashSpec.Viz
+@using Microsoft.FSharp.Core
+@using Radzen
+@using Radzen.Blazor
+
+@* ADR-0112 / ADR-0138: Native Radzen documentation portal for the Radzen stack.
+   Uses RadzenButton, RadzenTextBox, RadzenBadge, RadzenPanelMenu, RadzenBreadCrumb,
+   RadzenCard, RadzenAlert, and RadzenDataGrid. *@
+
+@{
+    var book = Context.Book;
+    var chrome = book.Template.Chrome;
+    var hasTreeSlot = book.ShellSlots.Contains("tree", StringComparer.OrdinalIgnoreCase);
+    var hasTocSlot = chrome.ShowToc && book.ShellSlots.Contains("toc", StringComparer.OrdinalIgnoreCase);
+    var showTreePane = hasTreeSlot && !Context.TreeCollapsed;
+    var showTocPane = hasTocSlot && !Context.TocCollapsed;
+}
+
+<section class="help-page">
+    <header class="dox-topbar">
+        <div class="dox-topbar-group">
+            @if (hasTreeSlot)
+            {
+                <RadzenButton Text="Tree"
+                              Icon="@(showTreePane ? "menu_open" : "menu")"
+                              ButtonStyle="@(showTreePane ? ButtonStyle.Primary : ButtonStyle.Base)"
+                              Variant="@(showTreePane ? Variant.Flat : Variant.Outlined)"
+                              Size="ButtonSize.Small"
+                              Click="@(() => Context.OnToggleTree.InvokeAsync())" />
+            }
+            <strong style="font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px;" title="@book.Title">@book.Title</strong>
+            <RadzenBadge Text="@book.Template.Id" BadgeStyle="BadgeStyle.Info" Shade="Shade.Darker" IsPill="true" />
+        </div>
+
+        @if (chrome.ShowSearch)
+        {
+            <div class="dox-topbar-center" style="gap: 0.35rem;">
+                <RadzenTextBox Value="@Context.Search"
+                               Placeholder="Search symbols, modules, transforms, types, rules…"
+                               Style="width: 100%;"
+                               @oninput="@(e => Context.OnSearchChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty))" />
+                @if (!string.IsNullOrWhiteSpace(Context.Search))
+                {
+                    <RadzenButton Icon="close"
+                                  Size="ButtonSize.Small"
+                                  Variant="Variant.Text"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Title="Clear search"
+                                  Click="@(() => Context.OnSearchChanged.InvokeAsync(string.Empty))" />
+                }
+            </div>
+        }
+
+        <div class="dox-topbar-group" style="flex-shrink: 0;">
+            @if (hasTocSlot)
+            {
+                <RadzenButton Text="On this page"
+                              Icon="@(showTocPane ? "toc" : "chevron_left")"
+                              ButtonStyle="@(showTocPane ? ButtonStyle.Primary : ButtonStyle.Base)"
+                              Variant="@(showTocPane ? Variant.Flat : Variant.Outlined)"
+                              Size="ButtonSize.Small"
+                              Click="@(() => Context.OnToggleToc.InvokeAsync())" />
+            }
+        </div>
+    </header>
+
+    <div class="dox-shell" style="@($"grid-template-columns: {ComputeShellGridColumns(chrome, showTreePane, showTocPane)};")">
+        @* 1. Left Doxygen Navigation Tree (RadzenPanelMenu) *@
+        @if (showTreePane)
+        {
+            <aside class="dox-sidebar" aria-label="Documentation Tree" style="padding: 0.35rem 0;">
+                <RadzenPanelMenu Style="background: transparent; border: none;">
+                    @foreach (var pageItem in book.Pages)
+                    {
+                        var units = FilteredPageUnits(pageItem);
+                        if (!string.IsNullOrWhiteSpace(Context.Search) && units.Count == 0 && !PageMatchesSearch(pageItem))
+                        {
+                            continue;
+                        }
+
+                        var isChapterActive = Context.ActivePage?.Id == pageItem.Id && Context.ActiveSymbol is null;
+                        var isExpanded = Context.ExpandedPages.Contains(pageItem.Id) || !string.IsNullOrWhiteSpace(Context.Search);
+                        var chapterLabel = units.Count > 0 ? $"{pageItem.Title} ({units.Count})" : pageItem.Title;
+
+                        @if (pageItem.SymbolSections.Count == 0)
+                        {
+                            <RadzenPanelMenuItem Text="@chapterLabel"
+                                                 Icon="menu_book"
+                                                 Selected="@isChapterActive"
+                                                 Click="@(_ => Context.OnSelectChapter.InvokeAsync(pageItem))" />
+                        }
+                        else
+                        {
+                            <RadzenPanelMenuItem Text="@chapterLabel"
+                                                 Icon="folder_open"
+                                                 Expanded="@isExpanded"
+                                                 Selected="@isChapterActive"
+                                                 Click="@(_ => Context.OnSelectChapter.InvokeAsync(pageItem))">
+                                @foreach (var sec in pageItem.SymbolSections)
+                                {
+                                    var secUnits = FilterSymbolList(sec.Units);
+                                    if (secUnits.Count == 0)
+                                    {
+                                        continue;
+                                    }
+
+                                    @if (pageItem.SymbolSections.Count > 1)
+                                    {
+                                        <RadzenPanelMenuItem Text="@($"{FormatNavGroupBadge(sec.CategoryId, sec.CategoryTitle)} ({secUnits.Count})")"
+                                                             Expanded="true">
+                                            @foreach (var unit in secUnits)
+                                            {
+                                                var isSymActive = Context.ActiveSymbol is not null &&
+                                                                  string.Equals(Context.ActiveSymbol.Id, unit.Id, StringComparison.OrdinalIgnoreCase) &&
+                                                                  string.Equals(Context.ActiveSymbol.Kind, unit.Kind, StringComparison.OrdinalIgnoreCase);
+                                                <RadzenPanelMenuItem Text="@unit.Id"
+                                                                     Selected="@isSymActive"
+                                                                     Click="@(_ => Context.OnSelectSymbol.InvokeAsync((pageItem, unit)))" />
+                                            }
+                                        </RadzenPanelMenuItem>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var unit in secUnits)
+                                        {
+                                            var isSymActive = Context.ActiveSymbol is not null &&
+                                                              string.Equals(Context.ActiveSymbol.Id, unit.Id, StringComparison.OrdinalIgnoreCase) &&
+                                                              string.Equals(Context.ActiveSymbol.Kind, unit.Kind, StringComparison.OrdinalIgnoreCase);
+                                            <RadzenPanelMenuItem Text="@unit.Id"
+                                                                 Selected="@isSymActive"
+                                                                 Click="@(_ => Context.OnSelectSymbol.InvokeAsync((pageItem, unit)))" />
+                                        }
+                                    }
+                                }
+                            </RadzenPanelMenuItem>
+                        }
+                    }
+                </RadzenPanelMenu>
+            </aside>
+        }
+
+        @* 2. Center Doxygen Detail Pane (RadzenCard + RadzenDataGrid) *@
+        <article class="dox-main">
+            @if (Context.ActiveSymbol is not null)
+            {
+                var sym = Context.ActiveSymbol;
+                var symTitle = FSharpOption<string>.get_IsSome(sym.Title) && !string.IsNullOrWhiteSpace(sym.Title.Value)
+                    ? sym.Title.Value
+                    : sym.Id;
+                var symNs = FSharpOption<string>.get_IsSome(sym.Namespace) ? sym.Namespace.Value : null;
+                var symPath = FSharpOption<string>.get_IsSome(sym.SourcePath) ? $"{sym.SourcePath.Value}:{sym.Line}" : null;
+
+                @if (chrome.ShowBreadcrumbs)
+                {
+                    <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                        <RadzenButton Text="@book.Title"
+                                      Variant="Variant.Text"
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Info"
+                                      Click="@(() => Context.OnSelectChapter.InvokeAsync(book.Pages[0]))" />
+                        @if (Context.ActivePage is not null)
+                        {
+                            <span class="muted">/</span>
+                            <RadzenButton Text="@Context.ActivePage.Title"
+                                          Variant="Variant.Text"
+                                          Size="ButtonSize.Small"
+                                          ButtonStyle="ButtonStyle.Info"
+                                          Click="@(() => Context.OnSelectChapter.InvokeAsync(Context.ActivePage))" />
+                        }
+                        @if (!string.IsNullOrWhiteSpace(symNs))
+                        {
+                            <span class="muted">/</span>
+                            <RadzenBadge Text="@symNs" BadgeStyle="BadgeStyle.Secondary" IsPill="true" />
+                        }
+                        <span class="muted">/</span>
+                        <RadzenBadge Text="@sym.Id" BadgeStyle="BadgeStyle.Primary" IsPill="true" />
+                    </div>
+                }
+
+                <RadzenCard Variant="Variant.Outlined" Style="padding: 1.25rem;">
+                    <header class="dox-title-row">
+                        <div>
+                            <h1 style="margin: 0; font-size: 1.5rem;">@symTitle</h1>
+                            @if (!string.Equals(symTitle, sym.Id, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <div class="muted" style="font-family: ui-monospace, Consolas, monospace; font-size: 0.88rem; margin-top: 0.25rem;">@sym.Kind @sym.Id</div>
+                            }
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                            @foreach (var tag in sym.Tags)
+                            {
+                                <RadzenBadge Text="@($"{tag.TagKey} = {tag.TagValue}")"
+                                             BadgeStyle="@GetTagBadgeStyle(tag.TagKey, tag.TagValue)"
+                                             IsPill="true" />
+                            }
+                            <RadzenBadge Text="@sym.Kind" BadgeStyle="BadgeStyle.Secondary" IsPill="true" />
+                        </div>
+                    </header>
+
+                    <div class="dox-decl-box" style="margin-top: 0.9rem;">
+                        <code>@sym.Signature</code>
+                        @if (!string.IsNullOrWhiteSpace(symPath))
+                        {
+                            <RadzenBadge Text="@symPath" BadgeStyle="BadgeStyle.Light" IsPill="true" />
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(sym.Markdown))
+                    {
+                        <div class="dox-prose" style="margin-top: 0.9rem;">
+                            @foreach (var paragraph in SplitParagraphs(sym.Markdown))
+                            {
+                                <p style="margin: 0 0 0.65rem;">@Context.RenderRichText(paragraph)</p>
+                            }
+                        </div>
+                    }
+                </RadzenCard>
+
+                @foreach (var group in sym.Children.GroupBy(c => c.Kind))
+                {
+                    var groupItems = group.ToList();
+                    <RadzenCard Variant="Variant.Outlined" Style="padding: 1rem 1.25rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+                            <h2 style="margin: 0; font-size: 1.08rem;">@FormatMemberGroupTitle(group.Key)</h2>
+                            <RadzenBadge Text="@groupItems.Count.ToString()" BadgeStyle="BadgeStyle.Info" IsPill="true" />
+                        </div>
+
+                        <RadzenDataGrid TItem="DashSpecSymbolDoc"
+                                        Data="@groupItems"
+                                        AllowSorting="true"
+                                        AllowFiltering="@(groupItems.Count > 15)"
+                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        FilterMode="FilterMode.Simple"
+                                        AllowPaging="@(groupItems.Count > 25)"
+                                        PageSize="25"
+                                        Density="Density.Compact">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Id" Title="Id" Width="22%">
+                                    <Template Context="memberItem">
+                                        @if (memberItem.Children.Length > 0 && memberItem.Kind is not "block")
+                                        {
+                                            <RadzenButton Text="@memberItem.Id"
+                                                          Variant="Variant.Text"
+                                                          Size="ButtonSize.Small"
+                                                          ButtonStyle="ButtonStyle.Primary"
+                                                          Style="padding: 0; font-family: ui-monospace, Consolas, monospace; font-weight: 600;"
+                                                          Click="@(() => Context.OnSelectSymbol.InvokeAsync((Context.ActivePage, memberItem)))" />
+                                        }
+                                        else
+                                        {
+                                            <code style="font-weight: 600;">@memberItem.Id</code>
+                                        }
+                                        @if (FSharpOption<string>.get_IsSome(memberItem.Title) && !string.IsNullOrWhiteSpace(memberItem.Title.Value))
+                                        {
+                                            <div class="muted" style="font-size: 0.76rem; margin-top: 0.15rem;">@memberItem.Title.Value</div>
+                                        }
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Signature" Title="Syntax / Type" Width="30%">
+                                    <Template Context="memberItem">
+                                        <code style="font-size: 0.78rem; white-space: normal; word-break: break-word;">@memberItem.Signature</code>
+                                        @foreach (var linkedType in FindReferencedSymbols(memberItem))
+                                        {
+                                            <div style="margin-top: 0.25rem;">
+                                                <RadzenButton Text="@($"→ {linkedType.Id}")"
+                                                              Variant="Variant.Text"
+                                                              Size="ButtonSize.ExtraSmall"
+                                                              ButtonStyle="ButtonStyle.Info"
+                                                              Click="@(() => Context.OnNavigateToSymbolId.InvokeAsync(linkedType.Id))" />
+                                            </div>
+                                        }
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Markdown" Title="Description" Width="48%">
+                                    <Template Context="memberItem">
+                                        <div style="white-space: normal;">
+                                            @if (!string.IsNullOrWhiteSpace(memberItem.Markdown))
+                                            {
+                                                @Context.RenderRichText(memberItem.Markdown)
+                                            }
+                                            @if (memberItem.Children.Length > 0)
+                                            {
+                                                <div style="margin-top: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                                    @foreach (var sub in memberItem.Children.Take(16))
+                                                    {
+                                                        <RadzenBadge Text="@sub.Id"
+                                                                     Title="@($"{sub.Signature} — {sub.Markdown}")"
+                                                                     BadgeStyle="BadgeStyle.Secondary"
+                                                                     IsPill="true" />
+                                                    }
+                                                    @if (memberItem.Children.Length > 16)
+                                                    {
+                                                        <RadzenBadge Text="@($"+{memberItem.Children.Length - 16}")"
+                                                                     BadgeStyle="BadgeStyle.Light"
+                                                                     IsPill="true" />
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                    </RadzenCard>
+                }
+            }
+            else if (Context.ActivePage is not null)
+            {
+                var chapter = Context.ActivePage;
+
+                <RadzenCard Variant="Variant.Outlined" Style="padding: 1.25rem;">
+                    <header class="dox-title-row">
+                        <h1 style="margin: 0; font-size: 1.5rem;">@chapter.Title</h1>
+                        <RadzenBadge Text="@($"page {chapter.Id}")" BadgeStyle="BadgeStyle.Info" IsPill="true" />
+                    </header>
+
+                    @if (!string.IsNullOrWhiteSpace(chapter.Markdown))
+                    {
+                        <div class="dox-prose" style="margin-top: 0.85rem;">
+                            @foreach (var paragraph in SplitParagraphs(chapter.Markdown))
+                            {
+                                <p style="margin: 0 0 0.75rem;">@Context.RenderRichText(paragraph)</p>
+                            }
+                        </div>
+                    }
+                </RadzenCard>
+
+                @if (!string.IsNullOrWhiteSpace(chapter.EmbeddedReportUnit))
+                {
+                    <RadzenCard Variant="Variant.Outlined" Style="padding: 1rem;">
+                        @Context.RenderEmbeddedReport(chapter.EmbeddedReportUnit, $"doc:{chapter.Id}")
+                    </RadzenCard>
+                }
+
+                @foreach (var sub in chapter.SubSections)
+                {
+                    var subUnits = FilteredPageUnits(sub);
+                    if (!string.IsNullOrWhiteSpace(Context.Search) && subUnits.Count == 0 && !PageMatchesSearch(sub))
+                    {
+                        continue;
+                    }
+
+                    <RadzenCard Variant="Variant.Outlined" Style="padding: 1.15rem 1.25rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.55rem;">
+                            <h2 style="margin: 0; font-size: 1.12rem;">@sub.Title</h2>
+                            @if (subUnits.Count > 0)
+                            {
+                                <RadzenBadge Text="@subUnits.Count.ToString()" BadgeStyle="BadgeStyle.Info" IsPill="true" />
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(sub.Markdown))
+                        {
+                            <div class="dox-prose" style="margin-bottom: 0.75rem;">
+                                @foreach (var paragraph in SplitParagraphs(sub.Markdown))
+                                {
+                                    <p style="margin: 0 0 0.65rem;">@Context.RenderRichText(paragraph)</p>
+                                }
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(sub.EmbeddedReportUnit))
+                        {
+                            @Context.RenderEmbeddedReport(sub.EmbeddedReportUnit, $"doc:{chapter.Id}.{sub.Id}")
+                        }
+
+                        @foreach (var subSec in sub.SymbolSections)
+                        {
+                            var secUnits = FilterSymbolList(subSec.Units);
+                            if (secUnits.Count == 0)
+                            {
+                                continue;
+                            }
+                            @RenderSymbolDataGrid(chapter, secUnits)
+                        }
+                    </RadzenCard>
+                }
+
+                @if (!chapter.SubSections.Any(s => s.SymbolSections.Count > 0))
+                {
+                    @foreach (var sec in chapter.SymbolSections)
+                    {
+                        var units = FilterSymbolList(sec.Units);
+                        if (units.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        <RadzenCard Variant="Variant.Outlined" Style="padding: 1.15rem 1.25rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+                                <h2 style="margin: 0; font-size: 1.12rem;">@sec.CategoryTitle</h2>
+                                <RadzenBadge Text="@units.Count.ToString()" BadgeStyle="BadgeStyle.Info" IsPill="true" />
+                            </div>
+                            @RenderSymbolDataGrid(chapter, units)
+                        </RadzenCard>
+                    }
+                }
+            }
+        </article>
+
+        @* 3. Right On-This-Page Outline (RadzenCard + Radzen buttons/badges) *@
+        @if (showTocPane)
+        {
+            <aside class="dox-toc" aria-label="On this page">
+                <p class="dox-toc-heading">On this page</p>
+                @if (Context.ActiveSymbol is not null)
+                {
+                    <div style="margin-bottom: 0.35rem;">
+                        <RadzenBadge Text="@Context.ActiveSymbol.Id" BadgeStyle="BadgeStyle.Primary" IsPill="true" />
+                    </div>
+                    <ul class="dox-toc-list">
+                        @foreach (var grp in Context.ActiveSymbol.Children.GroupBy(c => c.Kind))
+                        {
+                            <li class="muted" style="margin-top: 0.35rem; font-weight: 600;">@FormatMemberGroupTitle(grp.Key) (@grp.Count())</li>
+                            @foreach (var item in grp.Take(16))
+                            {
+                                <li style="padding-left: 0.45rem;">
+                                    @if (item.Children.Length > 0 && item.Kind is not "block")
+                                    {
+                                        <RadzenButton Text="@item.Id"
+                                                      Variant="Variant.Text"
+                                                      Size="ButtonSize.ExtraSmall"
+                                                      ButtonStyle="ButtonStyle.Info"
+                                                      Style="padding: 0.1rem 0.25rem; font-family: ui-monospace, Consolas, monospace;"
+                                                      Click="@(() => Context.OnSelectSymbol.InvokeAsync((Context.ActivePage, item)))" />
+                                    }
+                                    else
+                                    {
+                                        <span class="muted" style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;">@item.Id</span>
+                                    }
+                                </li>
+                            }
+                        }
+                    </ul>
+                }
+                else if (Context.ActivePage is not null)
+                {
+                    <div style="margin-bottom: 0.35rem;">
+                        <strong>@Context.ActivePage.Title</strong>
+                    </div>
+                    <ul class="dox-toc-list">
+                        @foreach (var sec in Context.ActivePage.SymbolSections)
+                        {
+                            @if (Context.ActivePage.SymbolSections.Count > 1)
+                            {
+                                <li class="muted" style="margin-top: 0.35rem; font-weight: 600;">@FormatNavGroupBadge(sec.CategoryId, sec.CategoryTitle)</li>
+                            }
+                            @foreach (var u in FilterSymbolList(sec.Units).Take(18))
+                            {
+                                <li style="padding-left: 0.25rem;">
+                                    <RadzenButton Text="@u.Id"
+                                                  Variant="Variant.Text"
+                                                  Size="ButtonSize.ExtraSmall"
+                                                  ButtonStyle="ButtonStyle.Info"
+                                                  Style="padding: 0.1rem 0.25rem; font-family: ui-monospace, Consolas, monospace;"
+                                                  Click="@(() => Context.OnSelectSymbol.InvokeAsync((Context.ActivePage, u)))" />
+                                </li>
+                            }
+                        }
+                        @if (Context.ActivePage.SymbolSections.Count == 0)
+                        {
+                            @foreach (var sub in Context.ActivePage.SubSections)
+                            {
+                                <li class="muted">@sub.Title</li>
+                            }
+                        }
+                    </ul>
+                }
+                <div style="margin-top: auto; padding-top: 0.65rem; border-top: 1px solid var(--border); font-size: 0.74rem;" class="muted">
+                    CLI: <code>dsc doc --stdlib</code>
+                </div>
+            </aside>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public StackDocPortalContext Context { get; set; } = default!;
+
+    private RenderFragment RenderSymbolDataGrid(DashSpecCompiledBookPage chapter, IReadOnlyList<DashSpecSymbolDoc> units) => __builder =>
+    {
+        <RadzenDataGrid TItem="DashSpecSymbolDoc"
+                        Data="@units"
+                        AllowSorting="true"
+                        AllowFiltering="@(units.Count > 12)"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        FilterMode="FilterMode.Simple"
+                        AllowPaging="@(units.Count > 20)"
+                        PageSize="20"
+                        Density="Density.Compact">
+            <Columns>
+                <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Id" Title="Symbol" Width="24%">
+                    <Template Context="unit">
+                        <RadzenButton Text="@unit.Id"
+                                      Variant="Variant.Text"
+                                      Size="ButtonSize.Small"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Style="padding: 0; font-family: ui-monospace, Consolas, monospace; font-weight: 700;"
+                                      Click="@(() => Context.OnSelectSymbol.InvokeAsync((chapter, unit)))" />
+                        <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                            @foreach (var tag in unit.Tags)
+                            {
+                                <RadzenBadge Text="@($"{tag.TagKey}: {tag.TagValue}")"
+                                             BadgeStyle="@GetTagBadgeStyle(tag.TagKey, tag.TagValue)"
+                                             IsPill="true" />
+                            }
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Signature" Title="Signature" Width="28%">
+                    <Template Context="unit">
+                        <code style="font-size: 0.78rem; white-space: normal; word-break: break-word;">@unit.Signature</code>
+                        @if (FSharpOption<string>.get_IsSome(unit.SourcePath))
+                        {
+                            <div class="muted" style="font-size: 0.72rem; margin-top: 0.2rem;">@($"{unit.SourcePath.Value}:{unit.Line}")</div>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Markdown" Title="Description" Width="48%">
+                    <Template Context="unit">
+                        <div style="white-space: normal;">
+                            @if (!string.IsNullOrWhiteSpace(unit.Markdown))
+                            {
+                                @Context.RenderRichText(unit.Markdown)
+                            }
+                            @if (unit.Children.Length > 0)
+                            {
+                                <div style="margin-top: 0.35rem; display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                    @foreach (var c in unit.Children.Take(8))
+                                    {
+                                        <RadzenBadge Text="@c.Id" BadgeStyle="BadgeStyle.Secondary" IsPill="true" />
+                                    }
+                                    @if (unit.Children.Length > 8)
+                                    {
+                                        <RadzenBadge Text="@($"+{unit.Children.Length - 8}")" BadgeStyle="BadgeStyle.Light" IsPill="true" />
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    };
+
+    private static BadgeStyle GetTagBadgeStyle(string key, string val) =>
+        (key.ToLowerInvariant(), val.ToLowerInvariant()) switch
+        {
+            ("locality", "database") => BadgeStyle.Info,
+            ("locality", "runtime") => BadgeStyle.Success,
+            ("role", "declaration") => BadgeStyle.Info,
+            ("role", "consumer") => BadgeStyle.Primary,
+            ("role", "root") => BadgeStyle.Warning,
+            ("severity", "error") => BadgeStyle.Danger,
+            ("severity", "warning") => BadgeStyle.Warning,
+            ("severity", "info") => BadgeStyle.Info,
+            _ => BadgeStyle.Secondary,
+        };
+
+    private static string ComputeShellGridColumns(
+        TemplateChromeOptions chrome,
+        bool showTree,
+        bool showToc)
+    {
+        var cols = new List<string>();
+        if (showTree)
+        {
+            cols.Add($"clamp(200px, 21vw, {chrome.TreeWidthPx}px)");
+        }
+        cols.Add("minmax(0, 1fr)");
+        if (showToc)
+        {
+            cols.Add($"clamp(170px, 18vw, {chrome.TocWidthPx}px)");
+        }
+        return string.Join(" ", cols);
+    }
+
+    private IReadOnlyList<DashSpecSymbolDoc> FilteredPageUnits(DashSpecCompiledBookPage page) =>
+        page.SymbolSections
+            .SelectMany(s => FilterSymbolList(s.Units))
+            .ToList();
+
+    private IReadOnlyList<DashSpecSymbolDoc> FilterSymbolList(IReadOnlyList<DashSpecSymbolDoc> units)
+    {
+        if (string.IsNullOrWhiteSpace(Context.Search))
+        {
+            return units;
+        }
+
+        var q = Context.Search.Trim();
+        return units.Where(u => SymbolMatches(u, q)).ToList();
+    }
+
+    private bool PageMatchesSearch(DashSpecCompiledBookPage page)
+    {
+        if (string.IsNullOrWhiteSpace(Context.Search))
+        {
+            return true;
+        }
+
+        var q = Context.Search.Trim();
+        return page.Title.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+               page.Markdown.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+               page.SubSections.Any(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Markdown.Contains(q, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool SymbolMatches(DashSpecSymbolDoc doc, string q) =>
+        doc.Id.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+        doc.Signature.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+        doc.Markdown.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+        (FSharpOption<string>.get_IsSome(doc.Title) && doc.Title.Value.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
+        doc.Tags.Any(t => t.TagValue.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
+        doc.Children.Any(c => SymbolMatches(c, q));
+
+    private static IReadOnlyList<string> SplitParagraphs(string markdown) =>
+        markdown
+            .Split(["\r\n\r\n", "\n\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static string FormatNavGroupBadge(string categoryId, string categoryTitle) =>
+        categoryId.ToLowerInvariant() switch
+        {
+            "declaration" => "Declaration",
+            "consumer" => "Consumer",
+            "root" => "Root",
+            "database" => "Database (SQL)",
+            "runtime" => "Runtime (In-Memory)",
+            "error" => "Errors",
+            "warning" => "Warnings",
+            "info" => "Info",
+            _ => categoryTitle.Length > 28 ? categoryId : categoryTitle,
+        };
+
+    private static string FormatMemberGroupTitle(string kind) =>
+        kind.ToLowerInvariant() switch
+        {
+            "block" => "Grammar Blocks (<block> … end <block>)",
+            "clause" => "Grammar Clauses & Statements",
+            "type" => "Data Types (type)",
+            "field" => "Fields",
+            "port" => "Ports",
+            "param" => "Parameters",
+            "property" => "Properties",
+            "source" => "Data Sources (source)",
+            "transformer" => "Transformers (transformer)",
+            "card" => "Report Cards (card)",
+            "filter" => "Filters (filter)",
+            "row" => "Registry Entries",
+            _ => kind,
+        };
+
+    private IReadOnlyList<DashSpecSymbolDoc> FindReferencedSymbols(DashSpecSymbolDoc memberItem)
+    {
+        if (memberItem.ReferencedSymbols.Length == 0)
+        {
+            return [];
+        }
+
+        var results = new List<DashSpecSymbolDoc>();
+        foreach (var symRef in memberItem.ReferencedSymbols)
+        {
+            if (string.Equals(symRef, memberItem.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (Context.Book.GlobalSymbolIndex.TryGetValue(symRef, out var target) &&
+                !string.Equals(target.Id, memberItem.Id, StringComparison.OrdinalIgnoreCase) &&
+                target.Kind is "type" or "unit" or "module diagram" or "module presentation" or "module transform")
+            {
+                if (!results.Any(r => string.Equals(r.Id, target.Id, StringComparison.OrdinalIgnoreCase)))
+                {
+                    results.Add(target);
+                }
+            }
+        }
+
+        return results;
+    }
+}
