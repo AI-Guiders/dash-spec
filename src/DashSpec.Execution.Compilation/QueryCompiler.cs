@@ -39,18 +39,23 @@ public static class QueryCompiler
         var flowPath = ResolveFlowPath(document, card);
         var effectiveGroupBy = groupByStep ?? ResolveGroupBy(card, flowPath);
         var effectiveOrderBy = orderByStep ?? OrderByStepSpec.Find(flowPath);
+        var rowTypes = RowTypeCatalog.FromDocument(document);
+        var filterSchema = !string.IsNullOrWhiteSpace(flowPath?.Source.OutputRowType)
+            ? rowTypes.GetRequired(flowPath.Source.OutputRowType)
+            : null;
         return Compile(
             card,
             filters,
             filterDefinitions,
-            RowTypeCatalog.FromDocument(document),
+            rowTypes,
             SqlDialectResolver.Resolve(sqlDialect ?? SqlDialect.TSql),
             specDirectory,
             cellDrillOverlay,
             reportTimePolicy,
             ResolveFilterDerives(document),
             effectiveGroupBy,
-            effectiveOrderBy);
+            effectiveOrderBy,
+            filterSchema);
     }
 
     private static DashflowExecutionPath? ResolveFlowPath(DashboardDocument document, CardDefinition card)
@@ -92,7 +97,8 @@ public static class QueryCompiler
         ReportTimePolicy? reportTimePolicy = null,
         IReadOnlyDictionary<string, FilterDeriveDefinition>? filterDerives = null,
         GroupByStepSpec? groupByStep = null,
-        OrderByStepSpec? orderByStep = null)
+        OrderByStepSpec? orderByStep = null,
+        RowTypeSchema? filterRowSchema = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(filters);
@@ -114,7 +120,7 @@ public static class QueryCompiler
 
         var parameters = new List<QueryParameter>();
         var whereBuilder = new StringBuilder("WHERE 1=1");
-        AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, dialect, cellDrillOverlay, rowSchema, filterDerives);
+        AppendBoundFilters(whereBuilder, card, filters, filterDefinitions, parameters, dialect, cellDrillOverlay, filterRowSchema ?? rowSchema, filterDerives);
         AppendWorkWindowClip(whereBuilder, reportTimePolicy, dialect);
 
         var tableLimit = DiagramKindRegistry.SupportsTopLimit(card.Diagram.Kind)
@@ -433,15 +439,10 @@ public static class QueryCompiler
             return false;
         }
 
-        if (!TryResolveAggregateFn(diagram, "SUM", out var aggregate))
-        {
-            return false;
-        }
-
         var parts = new List<string>
         {
             category,
-            $"{aggregate}({measure}) AS {measure}",
+            $"SUM({measure}) AS {measure}",
         };
         var groupParts = new List<string> { category };
 

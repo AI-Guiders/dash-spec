@@ -97,9 +97,11 @@ report "DashSpec Self-Monitoring (WitDB)"
       value = TotalQueries
       scale_value = integer
     end number
-    bind dashboard
     data flow
       tr_query_kpis_rounded [rows] -> [rows] __diagram__
+      connector_id -> [connector_id] __diagram__
+      query_kind -> [query_kind] __diagram__
+      query_status -> [query_status] __diagram__
     end data flow
   end card
 
@@ -112,9 +114,11 @@ report "DashSpec Self-Monitoring (WitDB)"
       value = AvgDurationMs
       aggregate = avg
     end number
-    bind dashboard
     data flow
       tr_query_kpis_rounded [rows] -> [rows] __diagram__
+      connector_id -> [connector_id] __diagram__
+      query_kind -> [query_kind] __diagram__
+      query_status -> [query_status] __diagram__
     end data flow
   end card
 
@@ -127,9 +131,11 @@ report "DashSpec Self-Monitoring (WitDB)"
       value = FailedQueries
       scale_value = integer
     end number
-    bind dashboard
     data flow
       tr_query_kpis_rounded [rows] -> [rows] __diagram__
+      connector_id -> [connector_id] __diagram__
+      query_kind -> [query_kind] __diagram__
+      query_status -> [query_status] __diagram__
     end data flow
   end card
 
@@ -161,9 +167,11 @@ report "DashSpec Self-Monitoring (WitDB)"
       bound_filters = hidden
     end chrome
     diagram ref main diag_telemetry_query_kind_bar
-    bind dashboard
     data flow
       tr_query_kind_stats_rounded [rows] -> [rows] main
+      connector_id -> [connector_id] main
+      query_kind -> [query_kind] main
+      query_status -> [query_status] main
     end data flow
   end card
 
@@ -173,9 +181,10 @@ report "DashSpec Self-Monitoring (WitDB)"
       bound_filters = hidden
     end chrome
     diagram ref main diag_telemetry_log_level_donut
-    bind dashboard
     data flow
-      src_log_level_stats [rows] -> [rows] main
+      tr_log_level_stats [rows] -> [rows] main
+      log_level -> [log_level] main
+      log_category -> [log_category] main
     end data flow
   end card
 
@@ -188,11 +197,17 @@ report "DashSpec Self-Monitoring (WitDB)"
       rows_top -> [toolbar] chrome.card.recent_queries
     end show flow
     diagram ref main diag_telemetry_queries
-    bind dashboard
     data flow
       src_queries [rows] -> [rows] main
+      connector_id -> [connector_id] main
+      query_kind -> [query_kind] main
+      query_status -> [query_status] main
       rows_top -> [rows_top] main
     end data flow
+    layout
+      [ rows_top ]
+      [ main ]
+    end layout
   end card
 
   /// Системный журнал событий хоста `DashSpec.Host` (`host_logs`).
@@ -204,11 +219,16 @@ report "DashSpec Self-Monitoring (WitDB)"
       rows_top -> [toolbar] chrome.card.recent_logs
     end show flow
     diagram ref main diag_telemetry_logs
-    bind dashboard
     data flow
       src_logs [rows] -> [rows] main
+      log_level -> [log_level] main
+      log_category -> [log_category] main
       rows_top -> [rows_top] main
     end data flow
+    layout
+      [ rows_top ]
+      [ main ]
+    end layout
   end card
 end report
 

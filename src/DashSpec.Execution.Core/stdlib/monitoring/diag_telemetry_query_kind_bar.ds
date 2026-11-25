@@ -8,6 +8,5 @@ end presentation
 
 bar
   x = Kind
-  y = AvgDurationMs
-  aggregate = avg
+  y = value
 end bar

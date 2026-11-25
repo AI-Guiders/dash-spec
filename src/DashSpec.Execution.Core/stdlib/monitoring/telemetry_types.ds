@@ -44,26 +44,18 @@ end type
 
 /// Статистика задержки запросов в разрезе вида операции (`card_query`, `field_options`).
 type TelemetryQueryKindRow
-  /// Идентификатор коннектора (`sqlserver`, `postgres`, `witdb`).
-  optional string ConnectorId
   /// Вид операции запроса.
   optional string Kind
-  /// Статус выполнения (`OK` или `ERROR`).
-  optional string Status
   /// Средняя длительность выполнения в миллисекундах (`ms`).
-  optional decimal AvgDurationMs
-  /// Количество запросов данного вида.
-  optional int QueryCount
+  int value
 end type
 
 /// Распределение записей журнала событий по уровню важности (`Information`, `Warning`, `Error`).
 type TelemetryLogLevelRow
   /// Уровень логирования.
   optional string Level
-  /// Категория логгера `.NET`.
-  optional string Category
   /// Число записей в журнале `host_logs`.
-  optional int LogCount
+  int value
 end type
 
 /// Запись журнала выполненных SQL-запросов из таблицы `query_telemetry`.

@@ -8,5 +8,5 @@ end presentation
 
 donut
   x = Level
-  y = LogCount
+  y = value
 end donut

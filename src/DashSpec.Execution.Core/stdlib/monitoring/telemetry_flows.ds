@@ -72,38 +72,6 @@ transformer tr_metrics_timeline_rounded {
 
 src_metrics_timeline [rows] -> [raw] tr_metrics_timeline_rounded
 
-source src_query_kind_stats {
-  use provider witdb
-  from sql query "SELECT ConnectorId, Kind, Status, AVG(DurationMs) AS AvgDurationMs, COUNT(*) AS QueryCount FROM query_telemetry GROUP BY ConnectorId, Kind, Status ORDER BY AvgDurationMs DESC"
-  ports
-    default output rows
-    output stream rows: TelemetryQueryKindRow
-  end ports
-}
-
-transformer tr_query_kind_stats_rounded {
-  ports
-    default input raw
-    default output rows
-    input stream raw: TelemetryQueryKindRow
-    output stream rows: TelemetryQueryKindRow
-  end ports
-  transform use round {
-    digits = 1
-  }
-}
-
-src_query_kind_stats [rows] -> [raw] tr_query_kind_stats_rounded
-
-source src_log_level_stats {
-  use provider witdb
-  from sql query "SELECT Level, Category, COUNT(*) AS LogCount FROM host_logs GROUP BY Level, Category ORDER BY LogCount DESC"
-  ports
-    default output rows
-    output stream rows: TelemetryLogLevelRow
-  end ports
-}
-
 source src_queries {
   use provider witdb
   from sql query "SELECT CAST(TimestampUtc AS TEXT) AS TimestampUtc, ConnectorId, Kind, DurationMs, RowCount, Status, SqlPreview FROM query_telemetry ORDER BY TimestampUtc DESC"
@@ -113,6 +81,25 @@ source src_queries {
   end ports
 }
 
+transformer tr_query_kind_stats_rounded {
+  ports
+    default input raw
+    default output rows
+    input stream raw: TelemetryQueryRow
+    output stream rows: TelemetryQueryKindRow
+  end ports
+  transform use summarize {
+    by = Kind
+    agg = avg
+    value = DurationMs
+  }
+  transform use round {
+    digits = 1
+  }
+}
+
+src_queries [rows] -> [raw] tr_query_kind_stats_rounded
+
 source src_logs {
   use provider witdb
   from sql query "SELECT CAST(TimestampUtc AS TEXT) AS TimestampUtc, Level, Category, Message FROM host_logs ORDER BY TimestampUtc DESC"
@@ -121,5 +108,20 @@ source src_logs {
     output stream rows: TelemetryLogRow
   end ports
 }
+
+transformer tr_log_level_stats {
+  ports
+    default input raw
+    default output rows
+    input stream raw: TelemetryLogRow
+    output stream rows: TelemetryLogLevelRow
+  end ports
+  transform use summarize {
+    by = Level
+    agg = count
+  }
+}
+
+src_logs [rows] -> [raw] tr_log_level_stats
 
 end flow
