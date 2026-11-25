@@ -58,6 +58,12 @@ module BlockSurfaceLineClassifier =
                 End(kind, tryReadOptionalId rest)
             | Kw DashSpec.Modeling.Parse.Syntax.DashSpecKeyword.Module :: { Kind = TokenKind.Ident; Value = kind } :: { Kind = TokenKind.Ident; Value = id } :: _ ->
                 ModuleHeader(kind, id)
+            | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Ident; Value = subKind } :: { Kind = TokenKind.Ident; Value = id } :: _
+                when String.Equals(kw, "template", StringComparison.OrdinalIgnoreCase)
+                     && (String.Equals(subKind, "report", StringComparison.OrdinalIgnoreCase)
+                         || String.Equals(subKind, "doc", StringComparison.OrdinalIgnoreCase)
+                         || String.Equals(subKind, "documentation", StringComparison.OrdinalIgnoreCase)) ->
+                ModuleHeader("template", id)
             | { Kind = TokenKind.Ident; Value = kw } :: { Kind = TokenKind.Ident; Value = id } :: _
                 when DashSpec.Modeling.Parse.Syntax.DashSpecBlockKeyword.isNamedBlockKeyword kw && id <> "as" ->
                 BlockOpener(kw, Some id)

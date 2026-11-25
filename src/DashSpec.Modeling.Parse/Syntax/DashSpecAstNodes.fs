@@ -317,6 +317,7 @@ type DashSpecModuleKind =
     | Catalog
     | Host
     | Transform
+    | Template
     | Documentation
     | Custom of keyword: string
 
@@ -341,6 +342,7 @@ module DashSpecModuleKind =
         | "catalog" -> DashSpecModuleKind.Catalog
         | "host" -> DashSpecModuleKind.Host
         | "transform" -> DashSpecModuleKind.Transform
+        | "template" -> DashSpecModuleKind.Template
         | "documentation" -> DashSpecModuleKind.Documentation
         | other -> DashSpecModuleKind.Custom other
 
@@ -363,6 +365,7 @@ module DashSpecModuleKind =
         | DashSpecModuleKind.Catalog -> "catalog"
         | DashSpecModuleKind.Host -> "host"
         | DashSpecModuleKind.Transform -> "transform"
+        | DashSpecModuleKind.Template -> "template"
         | DashSpecModuleKind.Documentation -> "documentation"
         | DashSpecModuleKind.Custom kw -> kw
 

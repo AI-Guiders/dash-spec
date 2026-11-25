@@ -23,6 +23,7 @@ type ImportKind =
     | Dashboards
     | Catalogs
     | Commands
+    | Templates
     | Documentations
 
 [<RequireQualifiedAccess>]
@@ -65,6 +66,7 @@ module ImportKindRegistry =
         | "dashboard" -> Some ImportKind.Dashboards
         | "catalog" -> Some ImportKind.Catalogs
         | "commands" -> Some ImportKind.Commands
+        | "template" -> Some ImportKind.Templates
         | "documentation" -> Some ImportKind.Documentations
         | _ -> None
 

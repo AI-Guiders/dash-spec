@@ -144,8 +144,26 @@ module DashSpecGrammarGraph =
                   kw "global" "Global implicit import modifier" ]
             | DashSpecModuleKind.Registry ->
                 []
+            | DashSpecModuleKind.Template ->
+                [ kw "kind" "Template target kind (report | doc)"
+                  kw "chrome" "Template chrome options block"
+                  kw "wide" "Wide viewport layout board ([ @tree:2 @article:7 @toc:2 ] or [ @sidebar:1 @main:5 ])"
+                  kw "mid" "Mid viewport layout board"
+                  kw "narrow" "Narrow viewport layout board"
+                  kw "nest" "Nested slot container (e.g. nest main … end nest)"
+                  kw "hstack" "Horizontal slot stack"
+                  kw "vstack" "Vertical slot stack"
+                  kw "scroll" "Scroll mode (independent | page)"
+                  kw "tree_width" "Left navigation tree width in px (doc)"
+                  kw "toc_width" "Right On-This-Page outline width in px (doc)"
+                  kw "sidebar_width" "Left report sidebar width in px (report)"
+                  kw "breadcrumbs" "Show breadcrumb trail (true | false)"
+                  kw "search" "Show symbol search box (true | false)"
+                  kw "toc" "Show right On-This-Page outline (true | false)" ]
             | DashSpecModuleKind.Documentation ->
                 [ kw "title" "Documentation book title"
+                  kw "use" "use template <template_id>"
+                  kw "template" "template = <template_id>"
                   kw "page" "Documentation chapter/page block"
                   kw "section" "Documentation section block" ]
             | DashSpecModuleKind.Custom "commands" ->
@@ -485,7 +503,11 @@ module DashSpecGrammarGraph =
         | "locality" ->
             [ GrammarExpectation.ValueDomain("locality", [ "database"; "runtime" ]) ]
         | "symbols" | "category" ->
-            [ GrammarExpectation.ValueDomain("symbols", [ "units"; "transforms"; "presentations"; "types"; "monitoring"; "rules"; "workspace"; "all" ]) ]
+            [ GrammarExpectation.ValueDomain("symbols", [ "units"; "transforms"; "presentations"; "templates"; "types"; "monitoring"; "rules"; "workspace"; "all" ]) ]
+        | "kind" ->
+            [ GrammarExpectation.ValueDomain("kind", [ "report"; "doc" ]) ]
+        | "scroll" | "scroll_mode" ->
+            [ GrammarExpectation.ValueDomain("scroll", [ "independent"; "page" ]) ]
         | "role" ->
             [ GrammarExpectation.ValueDomain("role", [ "declaration"; "consumer"; "root" ]) ]
         | "severity" ->

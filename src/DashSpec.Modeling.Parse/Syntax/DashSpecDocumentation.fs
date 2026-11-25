@@ -135,13 +135,16 @@ module DashSpecDocumentationExtractor =
             | DashSpecAstNode.PropertyAssignment p ->
                 let k = p.Key.Trim().ToLowerInvariant()
                 match k with
+                | "kind"
+                | "target"
                 | "locality"
                 | "type_effect"
                 | "requires_block"
                 | "scope"
                 | "language"
                 | "role"
-                | "severity" ->
+                | "severity"
+                | "scroll" ->
                     tags.Add({ TagKey = k; TagValue = p.Value.Text.Trim() })
                 | _ -> ()
             | DashSpecAstNode.ClauseDeclaration c ->
@@ -620,6 +623,7 @@ type DocumentationSymbolsCategory =
     | Units
     | Transforms
     | Presentations
+    | Templates
     | Types
     | Monitoring
     | Rules
@@ -633,6 +637,7 @@ module DocumentationSymbolsCategory =
         | "units" -> Some DocumentationSymbolsCategory.Units
         | "transforms" -> Some DocumentationSymbolsCategory.Transforms
         | "presentations" -> Some DocumentationSymbolsCategory.Presentations
+        | "templates" -> Some DocumentationSymbolsCategory.Templates
         | "types" -> Some DocumentationSymbolsCategory.Types
         | "monitoring" -> Some DocumentationSymbolsCategory.Monitoring
         | "rules" -> Some DocumentationSymbolsCategory.Rules
@@ -645,6 +650,7 @@ module DocumentationSymbolsCategory =
         | DocumentationSymbolsCategory.Units -> "units"
         | DocumentationSymbolsCategory.Transforms -> "transforms"
         | DocumentationSymbolsCategory.Presentations -> "presentations"
+        | DocumentationSymbolsCategory.Templates -> "templates"
         | DocumentationSymbolsCategory.Types -> "types"
         | DocumentationSymbolsCategory.Monitoring -> "monitoring"
         | DocumentationSymbolsCategory.Rules -> "rules"
@@ -704,6 +710,7 @@ type DocumentationModuleDocument =
     { Id: string
       Namespace: string option
       Title: string
+      TemplateId: string option
       Markdown: string
       Pages: DocumentationPageDefinition[] }
 
@@ -795,14 +802,21 @@ module DocumentationModuleParser =
 
         let mutable ns: string option = None
         let mutable title = unitId
+        let mutable templateId: string option = None
         let pages = ResizeArray<DocumentationPageDefinition>()
 
         for m in moduleNode.Members do
             match m with
             | DashSpecAstNode.ClauseDeclaration { Kind = ClauseKind.NamespaceClause n } ->
                 ns <- Some n
+            | DashSpecAstNode.ClauseDeclaration { Kind = ClauseKind.UseClause("template", t) } ->
+                templateId <- Some t
+            | DashSpecAstNode.ClauseDeclaration { Kind = ClauseKind.UsePresetClause t } ->
+                templateId <- Some t
             | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "title", StringComparison.OrdinalIgnoreCase) ->
                 title <- p.Value.Text
+            | DashSpecAstNode.PropertyAssignment p when String.Equals(p.Key, "template", StringComparison.OrdinalIgnoreCase) ->
+                templateId <- Some(p.Value.Text.Trim())
             | DashSpecAstNode.BlockDeclaration b ->
                 match b.Opener with
                 | DashSpecBlockOpener.Named(DashSpecBlockKeyword.Page, pageId)
@@ -819,5 +833,6 @@ module DocumentationModuleParser =
         { Id = unitId
           Namespace = ns
           Title = title
+          TemplateId = templateId
           Markdown = moduleMd
           Pages = pages.ToArray() }

@@ -3,6 +3,7 @@ using AIGuiders.Platform.Modeling.Paths;
 using DashSpec.Modeling.Core;
 using DashSpec.Modeling.Parse.Document;
 using DashSpec.Modeling.Parse.Syntax;
+using DashSpec.Modeling.Parse.Template;
 using DashSpec.Modeling.Parse.Texts;
 using Microsoft.FSharp.Core;
 
@@ -33,6 +34,9 @@ public sealed record DashSpecCompiledBook(
     string Title,
     string Markdown,
     string Language,
+    TemplateDocument Template,
+    string[] ShellSlots,
+    string ShellGridColumnsCss,
     IReadOnlyList<DashSpecCompiledBookPage> Pages,
     IReadOnlyDictionary<string, DashSpecSymbolDoc> GlobalSymbolIndex);
 
@@ -56,6 +60,7 @@ public static class DashSpecDocGenerator
         var unitDocs = new List<DashSpecSymbolDoc>();
         var transformDocs = new List<DashSpecSymbolDoc>();
         var presentationDocs = new List<DashSpecSymbolDoc>();
+        var templateDocs = new List<DashSpecSymbolDoc>();
         var typeDocs = new List<DashSpecSymbolDoc>();
         var ruleDocs = new List<DashSpecSymbolDoc>();
         var monitoringDocs = new List<DashSpecSymbolDoc>();
@@ -107,6 +112,10 @@ public static class DashSpecDocGenerator
                 {
                     presentationDocs.Add(doc);
                 }
+                else if (resName.StartsWith("stdlib/templates/", StringComparison.OrdinalIgnoreCase))
+                {
+                    templateDocs.Add(doc);
+                }
                 else if (resName.StartsWith("stdlib/types/", StringComparison.OrdinalIgnoreCase))
                 {
                     // Promote individual `type <Name>` blocks to first-class navigable symbols
@@ -150,6 +159,7 @@ public static class DashSpecDocGenerator
             new("units", isRu ? "Модули языка (stdlib/units)" : "Language Units (stdlib/units)", unitDocs),
             new("transforms", isRu ? "Трансформации потоков данных (stdlib/transforms)" : "Dataflow Transforms (stdlib/transforms)", transformDocs),
             new("presentations", isRu ? "Стандартные пресеты оформления (stdlib/presentation)" : "Presentation Presets (stdlib/presentation)", presentationDocs),
+            new("templates", isRu ? "Шаблоны рабочей оболочки (stdlib/templates)" : "Workbench Templates (stdlib/templates)", templateDocs),
             new("types", isRu ? "Стандартные типы данных (stdlib/types)" : "Standard Types (stdlib/types)", typeDocs),
             new("monitoring", isRu ? "Самодиагностика и мониторинг (stdlib/monitoring)" : "Self-Monitoring (stdlib/monitoring)", monitoringDocs),
             new("rules", isRu ? "Правила и диагностики компилятора (stdlib/rules)" : "Compiler Rules & Diagnostics (stdlib/rules)", ruleDocs),
@@ -313,16 +323,27 @@ public static class DashSpecDocGenerator
 
         if (string.IsNullOrWhiteSpace(docModuleText))
         {
+            var fallbackTpl = ResolveDocTemplate("doxygen_doc", workspaceDir);
+            var (fallbackSlots, fallbackCss) = TemplateModuleParser.resolveDocShellColumns(fallbackTpl);
             return new DashSpecCompiledBook(
                 "dashspec_manual",
                 stdlib.Title,
                 "",
                 lang,
+                fallbackTpl,
+                fallbackSlots,
+                fallbackCss,
                 [],
                 globalIndex);
         }
 
         var parsed = DocumentationModuleParser.parse(docModuleText);
+        var templateId = FSharpOption<string>.get_IsSome(parsed.TemplateId) && !string.IsNullOrWhiteSpace(parsed.TemplateId.Value)
+            ? parsed.TemplateId.Value.Trim()
+            : "doxygen_doc";
+        var resolvedTemplate = ResolveDocTemplate(templateId, workspaceDir);
+        var (shellSlots, shellCss) = TemplateModuleParser.resolveDocShellColumns(resolvedTemplate);
+
         var isRu = lang.StartsWith("ru", StringComparison.OrdinalIgnoreCase);
         var compiledPages = parsed.Pages
             .Select(p => CompileBookPage(p, stdlib, workspace, isRu))
@@ -333,8 +354,57 @@ public static class DashSpecDocGenerator
             parsed.Title,
             parsed.Markdown,
             lang,
+            resolvedTemplate,
+            shellSlots,
+            shellCss,
             compiledPages,
             globalIndex);
+    }
+
+    private static TemplateDocument ResolveDocTemplate(string templateId, string? workspaceDir)
+    {
+        if (!string.IsNullOrWhiteSpace(workspaceDir) && Directory.Exists(workspaceDir))
+        {
+            foreach (var file in UnitIndexModule.corpusFiles(Path.GetFullPath(workspaceDir)))
+            {
+                var rawOpt = UnitSource.tryReadRaw(file);
+                if (FSharpOption<string>.get_IsSome(rawOpt))
+                {
+                    var (kind, id) = UnitSource.tryKindAndId(rawOpt.Value);
+                    if (string.Equals(kind, "template", StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(id, templateId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            return TemplateModuleParser.parse(rawOpt.Value);
+                        }
+                        catch
+                        {
+                            // Fall back to stdlib template
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (var candidate in new[] { $"stdlib/templates/{templateId}.ds", "stdlib/templates/doxygen_doc.ds" })
+        {
+            var rawOpt = UnitSource.tryReadRaw(candidate);
+            if (FSharpOption<string>.get_IsSome(rawOpt))
+            {
+                try
+                {
+                    return TemplateModuleParser.parse(rawOpt.Value);
+                }
+                catch
+                {
+                    // Fall back
+                }
+            }
+        }
+
+        return TemplateModuleParser.parse(
+            "module template doxygen_doc\nkind = doc\n[ @tree:2 @article:7 @toc:2 ]\nend template");
     }
 
     private static DashSpecCompiledBookPage CompileBookPage(

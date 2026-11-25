@@ -1,0 +1,28 @@
+/// Стандартный 3-колоночный шаблон книги документации в стиле Doxygen-Awesome:
+/// левое дерево навигации (`@tree`), центральная статья (`@article`) и правое оглавление страницы (`@toc` — "On this page").
+module template doxygen_doc
+namespace DashSpec.Std.Templates
+
+kind = doc
+
+wide
+  [ @tree:2 @article:7 @toc:2 ]
+end wide
+
+mid
+  [ @tree:2 @article:6 ]
+end mid
+
+narrow
+  [ @article:1 ]
+end narrow
+
+chrome
+  scroll = independent
+  tree_width = 330
+  toc_width = 270
+  breadcrumbs = true
+  search = true
+  toc = true
+  expand_all = true
+end chrome

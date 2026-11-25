@@ -247,11 +247,15 @@ public sealed class DashSpecAssembledDiagnosticsTests
 
             var book = DashSpecDocGenerator.BuildDocumentationBook(tempDir, "ru-RU");
             Assert.Equal("dashspec_manual", book.Id);
-            Assert.True(book.Pages.Count >= 7);
+            Assert.Equal("doxygen_doc", book.Template.Id);
+            Assert.Equal(["tree", "article", "toc"], book.ShellSlots);
+            Assert.True(book.Pages.Count >= 8);
             var unitsPage = book.Pages.First(p => p.Id == "language_units");
             Assert.Equal(3, unitsPage.SymbolSections.Count); // declaration, consumer, root
             var transformsPage = book.Pages.First(p => p.Id == "dataflow_transforms");
             Assert.Equal(2, transformsPage.SymbolSections.Count); // database, runtime
+            var templatesPage = book.Pages.First(p => p.Id == "workbench_templates");
+            Assert.NotEmpty(templatesPage.SymbolSections[0].Units);
             var rulesPage = book.Pages.First(p => p.Id == "compiler_rules");
             Assert.Equal(3, rulesPage.SymbolSections.Count); // error, warning, info
         }

@@ -14,20 +14,29 @@
 
 @if (_book is not null)
 {
+    var chrome = _book.Template.Chrome;
     <section class="help-page">
-        <div class="dox-shell">
-            @* 1. Left Doxygen Navigation Tree *@
+        <div class="dox-shell" style="@($"grid-template-columns: {_book.ShellGridColumnsCss};")">
+            @* 1. Left Doxygen Navigation Tree (@tree slot) *@
+            @if (_book.ShellSlots.Contains("tree", StringComparer.OrdinalIgnoreCase))
+            {
             <aside class="dox-sidebar" aria-label="Documentation Tree">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; flex-wrap: wrap;">
                     <strong style="font-size: 0.85rem;">module documentation</strong>
-                    <span class="badge">@_book.Id</span>
+                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                        <span class="badge" title="Active template">template: @_book.Template.Id</span>
+                        <span class="badge">@_book.Id</span>
+                    </div>
                 </div>
 
+                @if (chrome.ShowSearch)
+                {
                 <input type="search"
                        class="dox-search"
                        placeholder="Search symbols, types, rules…"
                        @bind="_search"
                        @bind:event="oninput" />
+                }
 
                 <div class="dox-nav-group">
                     @foreach (var pageItem in _book.Pages)
@@ -95,8 +104,9 @@
                     }
                 </div>
             </aside>
+            }
 
-            @* 2. Center Doxygen Detail Pane *@
+            @* 2. Center Doxygen Detail Pane (@article slot) *@
             <article class="dox-main">
                 @if (_activeSymbol is not null)
                 {
@@ -107,6 +117,8 @@
                     var symNs = FSharpOption<string>.get_IsSome(sym.Namespace) ? sym.Namespace.Value : null;
                     var symPath = FSharpOption<string>.get_IsSome(sym.SourcePath) ? $"{sym.SourcePath.Value}:{sym.Line}" : null;
 
+                    @if (chrome.ShowBreadcrumbs)
+                    {
                     <nav class="dox-breadcrumbs" aria-label="Breadcrumbs">
                         <button type="button" class="dox-crumb-btn" @onclick="() => SelectChapter(_book.Pages[0])">@_book.Title</button>
                         @if (_activePage is not null)
@@ -122,6 +134,7 @@
                         <span>/</span>
                         <code>@sym.Id</code>
                     </nav>
+                    }
 
                     <header class="dox-title-row">
                         <div>
@@ -336,7 +349,9 @@
                 }
             </article>
 
-            @* 3. Right On-This-Page Outline *@
+            @* 3. Right On-This-Page Outline (@toc slot) *@
+            @if (chrome.ShowToc && _book.ShellSlots.Contains("toc", StringComparer.OrdinalIgnoreCase))
+            {
             <aside class="dox-toc" aria-label="On this page">
                 <p class="dox-toc-heading">On this page</p>
                 @if (_activeSymbol is not null)
@@ -399,6 +414,7 @@
                     CLI: <code>dsc doc --stdlib</code>
                 </div>
             </aside>
+            }
         </div>
     </section>
 }

@@ -36,6 +36,8 @@ namespace DashSpec.Stdlib.Units
 | catalog      | catalogs      | consumer    |
 /// Пользовательские алиасы команд для командной строки дашборда.
 | commands      | commands       | declaration |
+/// Шаблон рабочей оболочки и хрома для отчётов (`kind = report`: `@sidebar`, `@tabs`, `@toolbar`, `@board`) или книг документации (`kind = doc`: `@tree`, `@article`, `@toc`).
+| template      | templates      | declaration |
 /// Книга и портал документации (`page`, `section`, `symbols`, `report`, `///` Markdown) в стиле Doxygen.
 | documentation | documentations | consumer    |
 /// Конфигурация хоста DashSpec (точка входа каталога, язык, тема, поверхности оболочки).

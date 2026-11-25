@@ -1,0 +1,23 @@
+/// Двухколоночный шаблон книги документации без правой панели `On this page`:
+/// только левое дерево навигации (`@tree`) и широкая центральная область чтения (`@article`).
+module template reader_doc
+namespace DashSpec.Std.Templates
+
+kind = doc
+
+wide
+  [ @tree:2 @article:8 ]
+end wide
+
+narrow
+  [ @article:1 ]
+end narrow
+
+chrome
+  scroll = independent
+  tree_width = 310
+  breadcrumbs = true
+  search = true
+  toc = false
+  expand_all = true
+end chrome

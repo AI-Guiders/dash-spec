@@ -13,6 +13,7 @@ open DashSpec.Modeling.Parse.DataFlow
 open DashSpec.Modeling.Parse.Defaults
 open DashSpec.Modeling.Parse.Texts
 open DashSpec.Modeling.Parse.Runtime
+open DashSpec.Modeling.Parse.Template
 open DashSpec.Modeling.Parse.Syntax
 
 type ModuleImportState() =
@@ -36,7 +37,13 @@ type ModuleImportState() =
     let defaultsDocs = Dictionary<string, DefaultsDocument>(StringComparer.OrdinalIgnoreCase)
     let textBindings = ResizeArray<TextBinding>()
     let commandAliases = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let templates = Dictionary<string, TemplateDocument>(StringComparer.OrdinalIgnoreCase)
     let symbolDocs = ResizeArray<DashSpecSymbolDoc>()
+
+    member _.RegisterTemplate(id: string, doc: TemplateDocument) =
+        templates.[id] <- doc
+
+    member _.Templates = templates :> IReadOnlyDictionary<string, TemplateDocument>
 
     member this.RegisterUnitDocsFromTree(sourcePath: string option, tree: ParseTree) =
         for d in DashSpecDocumentationExtractor.extractFromTree sourcePath this.TryResolveRawText tree do

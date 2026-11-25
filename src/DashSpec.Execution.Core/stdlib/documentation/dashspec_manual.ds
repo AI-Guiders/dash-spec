@@ -4,6 +4,9 @@
 module documentation dashspec_manual
 namespace DashSpec.Std.Documentation
 
+from DashSpec.Std.Templates import templates
+
+use template doxygen_doc
 title = "DashSpec Language & Standard Library Reference"
 
 /// **DashSpec** — декларативный строго типизированный язык описания аналитических дашбордов, потоков данных (`module flow`),
@@ -106,6 +109,12 @@ end page
 /// Подключаются через `from DashSpec.Std import presentations` и `use <preset_id>`.
 page presentation_presets as "Пресеты оформления (Presentations)"
   symbols = "presentations"
+end page
+
+/// Декларативные шаблоны рабочей оболочки и хрома (`module template <id>`) для отчётов (`kind = report`: `@sidebar`, `@tabs`, `@toolbar`, `@board`)
+/// и порталов документации (`kind = doc`: `@tree`, `@article`, `@toc`).
+page workbench_templates as "Шаблоны оболочки (Templates)"
+  symbols = "templates"
 end page
 
 /// Базовые структурные типы времени, дат и календарных периодов стандартной библиотеки (`DashSpec.Std`),
