@@ -154,6 +154,7 @@ module DashSpecGrammarGraph =
                   kw "hstack" "Horizontal slot stack"
                   kw "vstack" "Vertical slot stack"
                   kw "scroll" "Scroll mode (independent | page)"
+                  kw "article_style" "Article layout flow (prose | cards)"
                   kw "tree_width" "Left navigation tree width in px (doc)"
                   kw "toc_width" "Right On-This-Page outline width in px (doc)"
                   kw "sidebar_width" "Left report sidebar width in px (report)"
@@ -311,6 +312,16 @@ module DashSpecGrammarGraph =
                     schemaProps PropertySchemas.cardChrome "card.chrome"
                 | GrammarScope.Block(DashSpecBlockKeyword.Cards, _, _) ->
                     schemaProps PropertySchemas.cardsChrome "cards.chrome"
+                | GrammarScope.Module DashSpecModuleKind.Template ->
+                    [ kw "scroll" "Scroll mode (independent | page)"
+                      kw "article_style" "Article layout flow (prose | cards)"
+                      kw "tree_width" "Left navigation tree width in px (doc)"
+                      kw "toc_width" "Right On-This-Page outline width in px (doc)"
+                      kw "sidebar_width" "Left report sidebar width in px (report)"
+                      kw "breadcrumbs" "Show breadcrumb trail (true | false)"
+                      kw "search" "Show symbol search box (true | false)"
+                      kw "toc" "Show right On-This-Page outline (true | false)"
+                      kw "expand_all" "Expand all chapters initially (true | false)" ]
                 | _ ->
                     (kw "use" "use <presentation_preset>")
                     :: schemaProps (PropertySchemas.presentation ()) "chrome"
@@ -508,6 +519,8 @@ module DashSpecGrammarGraph =
             [ GrammarExpectation.ValueDomain("kind", [ "report"; "doc" ]) ]
         | "scroll" | "scroll_mode" ->
             [ GrammarExpectation.ValueDomain("scroll", [ "independent"; "page" ]) ]
+        | "article_style" | "sections" ->
+            [ GrammarExpectation.ValueDomain("article_style", [ "prose"; "cards" ]) ]
         | "role" ->
             [ GrammarExpectation.ValueDomain("role", [ "declaration"; "consumer"; "root" ]) ]
         | "severity" ->

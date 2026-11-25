@@ -433,10 +433,15 @@ public static class QueryCompiler
             return false;
         }
 
+        if (!TryResolveAggregateFn(diagram, "SUM", out var aggregate))
+        {
+            return false;
+        }
+
         var parts = new List<string>
         {
             category,
-            $"SUM({measure}) AS {measure}",
+            $"{aggregate}({measure}) AS {measure}",
         };
         var groupParts = new List<string> { category };
 

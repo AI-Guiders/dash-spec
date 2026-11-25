@@ -28,7 +28,7 @@ src_latest_metrics [rows] -> [raw] tr_latest_metrics_rounded
 
 source src_query_kpis {
   use provider witdb
-  from sql query "SELECT COUNT(*) AS TotalQueries, COALESCE(AVG(DurationMs), 0) AS AvgDurationMs, COALESCE(SUM(CASE WHEN Status = 'ERROR' THEN 1 ELSE 0 END), 0) AS FailedQueries FROM query_telemetry"
+  from sql query "SELECT ConnectorId, Kind, Status, 1 AS TotalQueries, DurationMs AS AvgDurationMs, CASE WHEN Status = 'ERROR' THEN 1 ELSE 0 END AS FailedQueries FROM query_telemetry"
   ports
     default output rows
     output stream rows: TelemetryQueryKpiRow
@@ -74,7 +74,7 @@ src_metrics_timeline [rows] -> [raw] tr_metrics_timeline_rounded
 
 source src_query_kind_stats {
   use provider witdb
-  from sql query "SELECT Kind, AVG(DurationMs) AS AvgDurationMs, COUNT(*) AS QueryCount FROM query_telemetry GROUP BY Kind ORDER BY AvgDurationMs DESC"
+  from sql query "SELECT ConnectorId, Kind, Status, AVG(DurationMs) AS AvgDurationMs, COUNT(*) AS QueryCount FROM query_telemetry GROUP BY ConnectorId, Kind, Status ORDER BY AvgDurationMs DESC"
   ports
     default output rows
     output stream rows: TelemetryQueryKindRow
@@ -97,7 +97,7 @@ src_query_kind_stats [rows] -> [raw] tr_query_kind_stats_rounded
 
 source src_log_level_stats {
   use provider witdb
-  from sql query "SELECT Level, COUNT(*) AS LogCount FROM host_logs GROUP BY Level ORDER BY LogCount DESC"
+  from sql query "SELECT Level, Category, COUNT(*) AS LogCount FROM host_logs GROUP BY Level, Category ORDER BY LogCount DESC"
   ports
     default output rows
     output stream rows: TelemetryLogLevelRow

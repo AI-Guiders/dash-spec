@@ -19,6 +19,7 @@
     var hasTocSlot = chrome.ShowToc && book.ShellSlots.Contains("toc", StringComparer.OrdinalIgnoreCase);
     var showTreePane = hasTreeSlot && !Context.TreeCollapsed;
     var showTocPane = hasTocSlot && !Context.TocCollapsed;
+    var useCardsStyle = string.Equals(chrome.ArticleStyle, "cards", StringComparison.OrdinalIgnoreCase);
 }
 
 <section class="help-page">
@@ -144,8 +145,8 @@
             </aside>
         }
 
-        @* 2. Center Doxygen Detail Pane (RadzenCard + RadzenDataGrid) *@
-        <article class="dox-main">
+        @* 2. Center Doxygen Detail Pane (prose article flow or card sections + RadzenDataGrid) *@
+        <article class="dox-main @(!useCardsStyle ? "dox-main--prose" : "dox-main--cards")">
             @if (Context.ActiveSymbol is not null)
             {
                 var sym = Context.ActiveSymbol;
@@ -182,7 +183,7 @@
                     </div>
                 }
 
-                <RadzenCard Variant="Variant.Outlined" Style="padding: 1.25rem;">
+                <section class="dox-prose-section @(useCardsStyle ? "dox-card-box" : null)">
                     <header class="dox-title-row">
                         <div>
                             <h1 style="margin: 0; font-size: 1.5rem;">@symTitle</h1>
@@ -219,16 +220,15 @@
                             }
                         </div>
                     }
-                </RadzenCard>
+                </section>
 
                 @foreach (var group in sym.Children.GroupBy(c => c.Kind))
                 {
                     var groupItems = group.ToList();
                     var groupSecId = $"dox-sec-grp-{group.Key}";
-                    <div id="@groupSecId" data-dox-sec="@groupSecId">
-                    <RadzenCard Variant="Variant.Outlined" Style="padding: 1rem 1.25rem;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
-                            <h2 style="margin: 0; font-size: 1.08rem;">@FormatMemberGroupTitle(group.Key)</h2>
+                    <section id="@groupSecId" data-dox-sec="@groupSecId" class="dox-prose-section @(useCardsStyle ? "dox-card-box" : null)">
+                        <div class="dox-prose-heading-row" style="margin-bottom: 0.65rem;">
+                            <h2>@FormatMemberGroupTitle(group.Key)</h2>
                             <RadzenBadge Text="@groupItems.Count.ToString()" BadgeStyle="BadgeStyle.Info" IsPill="true" />
                         </div>
 
@@ -313,15 +313,14 @@
                                 </RadzenDataGridColumn>
                             </Columns>
                         </RadzenDataGrid>
-                    </RadzenCard>
-                    </div>
+                    </section>
                 }
             }
             else if (Context.ActivePage is not null)
             {
                 var chapter = Context.ActivePage;
 
-                <RadzenCard Variant="Variant.Outlined" Style="padding: 1.25rem;">
+                <section class="dox-prose-section @(useCardsStyle ? "dox-card-box" : null)">
                     <header class="dox-title-row">
                         <h1 style="margin: 0; font-size: 1.5rem;">@chapter.Title</h1>
                         <RadzenBadge Text="@($"page {chapter.Id}")" BadgeStyle="BadgeStyle.Info" IsPill="true" />
@@ -336,13 +335,13 @@
                             }
                         </div>
                     }
-                </RadzenCard>
+                </section>
 
                 @if (!string.IsNullOrWhiteSpace(chapter.EmbeddedReportUnit))
                 {
-                    <RadzenCard Variant="Variant.Outlined" Style="padding: 1rem;">
+                    <section class="dox-prose-section @(useCardsStyle ? "dox-card-box" : null)">
                         @Context.RenderEmbeddedReport(chapter.EmbeddedReportUnit, $"doc:{chapter.Id}")
-                    </RadzenCard>
+                    </section>
                 }
 
                 @foreach (var sub in chapter.SubSections)
@@ -354,10 +353,9 @@
                     }
 
                     var subSecId = $"dox-sec-sub-{sub.Id}";
-                    <div id="@subSecId" data-dox-sec="@subSecId">
-                    <RadzenCard Variant="Variant.Outlined" Style="padding: 1.15rem 1.25rem;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.55rem;">
-                            <h2 style="margin: 0; font-size: 1.12rem;">@sub.Title</h2>
+                    <section id="@subSecId" data-dox-sec="@subSecId" class="dox-prose-section @(useCardsStyle ? "dox-card-box" : null)">
+                        <div class="dox-prose-heading-row" style="margin-bottom: 0.55rem;">
+                            <h2>@sub.Title</h2>
                             @if (subUnits.Count > 0)
                             {
                                 <RadzenBadge Text="@subUnits.Count.ToString()" BadgeStyle="BadgeStyle.Info" IsPill="true" />
@@ -388,8 +386,7 @@
                             }
                             @RenderSymbolDataGrid(chapter, secUnits)
                         }
-                    </RadzenCard>
-                    </div>
+                    </section>
                 }
 
                 @if (!chapter.SubSections.Any(s => s.SymbolSections.Count > 0))
@@ -403,15 +400,13 @@
                         }
 
                         var catSecId = $"dox-sec-cat-{sec.CategoryId}";
-                        <div id="@catSecId" data-dox-sec="@catSecId">
-                        <RadzenCard Variant="Variant.Outlined" Style="padding: 1.15rem 1.25rem;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
-                                <h2 style="margin: 0; font-size: 1.12rem;">@sec.CategoryTitle</h2>
+                        <section id="@catSecId" data-dox-sec="@catSecId" class="dox-prose-section @(useCardsStyle ? "dox-card-box" : null)">
+                            <div class="dox-prose-heading-row" style="margin-bottom: 0.65rem;">
+                                <h2>@sec.CategoryTitle</h2>
                                 <RadzenBadge Text="@units.Count.ToString()" BadgeStyle="BadgeStyle.Info" IsPill="true" />
                             </div>
                             @RenderSymbolDataGrid(chapter, units)
-                        </RadzenCard>
-                        </div>
+                        </section>
                     }
                 }
             }

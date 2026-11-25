@@ -19,6 +19,7 @@ end narrow
 
 chrome
   scroll = independent
+  article_style = prose
   tree_width = 330
   toc_width = 270
   breadcrumbs = true

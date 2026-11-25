@@ -16,6 +16,12 @@ end type
 
 /// Сводная статистика выполненных SQL-запросов по всем коннекторам хоста.
 type TelemetryQueryKpiRow
+  /// Идентификатор коннектора (`sqlserver`, `postgres`, `witdb`).
+  optional string ConnectorId
+  /// Вид запроса (`card_query`, `field_options`).
+  optional string Kind
+  /// Статус выполнения (`OK` или `ERROR`).
+  optional string Status
   /// Общее число выполненных SQL-запросов.
   optional int TotalQueries
   /// Среднее время выполнения запроса в миллисекундах (`ms`).
@@ -38,8 +44,12 @@ end type
 
 /// Статистика задержки запросов в разрезе вида операции (`card_query`, `field_options`).
 type TelemetryQueryKindRow
+  /// Идентификатор коннектора (`sqlserver`, `postgres`, `witdb`).
+  optional string ConnectorId
   /// Вид операции запроса.
   optional string Kind
+  /// Статус выполнения (`OK` или `ERROR`).
+  optional string Status
   /// Средняя длительность выполнения в миллисекундах (`ms`).
   optional decimal AvgDurationMs
   /// Количество запросов данного вида.
@@ -50,6 +60,8 @@ end type
 type TelemetryLogLevelRow
   /// Уровень логирования.
   optional string Level
+  /// Категория логгера `.NET`.
+  optional string Category
   /// Число записей в журнале `host_logs`.
   optional int LogCount
 end type

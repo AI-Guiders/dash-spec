@@ -25,8 +25,34 @@ connect
 end connect
 
 report "DashSpec Self-Monitoring (WitDB)"
+  toolbar chrome
+    layout = bar
+    sticky = line
+    apply = auto
+    debounce_ms = 300
+  end chrome
+
+  toolbar connector_id, query_kind, query_status, log_level, log_category
+
+  defaults
+    filter.rows_top.limit = 100
+  end defaults
+
+  filters
+    | id           | bind  | column                      | label          | widget   | ref          | range |
+    | connector_id | field | query_telemetry.ConnectorId | Коннектор      | combobox | connector_id | -     |
+    | query_kind   | field | query_telemetry.Kind        | Вид запроса    | combobox | query_kind   | -     |
+    | query_status | field | query_telemetry.Status      | Статус SQL     | combobox | query_status | -     |
+    | log_level    | field | host_logs.Level             | Уровень логов  | combobox | log_level    | -     |
+    | log_category | field | host_logs.Category          | Категория      | combobox | log_category | -     |
+    | rows_top     | top   | -                           | Строк (TOP)    | -        | rows_top     | -     |
+  end filters
+
   /// Текущий объём физической памяти процесса `DashSpec.Host` (`Working Set`, `MiB`).
   card kpi_working_set as "Working Set (MiB)"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram number
       value = WorkingSetMb
     end number
@@ -37,6 +63,9 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Текущий размер управляемой кучи `.NET GC` (`Managed Heap`, `MiB`).
   card kpi_managed_heap as "Managed Heap (MiB)"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram number
       value = ManagedHeapMb
     end number
@@ -47,6 +76,9 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Количество активных потоков в пуле `.NET ThreadPool`.
   card kpi_thread_pool as "ThreadPool Threads"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram number
       value = ThreadPoolThreads
       scale_value = integer
@@ -58,10 +90,14 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Общее количество выполненных SQL-запросов к источникам данных отчётов.
   card kpi_total_queries as "Total SQL Queries"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram number
       value = TotalQueries
       scale_value = integer
     end number
+    bind dashboard
     data flow
       tr_query_kpis_rounded [rows] -> [rows] __diagram__
     end data flow
@@ -69,9 +105,14 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Средняя задержка выполнения SQL-запросов в миллисекундах.
   card kpi_avg_latency as "Avg Query Latency (ms)"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram number
       value = AvgDurationMs
+      aggregate = avg
     end number
+    bind dashboard
     data flow
       tr_query_kpis_rounded [rows] -> [rows] __diagram__
     end data flow
@@ -79,10 +120,14 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Количество SQL-запросов, завершившихся с ошибкой.
   card kpi_failed_queries as "Failed Queries"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram number
       value = FailedQueries
       scale_value = integer
     end number
+    bind dashboard
     data flow
       tr_query_kpis_rounded [rows] -> [rows] __diagram__
     end data flow
@@ -90,6 +135,9 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Временной ряд потребления физической памяти (`Working Set`, `MiB`) процессом хоста.
   card working_set_chart as "Working Set Memory (MiB)"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram ref main diag_telemetry_memory_line
     data flow
       tr_metrics_timeline_rounded [rows] -> [rows] main
@@ -98,6 +146,9 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Временной ряд размера управляемой кучи сборщика мусора (`Managed GC Heap`, `MiB`).
   card managed_heap_chart as "Managed GC Heap (MiB)"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram ref main diag_telemetry_heap_area
     data flow
       tr_metrics_timeline_rounded [rows] -> [rows] main
@@ -106,7 +157,11 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Сравнение средней длительности запросов (`ms`) по видам операций (`card_query`, `field_options`).
   card query_latency_chart as "Average Query Latency by Kind (ms)"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram ref main diag_telemetry_query_kind_bar
+    bind dashboard
     data flow
       tr_query_kind_stats_rounded [rows] -> [rows] main
     end data flow
@@ -114,7 +169,11 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Долевое распределение записей системного журнала по уровням важности.
   card log_levels_chart as "Host Events by Severity"
+    chrome
+      bound_filters = hidden
+    end chrome
     diagram ref main diag_telemetry_log_level_donut
+    bind dashboard
     data flow
       src_log_level_stats [rows] -> [rows] main
     end data flow
@@ -122,17 +181,33 @@ report "DashSpec Self-Monitoring (WitDB)"
 
   /// Полный журнал выполненных SQL-запросов с фильтрацией и сортировкой по колонкам.
   card recent_queries as "Executed Queries (WitDB: query_telemetry)"
+    chrome
+      bound_filters = hidden
+    end chrome
+    show flow
+      rows_top -> [toolbar] chrome.card.recent_queries
+    end show flow
     diagram ref main diag_telemetry_queries
+    bind dashboard
     data flow
       src_queries [rows] -> [rows] main
+      rows_top -> [rows_top] main
     end data flow
   end card
 
   /// Системный журнал событий хоста `DashSpec.Host` (`host_logs`).
   card recent_logs as "Host Event Log (WitDB: host_logs)"
+    chrome
+      bound_filters = hidden
+    end chrome
+    show flow
+      rows_top -> [toolbar] chrome.card.recent_logs
+    end show flow
     diagram ref main diag_telemetry_logs
+    bind dashboard
     data flow
       src_logs [rows] -> [rows] main
+      rows_top -> [rows_top] main
     end data flow
   end card
 end report

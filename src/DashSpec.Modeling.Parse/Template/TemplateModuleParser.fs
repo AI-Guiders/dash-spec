@@ -34,6 +34,7 @@ module TemplateKind =
 [<CLIMutable>]
 type TemplateChromeOptions =
     { ScrollMode: string
+      ArticleStyle: string
       TreeWidthPx: int
       TocWidthPx: int
       SidebarWidthPx: int
@@ -49,6 +50,7 @@ module TemplateChromeOptions =
         match kind with
         | TemplateKind.Doc ->
             { ScrollMode = "independent"
+              ArticleStyle = "prose"
               TreeWidthPx = 330
               TocWidthPx = 270
               SidebarWidthPx = 256
@@ -59,6 +61,7 @@ module TemplateChromeOptions =
               ExpandAllChapters = true }
         | TemplateKind.Report ->
             { ScrollMode = "page"
+              ArticleStyle = "cards"
               TreeWidthPx = 330
               TocWidthPx = 270
               SidebarWidthPx = 256
@@ -134,6 +137,12 @@ module TemplateModuleParser =
                 let v = p.Value.Text.Trim()
                 match p.Key.Trim().ToLowerInvariant() with
                 | "scroll" | "scroll_mode" -> c <- { c with ScrollMode = v.ToLowerInvariant() }
+                | "article_style" | "sections" | "flow" ->
+                    let style =
+                        match v.ToLowerInvariant() with
+                        | "cards" | "card" | "boxed" -> "cards"
+                        | _ -> "prose"
+                    c <- { c with ArticleStyle = style }
                 | "tree_width" -> c <- { c with TreeWidthPx = parseInt v c.TreeWidthPx }
                 | "toc_width" -> c <- { c with TocWidthPx = parseInt v c.TocWidthPx }
                 | "sidebar_width" -> c <- { c with SidebarWidthPx = parseInt v c.SidebarWidthPx }
