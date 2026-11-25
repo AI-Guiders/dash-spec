@@ -1,13 +1,13 @@
 /// Компактный одноколоночный шаблон встроенного отчёта (`kind = report`) без бокового меню каталога:
-/// только панель фильтров (`@toolbar`) и доска карточек (`@board`).
+/// только панель фильтров (`toolbar`) и доска карточек (`board`).
 module template compact_report
 namespace DashSpec.Std.Templates
 
 kind = report
 
 wide
-  [ @toolbar ]
-  [ @board ]
+  [ toolbar ]
+  [ board ]
 end wide
 
 chrome

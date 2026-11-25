@@ -400,9 +400,10 @@ module LayoutModuleParser =
                 else
                     trimmed, ""
 
-            if String.Equals(name, "@primary", StringComparison.OrdinalIgnoreCase) then
+            let norm = name.TrimStart('@')
+            if String.Equals(norm, "primary", StringComparison.OrdinalIgnoreCase) then
                 [ primaryToken + weightSuffix ]
-            elif String.Equals(name, "@filters", StringComparison.OrdinalIgnoreCase) then
+            elif String.Equals(norm, "filters", StringComparison.OrdinalIgnoreCase) then
                 if isNull localFilters || localFilters.Count = 0 then
                     []
                 else

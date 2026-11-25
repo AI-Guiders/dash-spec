@@ -70,8 +70,8 @@ module TemplateChromeOptions =
 
 /// <summary>
 /// Compiled <c>module template &lt;id&gt;</c> workbench shell specification for <c>report</c> or <c>doc</c>.
-/// Defines the responsive slot plane (<c>@tree</c>, <c>@article</c>, <c>@toc</c> for <c>doc</c>;
-/// <c>@sidebar</c>, <c>@tabs</c>, <c>@toolbar</c>, <c>@board</c> for <c>report</c>) and chrome options.
+/// Defines the responsive slot plane (<c>tree</c>, <c>article</c>, <c>toc</c> for <c>doc</c>;
+/// <c>sidebar</c>, <c>tabs</c>, <c>toolbar</c>, <c>board</c> for <c>report</c>) and chrome options.
 /// </summary>
 [<CLIMutable>]
 type TemplateDocument =
@@ -102,23 +102,23 @@ module TemplateModuleParser =
     let private defaultBoardForKind (kind: TemplateKind) : LayoutBoardDefinition =
         match kind with
         | TemplateKind.Doc ->
-            let wideRow = [| "@tree:2"; "@article:7"; "@toc:2" |] :> IReadOnlyList<string>
-            let midRow = [| "@tree:2"; "@article:6" |] :> IReadOnlyList<string>
-            let narrowRow = [| "@article:1" |] :> IReadOnlyList<string>
+            let wideRow = [| "tree:2"; "article:7"; "toc:2" |] :> IReadOnlyList<string>
+            let midRow = [| "tree:2"; "article:6" |] :> IReadOnlyList<string>
+            let narrowRow = [| "article:1" |] :> IReadOnlyList<string>
             { Entries = [ CardRow wideRow ] :> IReadOnlyList<_>
               ModuleScope = None
               GridColumns = 0
               MidEntries = Some([ CardRow midRow ] :> IReadOnlyList<_>)
               NarrowEntries = Some([ CardRow narrowRow ] :> IReadOnlyList<_>) }
         | TemplateKind.Report ->
-            let wideRow = [| "@sidebar:1"; "main:5" |] :> IReadOnlyList<string>
+            let wideRow = [| "sidebar:1"; "main:5" |] :> IReadOnlyList<string>
             let mainNest =
                 NestRow
                     { Id = "main"
                       Rows =
-                          [ [| "@tabs" |] :> IReadOnlyList<string>
-                            [| "@toolbar" |] :> IReadOnlyList<string>
-                            [| "@board" |] :> IReadOnlyList<string> ]
+                          [ [| "tabs" |] :> IReadOnlyList<string>
+                            [| "toolbar" |] :> IReadOnlyList<string>
+                            [| "board" |] :> IReadOnlyList<string> ]
                           :> IReadOnlyList<_> }
             { Entries = [ mainNest; CardRow wideRow ] :> IReadOnlyList<_>
               ModuleScope = None
@@ -222,14 +222,14 @@ module TemplateModuleParser =
         | None ->
             raise (DashSpecParseException("Expected 'module template <id>'."))
 
-    /// Inspect the top-level wide row of a doc template and return ordered slot ids (`@tree`, `@article`, `@toc`)
+    /// Inspect the top-level wide row of a doc template and return ordered slot ids (`tree`, `article`, `toc`)
     /// plus the grid-template-columns CSS string.
     let resolveDocShellColumns (template: TemplateDocument) : string[] * string =
         let rawCells =
             template.Board.Rows
             |> List.tryHead
             |> Option.map Seq.toArray
-            |> Option.defaultValue [| "@tree:2"; "@article:7"; "@toc:2" |]
+            |> Option.defaultValue [| "tree:2"; "article:7"; "toc:2" |]
 
         let slots = ResizeArray<string>()
         let colWidths = ResizeArray<string>()

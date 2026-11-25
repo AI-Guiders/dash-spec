@@ -2,15 +2,15 @@
    the parts are this stack's copy of the plane projection (tokens read --rz-*),
    the rules below are the stack's own chrome (left menu + board column). Colors
    ride the --rz-* theme variables — the theme file owns the palette. */
-@import url("parts/tokens.css?v=20261125a");
-@import url("parts/layout.css?v=20261125a");
-@import url("parts/filters.css?v=20261125a");
-@import url("parts/cards.css?v=20261125a");
-@import url("parts/charts.css?v=20261125a");
-@import url("parts/viz-misc.css?v=20261125a");
-@import url("parts/gantt-timeline.css?v=20261125a");
-@import url("parts/spec-inspector.css?v=20261125a");
-@import url("parts/command-palette.css?v=20261125a");
+@import url("parts/tokens.css?v=20261125b");
+@import url("parts/layout.css?v=20261125b");
+@import url("parts/filters.css?v=20261125b");
+@import url("parts/cards.css?v=20261125b");
+@import url("parts/charts.css?v=20261125b");
+@import url("parts/viz-misc.css?v=20261125b");
+@import url("parts/gantt-timeline.css?v=20261125b");
+@import url("parts/spec-inspector.css?v=20261125b");
+@import url("parts/command-palette.css?v=20261125b");
 
 .dash-home-flow-sidebar,
 .dash-home-flow-radzen {
@@ -52,6 +52,62 @@
   border: 1px solid var(--rz-base-700);
   border-radius: var(--rz-border-radius, 6px);
   padding: 0.25rem 0 0.5rem;
+  transition: flex-basis 0.16s ease, width 0.16s ease;
+}
+
+.dash-sidebar--collapsed {
+  flex: 0 0 2.5rem;
+  width: 2.5rem;
+  overflow: hidden;
+}
+
+.dash-sidebar--collapsed .dash-sidebar-body {
+  display: none;
+}
+
+.dash-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.65rem 0.25rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.dash-sidebar--collapsed .dash-sidebar-header {
+  justify-content: center;
+  padding: 0.35rem 0.2rem;
+  border-bottom: none;
+}
+
+.dash-sidebar-header-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rz-text-tertiary-color, var(--muted));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-sidebar-collapse-btn {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: transparent;
+  color: var(--rz-text-secondary-color, var(--text));
+  border-radius: 4px;
+  width: 1.55rem;
+  height: 1.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.dash-sidebar-collapse-btn:hover {
+  background: rgba(148, 163, 184, 0.15);
 }
 
 .dash-sidebar .rz-menu {
@@ -90,6 +146,10 @@ section.filters [class*=filter] {
   .dash-home-flow-sidebar,
   .dash-home-flow-radzen {
     flex-direction: column;
+  }
+
+  .dash-sidebar-header {
+    display: none;
   }
 
   .dash-sidebar {

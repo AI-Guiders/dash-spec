@@ -144,30 +144,78 @@
   height: calc(100vh - 54px);
   width: 100%;
   overflow: hidden;
+  gap: 0;
+}
+
+.dox-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.dox-topbar-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.dox-topbar-center {
+  flex: 1 1 320px;
+  max-width: 540px;
+  display: flex;
+  align-items: center;
+}
+
+.dox-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.65rem;
+  border-radius: calc(var(--radius) - 2px);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dox-toggle-btn:hover {
+  border-color: var(--accent, #3b82f6);
+}
+
+.dox-toggle-btn.is-active {
+  background: color-mix(in srgb, var(--accent, #3b82f6) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent, #3b82f6) 55%, var(--border));
+  color: var(--accent, #60a5fa);
 }
 
 .dox-shell {
   display: grid;
-  grid-template-columns: 330px minmax(0, 1fr) 270px;
+  grid-template-columns: 310px minmax(0, 1fr) 250px;
   gap: 0;
-  height: 100%;
+  flex: 1 1 0%;
+  min-height: 0;
   width: 100%;
   overflow: hidden;
   align-items: stretch;
 }
 
-@media (max-width: 1180px) {
-  .dox-shell {
-    grid-template-columns: 290px minmax(0, 1fr);
+@media (max-width: 960px) {
+  .dox-topbar {
+    flex-wrap: wrap;
   }
-  .dox-toc {
-    display: none;
-  }
-}
-
-@media (max-width: 780px) {
-  .dox-shell {
-    grid-template-columns: 1fr;
+  .dox-topbar-center {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
   }
 }
 

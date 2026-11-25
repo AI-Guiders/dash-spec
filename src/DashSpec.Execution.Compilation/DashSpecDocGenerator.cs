@@ -404,7 +404,7 @@ public static class DashSpecDocGenerator
         }
 
         return TemplateModuleParser.parse(
-            "module template doxygen_doc\nkind = doc\n[ @tree:2 @article:7 @toc:2 ]\nend template");
+            "module template doxygen_doc\nkind = doc\n[ tree:2 article:7 toc:2 ]\nend template");
     }
 
     private static DashSpecCompiledBookPage CompileBookPage(

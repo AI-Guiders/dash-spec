@@ -9,7 +9,20 @@
 
 @* ADR-0073 / ADR-0112: Radzen stack's left navigation sidebar (RadzenPanelMenu). *@
 
-<aside class="dash-sidebar @(_mobileOpen ? "dash-sidebar--open" : null)" aria-label="@Context.SidebarLabel">
+<aside class="dash-sidebar @(_desktopCollapsed ? "dash-sidebar--collapsed" : null) @(_mobileOpen ? "dash-sidebar--open" : null)" aria-label="@Context.SidebarLabel">
+    <div class="dash-sidebar-header">
+        @if (!_desktopCollapsed)
+        {
+            <span class="dash-sidebar-header-title">@Context.SidebarLabel</span>
+        }
+        <button type="button"
+                class="dash-sidebar-collapse-btn"
+                title="@(_desktopCollapsed ? "Expand navigation" : "Collapse navigation")"
+                aria-label="@Context.SidebarLabel"
+                @onclick="ToggleDesktopCollapse">
+            @(_desktopCollapsed ? "»" : "«")
+        </button>
+    </div>
     <button type="button"
             class="dash-sidebar-toggle"
             aria-expanded="@_mobileOpen"
@@ -53,8 +66,10 @@
     [Parameter, EditorRequired] public StackSidebarContext Context { get; set; } = default!;
 
     private bool _mobileOpen;
+    private bool _desktopCollapsed;
 
     private void ToggleMobile() => _mobileOpen = !_mobileOpen;
+    private void ToggleDesktopCollapse() => _desktopCollapsed = !_desktopCollapsed;
 
     private string ActiveBreadcrumb
     {

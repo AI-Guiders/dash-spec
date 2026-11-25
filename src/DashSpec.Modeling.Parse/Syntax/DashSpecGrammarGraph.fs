@@ -147,7 +147,7 @@ module DashSpecGrammarGraph =
             | DashSpecModuleKind.Template ->
                 [ kw "kind" "Template target kind (report | doc)"
                   kw "chrome" "Template chrome options block"
-                  kw "wide" "Wide viewport layout board ([ @tree:2 @article:7 @toc:2 ] or [ @sidebar:1 @main:5 ])"
+                  kw "wide" "Wide viewport layout board ([ tree:2 article:7 toc:2 ] or [ sidebar:1 main:5 ])"
                   kw "mid" "Mid viewport layout board"
                   kw "narrow" "Narrow viewport layout board"
                   kw "nest" "Nested slot container (e.g. nest main … end nest)"

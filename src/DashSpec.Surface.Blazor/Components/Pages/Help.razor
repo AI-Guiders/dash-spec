@@ -1,5 +1,4 @@
 @page "/help"
-@layout DashSpec.Surface.Blazor.Components.Layout.MainLayout
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using DashSpec.Execution.Compilation
 @using DashSpec.Modeling.Parse.Syntax
@@ -15,29 +14,58 @@
 @if (_book is not null)
 {
     var chrome = _book.Template.Chrome;
+    var hasTreeSlot = _book.ShellSlots.Contains("tree", StringComparer.OrdinalIgnoreCase);
+    var hasTocSlot = chrome.ShowToc && _book.ShellSlots.Contains("toc", StringComparer.OrdinalIgnoreCase);
+    var showTreePane = hasTreeSlot && !_treeCollapsed;
+    var showTocPane = hasTocSlot && !_tocCollapsed;
+
     <section class="help-page">
-        <div class="dox-shell" style="@($"grid-template-columns: {_book.ShellGridColumnsCss};")">
-            @* 1. Left Doxygen Navigation Tree (@tree slot) *@
-            @if (_book.ShellSlots.Contains("tree", StringComparer.OrdinalIgnoreCase))
+        <header class="dox-topbar">
+            <div class="dox-topbar-group">
+                @if (hasTreeSlot)
+                {
+                    <button type="button"
+                            class="dox-toggle-btn @(showTreePane ? "is-active" : null)"
+                            title="@(showTreePane ? "Collapse navigation tree" : "Expand navigation tree")"
+                            @onclick="ToggleTreePane">
+                        <span>@(showTreePane ? "«" : "»")</span>
+                        <span>Tree</span>
+                    </button>
+                }
+                <strong style="font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px;" title="@_book.Title">@_book.Title</strong>
+                <span class="badge" style="white-space: nowrap; flex-shrink: 0;">@_book.Template.Id</span>
+            </div>
+
+            @if (chrome.ShowSearch)
+            {
+                <div class="dox-topbar-center">
+                    <input type="search"
+                           class="dox-search"
+                           placeholder="Search symbols, modules, transforms, types, rules…"
+                           @bind="_search"
+                           @bind:event="oninput" />
+                </div>
+            }
+
+            <div class="dox-topbar-group" style="flex-shrink: 0;">
+                @if (hasTocSlot)
+                {
+                    <button type="button"
+                            class="dox-toggle-btn @(showTocPane ? "is-active" : null)"
+                            title="@(showTocPane ? "Collapse On this page outline" : "Expand On this page outline")"
+                            @onclick="ToggleTocPane">
+                        <span>On this page</span>
+                        <span>@(showTocPane ? "»" : "«")</span>
+                    </button>
+                }
+            </div>
+        </header>
+
+        <div class="dox-shell" style="@($"grid-template-columns: {ComputeShellGridColumns(chrome, showTreePane, showTocPane)};")">
+            @* 1. Left Doxygen Navigation Tree (tree slot) *@
+            @if (showTreePane)
             {
             <aside class="dox-sidebar" aria-label="Documentation Tree">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; flex-wrap: wrap;">
-                    <strong style="font-size: 0.85rem;">module documentation</strong>
-                    <div style="display: flex; align-items: center; gap: 0.25rem;">
-                        <span class="badge" title="Active template">template: @_book.Template.Id</span>
-                        <span class="badge">@_book.Id</span>
-                    </div>
-                </div>
-
-                @if (chrome.ShowSearch)
-                {
-                <input type="search"
-                       class="dox-search"
-                       placeholder="Search symbols, types, rules…"
-                       @bind="_search"
-                       @bind:event="oninput" />
-                }
-
                 <div class="dox-nav-group">
                     @foreach (var pageItem in _book.Pages)
                     {
@@ -349,8 +377,8 @@
                 }
             </article>
 
-            @* 3. Right On-This-Page Outline (@toc slot) *@
-            @if (chrome.ShowToc && _book.ShellSlots.Contains("toc", StringComparer.OrdinalIgnoreCase))
+            @* 3. Right On-This-Page Outline (toc slot) *@
+            @if (showTocPane)
             {
             <aside class="dox-toc" aria-label="On this page">
                 <p class="dox-toc-heading">On this page</p>
@@ -360,8 +388,8 @@
                         <li><code>@_activeSymbol.Id</code></li>
                         @foreach (var grp in _activeSymbol.Children.GroupBy(c => c.Kind))
                         {
-                            <li class="muted">@FormatMemberGroupTitle(grp.Key) (@grp.Count())</li>
-                            @foreach (var item in grp.Take(12))
+                            <li class="muted" style="margin-top: 0.25rem; font-weight: 600;">@FormatMemberGroupTitle(grp.Key) (@grp.Count())</li>
+                            @foreach (var item in grp.Take(14))
                             {
                                 <li style="padding-left: 0.55rem;">
                                     @if (item.Children.Length > 0 && item.Kind is not "block")
@@ -386,10 +414,6 @@
                 {
                     <ul class="dox-toc-list">
                         <li><strong>@_activePage.Title</strong></li>
-                        @foreach (var sub in _activePage.SubSections)
-                        {
-                            <li class="muted">@sub.Title</li>
-                        }
                         @foreach (var sec in _activePage.SymbolSections)
                         {
                             @if (_activePage.SymbolSections.Count > 1)
@@ -408,6 +432,13 @@
                                 </li>
                             }
                         }
+                        @if (_activePage.SymbolSections.Count == 0)
+                        {
+                            @foreach (var sub in _activePage.SubSections)
+                            {
+                                <li class="muted">@sub.Title</li>
+                            }
+                        }
                     </ul>
                 }
                 <div style="margin-top: 0.75rem; padding-top: 0.65rem; border-top: 1px solid var(--border); font-size: 0.74rem;" class="muted">
@@ -418,6 +449,13 @@
         </div>
     </section>
 }
+else
+{
+    <div class="page-loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <span>Loading documentation book…</span>
+    </div>
+}
 
 @code {
     private DashSpecCompiledBook? _book;
@@ -425,12 +463,36 @@
     private DashSpecSymbolDoc? _activeSymbol;
     private readonly HashSet<string> _expandedPages = new(StringComparer.OrdinalIgnoreCase);
     private string _search = "";
+    private bool _treeCollapsed;
+    private bool _tocCollapsed;
 
-    protected override void OnInitialized()
+    private void ToggleTreePane() => _treeCollapsed = !_treeCollapsed;
+    private void ToggleTocPane() => _tocCollapsed = !_tocCollapsed;
+
+    private static string ComputeShellGridColumns(
+        DashSpec.Modeling.Parse.Template.TemplateChromeOptions chrome,
+        bool showTree,
+        bool showToc)
     {
+        var cols = new List<string>();
+        if (showTree)
+        {
+            cols.Add($"clamp(220px, 24vw, {chrome.TreeWidthPx}px)");
+        }
+        cols.Add("minmax(0, 1fr)");
+        if (showToc)
+        {
+            cols.Add($"clamp(185px, 20vw, {chrome.TocWidthPx}px)");
+        }
+        return string.Join(" ", cols);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Yield();
         var lang = CultureAmbient.Culture.Name;
         var catalogDir = Path.GetDirectoryName(CatalogState.Current.FullPath);
-        _book = DashSpecDocGenerator.BuildDocumentationBook(catalogDir, lang);
+        _book = await Task.Run(() => DashSpecDocGenerator.BuildDocumentationBook(catalogDir, lang));
         foreach (var p in _book.Pages)
         {
             _expandedPages.Add(p.Id);

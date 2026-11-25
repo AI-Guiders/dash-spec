@@ -35,7 +35,22 @@
 }
 else
 {
-    <aside class="dash-sidebar" aria-label="@SidebarText">
+<aside class="dash-sidebar @(_desktopCollapsed ? "dash-sidebar--collapsed" : null)" aria-label="@SidebarText">
+        <div class="dash-sidebar-header">
+            @if (!_desktopCollapsed)
+            {
+                <span class="dash-sidebar-header-title">@SidebarText</span>
+            }
+            <button type="button"
+                    class="dash-sidebar-collapse-btn"
+                    title="@(_desktopCollapsed ? "Expand navigation" : "Collapse navigation")"
+                    aria-label="@SidebarText"
+                    @onclick="() => _desktopCollapsed = !_desktopCollapsed">
+                @(_desktopCollapsed ? "»" : "«")
+            </button>
+        </div>
+        @if (!_desktopCollapsed)
+        {
         <ul class="dash-sidebar-menu" role="menu">
             @foreach (var group in Groups)
             {
@@ -54,10 +69,13 @@ else
                 @EntryNode(entry)
             }
         </ul>
+        }
     </aside>
 }
 
 @code {
+    private bool _desktopCollapsed;
+
     [Parameter] public IReadOnlyList<CatalogEntryDefinition> Entries { get; set; } = [];
 
     [Parameter] public IReadOnlyList<CatalogGroupDefinition> Groups { get; set; } = [];

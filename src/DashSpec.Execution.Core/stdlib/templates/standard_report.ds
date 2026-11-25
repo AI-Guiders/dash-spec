@@ -1,18 +1,18 @@
-/// Стандартный шаблон рабочего пространства отчёта (`kind = report`) с боковым меню каталога (`@sidebar`),
-/// вкладками секций (`@tabs`), панелью фильтров (`@toolbar`) и сеткой карточек (`@board`).
+/// Стандартный шаблон рабочего пространства отчёта (`kind = report`) с боковым меню каталога (`sidebar`),
+/// вкладками секций (`tabs`), панелью фильтров (`toolbar`) и сеткой карточек (`board`).
 module template standard_report
 namespace DashSpec.Std.Templates
 
 kind = report
 
 nest main
-  [ @tabs ]
-  [ @toolbar ]
-  [ @board ]
+  [ tabs ]
+  [ toolbar ]
+  [ board ]
 end nest
 
 wide
-  [ @sidebar:1 main:5 ]
+  [ sidebar:1 main:5 ]
 end wide
 
 narrow

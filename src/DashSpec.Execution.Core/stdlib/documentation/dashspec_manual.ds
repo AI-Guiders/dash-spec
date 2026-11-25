@@ -111,8 +111,8 @@ page presentation_presets as "Пресеты оформления (Presentations
   symbols = "presentations"
 end page
 
-/// Декларативные шаблоны рабочей оболочки и хрома (`module template <id>`) для отчётов (`kind = report`: `@sidebar`, `@tabs`, `@toolbar`, `@board`)
-/// и порталов документации (`kind = doc`: `@tree`, `@article`, `@toc`).
+/// Декларативные шаблоны рабочей оболочки и хрома (`module template <id>`) для отчётов (`kind = report`: `sidebar`, `tabs`, `toolbar`, `board`)
+/// и порталов документации (`kind = doc`: `tree`, `article`, `toc`).
 page workbench_templates as "Шаблоны оболочки (Templates)"
   symbols = "templates"
 end page
