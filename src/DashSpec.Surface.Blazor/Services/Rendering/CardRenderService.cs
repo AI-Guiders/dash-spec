@@ -742,7 +742,7 @@ public sealed class CardRenderService(
         var value = rows[0].GetClr(DiagramBindings.Column(diagram, "value"));
         if (value is null or DBNull)
         {
-            return null;
+            return "0";
         }
 
         return value switch

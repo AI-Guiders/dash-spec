@@ -30,11 +30,12 @@ public sealed class DashboardSpecLoader(
         DashboardDocument document,
         IDataSourceConnector connector,
         CancellationToken cancellationToken = default,
-        TimeSpan? timeout = null) =>
+        TimeSpan? timeout = null,
+        string? runtimeConfigPath = null) =>
         bootstrap.LoadFieldOptionsAsync(
             document,
             connector,
-            runtimeContext.StartupRuntimeConfigPath,
+            string.IsNullOrWhiteSpace(runtimeConfigPath) ? runtimeContext.StartupRuntimeConfigPath : runtimeConfigPath,
             cancellationToken,
             timeout);
 

@@ -135,7 +135,7 @@ public sealed class DashboardSessionService(
         }
 
         var loaded = await specLoader
-            .LoadFieldOptionsAsync(_document, _connector, cancellationToken)
+            .LoadFieldOptionsAsync(_document, _connector, cancellationToken, runtimeConfigPath: _runtimeConfigPath)
             .ConfigureAwait(false);
         _fieldOptions = loaded;
     }

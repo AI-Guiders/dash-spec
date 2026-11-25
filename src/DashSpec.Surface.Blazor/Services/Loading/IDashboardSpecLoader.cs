@@ -17,5 +17,6 @@ public interface IDashboardSpecLoader : IReportSpecBootstrap
         DashboardDocument document,
         IDataSourceConnector connector,
         CancellationToken cancellationToken = default,
-        TimeSpan? timeout = null);
+        TimeSpan? timeout = null,
+        string? runtimeConfigPath = null);
 }

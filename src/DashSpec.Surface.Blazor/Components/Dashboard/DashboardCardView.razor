@@ -139,7 +139,7 @@
              @onkeydown="OnFullscreenKeyDown">
             @* The maximized card IS the card (ADR-0111 P1): one unified .card-head
                carries the title, toolbar chrome, and close button; only the frame grows. *@
-            <CascadingValue Value="this" IsFixed="true">
+            <CascadingValue Value="this">
                 <header class="card-head card-fullscreen-head">
                     <div class="card-head-title">
                         <h2 class="card-title"><RichTextView Text="@Card.Title" /></h2>
@@ -382,7 +382,7 @@
     /// interior flow.</summary>
     private RenderFragment InteriorPlan(bool detailView = false) => __builder =>
     {
-        <CascadingValue Value="this" IsFixed="true">
+        <CascadingValue Value="this">
             <CardInteriorGrid GridColumns="GridColumns" ExtraStyle="@InteriorGridFillStyle()">
                 @{
                     var lastInteriorRow = 0;
