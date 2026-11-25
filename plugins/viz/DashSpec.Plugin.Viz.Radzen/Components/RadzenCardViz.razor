@@ -9,6 +9,7 @@
 @inject IStringLocalizer<RadzenVizStrings> Loc
 @inject ICardVizDisplayState VizDisplayState
 @inject IJSRuntime Js
+@implements IDisposable
 
 @* Radzen visual layer pilot ([ADR-0111]): every data family through Radzen — 100% native C#,
    no JS interop of our own. One component for the whole family set: charts (line/area/bar/
@@ -73,7 +74,9 @@ else if (IsChartFamily)
                                              ValueProperty="Value"
                                              Title="@SeriesTitle(series)"
                                              Fill="@SeriesColor(series)"
-                                             Fills="@series.PointColors" />
+                                             Fills="@series.PointColors">
+                                <RadzenSeriesDataLabels Visible="@DataLabelsVisible" />
+                            </RadzenBarSeries>
                         }
                     }
                     else
@@ -86,11 +89,17 @@ else if (IsChartFamily)
                                                 ValueProperty="Value"
                                                 Title="@SeriesTitle(series)"
                                                 Fill="@SeriesColor(series)"
-                                                Fills="@series.PointColors" />
+                                                Fills="@series.PointColors">
+                                <RadzenSeriesDataLabels Visible="@DataLabelsVisible" />
+                            </RadzenColumnSeries>
                         }
                     }
-                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" />
-                    <RadzenValueAxis />
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" Visible="@AxisLabelsXVisible">
+                        <RadzenGridLines Visible="@GridLinesX" />
+                    </RadzenCategoryAxis>
+                    <RadzenValueAxis Visible="@AxisLabelsYVisible">
+                        <RadzenGridLines Visible="@GridLinesY" />
+                    </RadzenValueAxis>
                     break;
                 case "pie":
                     <RadzenPieSeries TItem="RadzenPoint"
@@ -98,7 +107,9 @@ else if (IsChartFamily)
                                      CategoryProperty="Label"
                                      ValueProperty="Value"
                                      Fills="@FirstSeries.PointColors"
-                                     Title="@SeriesTitle(FirstSeries)" />
+                                     Title="@SeriesTitle(FirstSeries)">
+                        <RadzenSeriesDataLabels Visible="@DataLabelsVisible" />
+                    </RadzenPieSeries>
                     break;
                 case "donut":
                 case "doughnut":
@@ -107,16 +118,24 @@ else if (IsChartFamily)
                                        CategoryProperty="Label"
                                        ValueProperty="Value"
                                        Fills="@FirstSeries.PointColors"
-                                       Title="@SeriesTitle(FirstSeries)" />
+                                       Title="@SeriesTitle(FirstSeries)">
+                        <RadzenSeriesDataLabels Visible="@DataLabelsVisible" />
+                    </RadzenDonutSeries>
                     break;
                 case "scatter":
                     <RadzenScatterSeries TItem="RadzenPoint"
                                           Data="PointsOf(FirstSeries)"
                                           CategoryProperty="Label"
                                           ValueProperty="Value"
-                                          Title="@FirstSeries.Name" />
-                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" />
-                    <RadzenValueAxis />
+                                          Title="@FirstSeries.Name">
+                        <RadzenMarkers Visible="@MarkersVisible" MarkerType="MarkerType.Circle" />
+                    </RadzenScatterSeries>
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" Visible="@AxisLabelsXVisible">
+                        <RadzenGridLines Visible="@GridLinesX" />
+                    </RadzenCategoryAxis>
+                    <RadzenValueAxis Visible="@AxisLabelsYVisible">
+                        <RadzenGridLines Visible="@GridLinesY" />
+                    </RadzenValueAxis>
                     break;
                 case "area":
                     @foreach (var series in Chart.Series)
@@ -126,12 +145,14 @@ else if (IsChartFamily)
                                           CategoryProperty="Label"
                                           ValueProperty="Value"
                                           Title="@SeriesTitle(series)"
-                                          Fill="@SeriesColor(series)" />
+                                          Fill="@SeriesColor(series)">
+                            <RadzenSeriesDataLabels Visible="@DataLabelsVisible" />
+                        </RadzenAreaSeries>
                     }
-                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto">
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" Visible="@AxisLabelsXVisible">
                         <RadzenGridLines Visible="@GridLinesX" />
                     </RadzenCategoryAxis>
-                    <RadzenValueAxis>
+                    <RadzenValueAxis Visible="@AxisLabelsYVisible">
                         <RadzenGridLines Visible="@GridLinesY" />
                     </RadzenValueAxis>
                     break;
@@ -145,12 +166,13 @@ else if (IsChartFamily)
                                           Title="@SeriesTitle(series)"
                                           Stroke="@SeriesColor(series)">
                             <RadzenMarkers Visible="@MarkersVisible" MarkerType="MarkerType.Circle" />
+                            <RadzenSeriesDataLabels Visible="@DataLabelsVisible" />
                         </RadzenLineSeries>
                     }
-                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto">
+                    <RadzenCategoryAxis LabelFit="CategoryAxisLabelFit.Auto" Visible="@AxisLabelsXVisible">
                         <RadzenGridLines Visible="@GridLinesX" />
                     </RadzenCategoryAxis>
-                    <RadzenValueAxis>
+                    <RadzenValueAxis Visible="@AxisLabelsYVisible">
                         <RadzenGridLines Visible="@GridLinesY" />
                     </RadzenValueAxis>
                     break;
@@ -238,11 +260,28 @@ else
     private bool IsHorizontal =>
         Context.EffectiveCard.ChartPresentation?.Orientation == ChartOrientation.Horizontal;
 
-    private bool GridLinesX => Context.EffectiveCard.ChartPresentation?.GridLinesX ?? true;
+    private string VizStateCardId => Context.ResolveVizStateCardId();
 
-    private bool GridLinesY => Context.EffectiveCard.ChartPresentation?.GridLinesY ?? true;
+    private bool AxisLabelsXVisible =>
+        VizDisplayState.GetAxisLabelsXOverride(VizStateCardId) ?? true;
 
-    private bool MarkersVisible => Context.EffectiveCard.ChartPresentation?.Markers ?? true;
+    private bool AxisLabelsYVisible =>
+        VizDisplayState.GetAxisLabelsYOverride(VizStateCardId) ?? true;
+
+    private bool GridLinesX =>
+        (VizDisplayState.GetAxisLabelsXOverride(VizStateCardId) ?? true) &&
+        (Context.EffectiveCard.ChartPresentation?.GridLinesX ?? true);
+
+    private bool GridLinesY =>
+        (VizDisplayState.GetAxisLabelsYOverride(VizStateCardId) ?? true) &&
+        (Context.EffectiveCard.ChartPresentation?.GridLinesY ?? true);
+
+    private bool MarkersVisible =>
+        VizDisplayState.GetValueLabelsOverride(VizStateCardId) ??
+        (Context.EffectiveCard.ChartPresentation?.Markers ?? true);
+
+    private bool DataLabelsVisible =>
+        VizDisplayState.GetValueLabelsOverride(VizStateCardId) == true;
 
     /// <summary>Pie/donut: the bottom legend carries the category labels — the only label
     /// surface Radzen gives a pie series. Other families: real multi-series splits only.</summary>
@@ -250,9 +289,29 @@ else
     {
         get
         {
-            var legendOverride = VizDisplayState.GetLegendOverride(Context.ResolveVizStateCardId());
+            var legendOverride = VizDisplayState.GetLegendOverride(VizStateCardId);
             return legendOverride ?? (DiagramKind is "pie" or "donut" or "doughnut" || Chart.Series.Count > 1);
         }
+    }
+
+    protected override void OnInitialized()
+    {
+        VizDisplayState.Changed += OnVizDisplayStateChanged;
+    }
+
+    public void Dispose()
+    {
+        VizDisplayState.Changed -= OnVizDisplayStateChanged;
+    }
+
+    private void OnVizDisplayStateChanged(string cardId)
+    {
+        if (!string.Equals(cardId, VizStateCardId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
     }
 
     /// <summary>Card-authored chart height (chartjs parity): the presentation height on the

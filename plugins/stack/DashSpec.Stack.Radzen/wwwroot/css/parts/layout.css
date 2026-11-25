@@ -493,7 +493,49 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.28rem;
+  gap: 0.22rem;
+}
+
+.dox-toc-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.24rem 0.45rem;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.dox-toc-link:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.dox-toc-link.is-group {
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 0.25rem;
+}
+
+.dox-toc-link.is-sub {
+  padding-left: 0.85rem;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.dox-toc-link.is-active {
+  color: var(--accent, #60a5fa);
+  border-left-color: var(--accent, #3b82f6);
+  background: color-mix(in srgb, var(--accent, #3b82f6) 14%, transparent);
+  font-weight: 600;
 }
 
 .dash-toolbar {

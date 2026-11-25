@@ -3,8 +3,10 @@
 @using DashSpec.Modeling.Parse.Template
 @using DashSpec.Viz
 @using Microsoft.FSharp.Core
+@using Microsoft.JSInterop
 @using Radzen
 @using Radzen.Blazor
+@inject IJSRuntime Js
 
 @* ADR-0112 / ADR-0138: Native Radzen documentation portal for the Radzen stack.
    Uses RadzenButton, RadzenTextBox, RadzenBadge, RadzenPanelMenu, RadzenBreadCrumb,
@@ -222,6 +224,8 @@
                 @foreach (var group in sym.Children.GroupBy(c => c.Kind))
                 {
                     var groupItems = group.ToList();
+                    var groupSecId = $"dox-sec-grp-{group.Key}";
+                    <div id="@groupSecId" data-dox-sec="@groupSecId">
                     <RadzenCard Variant="Variant.Outlined" Style="padding: 1rem 1.25rem;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
                             <h2 style="margin: 0; font-size: 1.08rem;">@FormatMemberGroupTitle(group.Key)</h2>
@@ -240,6 +244,10 @@
                             <Columns>
                                 <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Id" Title="Id" Width="22%">
                                     <Template Context="memberItem">
+                                        @{
+                                            var memberSecId = $"dox-sec-mem-{group.Key}-{memberItem.Id}";
+                                        }
+                                        <div id="@memberSecId" data-dox-sec="@memberSecId">
                                         @if (memberItem.Children.Length > 0 && memberItem.Kind is not "block")
                                         {
                                             <RadzenButton Text="@memberItem.Id"
@@ -257,6 +265,7 @@
                                         {
                                             <div class="muted" style="font-size: 0.76rem; margin-top: 0.15rem;">@memberItem.Title.Value</div>
                                         }
+                                        </div>
                                     </Template>
                                 </RadzenDataGridColumn>
                                 <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Signature" Title="Syntax / Type" Width="30%">
@@ -305,6 +314,7 @@
                             </Columns>
                         </RadzenDataGrid>
                     </RadzenCard>
+                    </div>
                 }
             }
             else if (Context.ActivePage is not null)
@@ -343,6 +353,8 @@
                         continue;
                     }
 
+                    var subSecId = $"dox-sec-sub-{sub.Id}";
+                    <div id="@subSecId" data-dox-sec="@subSecId">
                     <RadzenCard Variant="Variant.Outlined" Style="padding: 1.15rem 1.25rem;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.55rem;">
                             <h2 style="margin: 0; font-size: 1.12rem;">@sub.Title</h2>
@@ -377,6 +389,7 @@
                             @RenderSymbolDataGrid(chapter, secUnits)
                         }
                     </RadzenCard>
+                    </div>
                 }
 
                 @if (!chapter.SubSections.Any(s => s.SymbolSections.Count > 0))
@@ -389,6 +402,8 @@
                             continue;
                         }
 
+                        var catSecId = $"dox-sec-cat-{sec.CategoryId}";
+                        <div id="@catSecId" data-dox-sec="@catSecId">
                         <RadzenCard Variant="Variant.Outlined" Style="padding: 1.15rem 1.25rem;">
                             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
                                 <h2 style="margin: 0; font-size: 1.12rem;">@sec.CategoryTitle</h2>
@@ -396,6 +411,7 @@
                             </div>
                             @RenderSymbolDataGrid(chapter, units)
                         </RadzenCard>
+                        </div>
                     }
                 }
             }
@@ -414,22 +430,37 @@
                     <ul class="dox-toc-list">
                         @foreach (var grp in Context.ActiveSymbol.Children.GroupBy(c => c.Kind))
                         {
-                            <li class="muted" style="margin-top: 0.35rem; font-weight: 600;">@FormatMemberGroupTitle(grp.Key) (@grp.Count())</li>
+                            var grpId = $"dox-sec-grp-{grp.Key}";
+                            <li>
+                                <button type="button"
+                                        class="dox-toc-link is-group"
+                                        data-dox-toc-target="@grpId"
+                                        @onclick="() => ScrollToSectionAsync(grpId)">
+                                    <span>@FormatMemberGroupTitle(grp.Key)</span>
+                                    <span class="muted">(@grp.Count())</span>
+                                </button>
+                            </li>
                             @foreach (var item in grp.Take(16))
                             {
-                                <li style="padding-left: 0.45rem;">
+                                var memId = $"dox-sec-mem-{grp.Key}-{item.Id}";
+                                <li>
                                     @if (item.Children.Length > 0 && item.Kind is not "block")
                                     {
-                                        <RadzenButton Text="@item.Id"
-                                                      Variant="Variant.Text"
-                                                      Size="ButtonSize.ExtraSmall"
-                                                      ButtonStyle="ButtonStyle.Info"
-                                                      Style="padding: 0.1rem 0.25rem; font-family: ui-monospace, Consolas, monospace;"
-                                                      Click="@(() => Context.OnSelectSymbol.InvokeAsync((Context.ActivePage, item)))" />
+                                        <button type="button"
+                                                class="dox-toc-link is-sub"
+                                                data-dox-toc-target="@memId"
+                                                @onclick="() => Context.OnSelectSymbol.InvokeAsync((Context.ActivePage, item))">
+                                            <span>@item.Id</span>
+                                        </button>
                                     }
                                     else
                                     {
-                                        <span class="muted" style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;">@item.Id</span>
+                                        <button type="button"
+                                                class="dox-toc-link is-sub"
+                                                data-dox-toc-target="@memId"
+                                                @onclick="() => ScrollToSectionAsync(memId)">
+                                            <span>@item.Id</span>
+                                        </button>
                                     }
                                 </li>
                             }
@@ -442,29 +473,43 @@
                         <strong>@Context.ActivePage.Title</strong>
                     </div>
                     <ul class="dox-toc-list">
+                        @foreach (var sub in Context.ActivePage.SubSections)
+                        {
+                            var subId = $"dox-sec-sub-{sub.Id}";
+                            <li>
+                                <button type="button"
+                                        class="dox-toc-link is-group"
+                                        data-dox-toc-target="@subId"
+                                        @onclick="() => ScrollToSectionAsync(subId)">
+                                    <span>@sub.Title</span>
+                                </button>
+                            </li>
+                        }
                         @foreach (var sec in Context.ActivePage.SymbolSections)
                         {
+                            var catId = $"dox-sec-cat-{sec.CategoryId}";
                             @if (Context.ActivePage.SymbolSections.Count > 1)
                             {
-                                <li class="muted" style="margin-top: 0.35rem; font-weight: 600;">@FormatNavGroupBadge(sec.CategoryId, sec.CategoryTitle)</li>
+                                <li>
+                                    <button type="button"
+                                            class="dox-toc-link is-group"
+                                            data-dox-toc-target="@catId"
+                                            @onclick="() => ScrollToSectionAsync(catId)">
+                                        <span>@FormatNavGroupBadge(sec.CategoryId, sec.CategoryTitle)</span>
+                                    </button>
+                                </li>
                             }
                             @foreach (var u in FilterSymbolList(sec.Units).Take(18))
                             {
-                                <li style="padding-left: 0.25rem;">
-                                    <RadzenButton Text="@u.Id"
-                                                  Variant="Variant.Text"
-                                                  Size="ButtonSize.ExtraSmall"
-                                                  ButtonStyle="ButtonStyle.Info"
-                                                  Style="padding: 0.1rem 0.25rem; font-family: ui-monospace, Consolas, monospace;"
-                                                  Click="@(() => Context.OnSelectSymbol.InvokeAsync((Context.ActivePage, u)))" />
+                                var symRowId = $"dox-sec-sym-{u.Id}";
+                                <li>
+                                    <button type="button"
+                                            class="dox-toc-link is-sub"
+                                            data-dox-toc-target="@symRowId"
+                                            @onclick="() => Context.OnSelectSymbol.InvokeAsync((Context.ActivePage, u))">
+                                        <span>@u.Id</span>
+                                    </button>
                                 </li>
-                            }
-                        }
-                        @if (Context.ActivePage.SymbolSections.Count == 0)
-                        {
-                            @foreach (var sub in Context.ActivePage.SubSections)
-                            {
-                                <li class="muted">@sub.Title</li>
                             }
                         }
                     </ul>
@@ -480,6 +525,40 @@
 @code {
     [Parameter, EditorRequired] public StackDocPortalContext Context { get; set; } = default!;
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("dashSpecDocPortal.initScrollSpy");
+        }
+        catch (JSException)
+        {
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private async Task ScrollToSectionAsync(string sectionId)
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("dashSpecDocPortal.scrollToSection", sectionId);
+        }
+        catch (JSException)
+        {
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
     private RenderFragment RenderSymbolDataGrid(DashSpecCompiledBookPage chapter, IReadOnlyList<DashSpecSymbolDoc> units) => __builder =>
     {
         <RadzenDataGrid TItem="DashSpecSymbolDoc"
@@ -494,6 +573,10 @@
             <Columns>
                 <RadzenDataGridColumn TItem="DashSpecSymbolDoc" Property="Id" Title="Symbol" Width="24%">
                     <Template Context="unit">
+                        @{
+                            var symRowId = $"dox-sec-sym-{unit.Id}";
+                        }
+                        <div id="@symRowId" data-dox-sec="@symRowId">
                         <RadzenButton Text="@unit.Id"
                                       Variant="Variant.Text"
                                       Size="ButtonSize.Small"
@@ -507,6 +590,7 @@
                                              BadgeStyle="@GetTagBadgeStyle(tag.TagKey, tag.TagValue)"
                                              IsPill="true" />
                             }
+                        </div>
                         </div>
                     </Template>
                 </RadzenDataGridColumn>

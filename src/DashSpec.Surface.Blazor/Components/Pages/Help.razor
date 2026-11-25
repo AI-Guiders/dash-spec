@@ -6,10 +6,12 @@
 @using DashSpec.Surface.Blazor.Services.Presentation
 @using DashSpec.Viz
 @using Microsoft.FSharp.Core
+@using Microsoft.JSInterop
 @inject CatalogSourceState CatalogState
 @inject DashSpec.Surface.Blazor.Commands.IDashboardCultureAmbient CultureAmbient
 @inject DashSpec.Surface.Blazor.Services.Localization.DashboardLocalizer Loc
 @inject ICardChromeControlsOverride ChromeControls
+@inject IJSRuntime Js
 
 <PageTitle>@(_book?.Title ?? "Documentation") — DashSpec</PageTitle>
 
@@ -232,7 +234,8 @@
                     @* Group children by Doxygen member kind (block, clause, type, field, port, param, source, transformer, card, filter, row, property) *@
                     @foreach (var group in sym.Children.GroupBy(c => c.Kind))
                     {
-                        <section>
+                        var groupSecId = $"dox-sec-grp-{group.Key}";
+                        <section id="@groupSecId" data-dox-sec="@groupSecId">
                             <h2 class="dox-section-title">@FormatMemberGroupTitle(group.Key) (@group.Count())</h2>
                             <table class="dox-table">
                                 <thead>
@@ -248,7 +251,8 @@
                                         var memberTitle = FSharpOption<string>.get_IsSome(memberItem.Title) && !string.IsNullOrWhiteSpace(memberItem.Title.Value)
                                             ? memberItem.Title.Value
                                             : null;
-                                        <tr>
+                                        var memberSecId = $"dox-sec-mem-{group.Key}-{memberItem.Id}";
+                                        <tr id="@memberSecId" data-dox-sec="@memberSecId">
                                             <td>
                                                 @if (memberItem.Children.Length > 0 && memberItem.Kind is not "block")
                                                 {
@@ -354,7 +358,8 @@
                             continue;
                         }
 
-                        <section>
+                        var subSecId = $"dox-sec-sub-{sub.Id}";
+                        <section id="@subSecId" data-dox-sec="@subSecId">
                             <h2 class="dox-section-title">
                                 @sub.Title
                                 @if (subUnits.Count > 0)
@@ -398,7 +403,8 @@
                                 continue;
                             }
 
-                            <section>
+                            var catSecId = $"dox-sec-cat-{sec.CategoryId}";
+                            <section id="@catSecId" data-dox-sec="@catSecId">
                                 <h2 class="dox-section-title">@sec.CategoryTitle (@units.Count)</h2>
                                 @RenderSymbolTable(chapter, units)
                             </section>
@@ -418,22 +424,37 @@
                         <li><code>@_activeSymbol.Id</code></li>
                         @foreach (var grp in _activeSymbol.Children.GroupBy(c => c.Kind))
                         {
-                            <li class="muted" style="margin-top: 0.25rem; font-weight: 600;">@FormatMemberGroupTitle(grp.Key) (@grp.Count())</li>
+                            var grpId = $"dox-sec-grp-{grp.Key}";
+                            <li>
+                                <button type="button"
+                                        class="dox-toc-link is-group"
+                                        data-dox-toc-target="@grpId"
+                                        @onclick="() => ScrollToSectionAsync(grpId)">
+                                    <span>@FormatMemberGroupTitle(grp.Key)</span>
+                                    <span class="muted">(@grp.Count())</span>
+                                </button>
+                            </li>
                             @foreach (var item in grp.Take(14))
                             {
-                                <li style="padding-left: 0.55rem;">
+                                var memId = $"dox-sec-mem-{grp.Key}-{item.Id}";
+                                <li>
                                     @if (item.Children.Length > 0 && item.Kind is not "block")
                                     {
                                         <button type="button"
-                                                class="dox-crumb-btn"
-                                                style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;"
+                                                class="dox-toc-link is-sub"
+                                                data-dox-toc-target="@memId"
                                                 @onclick="() => SelectSymbol(_activePage, item)">
-                                            @item.Id
+                                            <span>@item.Id</span>
                                         </button>
                                     }
                                     else
                                     {
-                                        <span class="muted" style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;">@item.Id</span>
+                                        <button type="button"
+                                                class="dox-toc-link is-sub"
+                                                data-dox-toc-target="@memId"
+                                                @onclick="() => ScrollToSectionAsync(memId)">
+                                            <span>@item.Id</span>
+                                        </button>
                                     }
                                 </li>
                             }
@@ -444,29 +465,43 @@
                 {
                     <ul class="dox-toc-list">
                         <li><strong>@_activePage.Title</strong></li>
+                        @foreach (var sub in _activePage.SubSections)
+                        {
+                            var subId = $"dox-sec-sub-{sub.Id}";
+                            <li>
+                                <button type="button"
+                                        class="dox-toc-link is-group"
+                                        data-dox-toc-target="@subId"
+                                        @onclick="() => ScrollToSectionAsync(subId)">
+                                    <span>@sub.Title</span>
+                                </button>
+                            </li>
+                        }
                         @foreach (var sec in _activePage.SymbolSections)
                         {
+                            var catId = $"dox-sec-cat-{sec.CategoryId}";
                             @if (_activePage.SymbolSections.Count > 1)
                             {
-                                <li class="muted" style="margin-top: 0.25rem; font-weight: 600;">@FormatNavGroupBadge(sec.CategoryId, sec.CategoryTitle)</li>
-                            }
-                            @foreach (var u in FilterSymbolList(sec.Units).Take(16))
-                            {
-                                <li style="padding-left: 0.35rem;">
+                                <li>
                                     <button type="button"
-                                            class="dox-crumb-btn"
-                                            style="font-family: ui-monospace, Consolas, monospace; font-size: 0.76rem;"
-                                            @onclick="() => SelectSymbol(_activePage, u)">
-                                        @u.Id
+                                            class="dox-toc-link is-group"
+                                            data-dox-toc-target="@catId"
+                                            @onclick="() => ScrollToSectionAsync(catId)">
+                                        <span>@FormatNavGroupBadge(sec.CategoryId, sec.CategoryTitle)</span>
                                     </button>
                                 </li>
                             }
-                        }
-                        @if (_activePage.SymbolSections.Count == 0)
-                        {
-                            @foreach (var sub in _activePage.SubSections)
+                            @foreach (var u in FilterSymbolList(sec.Units).Take(16))
                             {
-                                <li class="muted">@sub.Title</li>
+                                var symRowId = $"dox-sec-sym-{u.Id}";
+                                <li>
+                                    <button type="button"
+                                            class="dox-toc-link is-sub"
+                                            data-dox-toc-target="@symRowId"
+                                            @onclick="() => SelectSymbol(_activePage, u)">
+                                        <span>@u.Id</span>
+                                    </button>
+                                </li>
                             }
                         }
                     </ul>
@@ -544,6 +579,45 @@ else
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_book is null || ChromeControls.ResolveDocPortal() is not null)
+        {
+            return;
+        }
+
+        try
+        {
+            await Js.InvokeVoidAsync("dashSpecDocPortal.initScrollSpy");
+        }
+        catch (JSException)
+        {
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private async Task ScrollToSectionAsync(string sectionId)
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("dashSpecDocPortal.scrollToSection", sectionId);
+        }
+        catch (JSException)
+        {
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
     private RenderFragment RenderSymbolTable(DashSpecCompiledBookPage chapter, IReadOnlyList<DashSpecSymbolDoc> units) => __builder =>
     {
         <table class="dox-table">
@@ -561,7 +635,8 @@ else
                         ? unit.Title.Value
                         : null;
                     var uSrc = FSharpOption<string>.get_IsSome(unit.SourcePath) ? $"{unit.SourcePath.Value}:{unit.Line}" : null;
-                    <tr>
+                    var symRowId = $"dox-sec-sym-{unit.Id}";
+                    <tr id="@symRowId" data-dox-sec="@symRowId">
                         <td>
                             <button type="button"
                                     class="dox-sym-link"
